@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import { NAV_LINKS } from "@/components/chrome/Navigation";
+import { NAV_LINKS, Wordmark } from "@/components/chrome/Navigation";
 
 type Props = {
   open: boolean;
@@ -118,10 +118,41 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
       aria-label="Site menu"
       aria-hidden={!open}
       data-theme="ink"
-      className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between bg-ink px-6 pt-28 pb-10 text-bone opacity-0 lg:hidden"
+      className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink px-6 pt-6 pb-10 text-bone opacity-0 lg:hidden"
       style={{ pointerEvents: "none" }}
     >
-      <nav aria-label="Menu">
+      <div data-menu-meta className="flex items-center justify-between">
+        <Wordmark />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          data-cursor="link"
+          tabIndex={open ? 0 : -1}
+          className="-mr-2 flex size-10 items-center justify-center"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden fill="none">
+            <line
+              x1="3"
+              y1="3"
+              x2="17"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="17"
+              y1="3"
+              x2="3"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <nav aria-label="Menu" className="py-10">
         <ul className="flex flex-col gap-1">
           {NAV_LINKS.map((link, i) => (
             <li key={link.href} className="overflow-hidden">
@@ -129,7 +160,7 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
                 href={link.href}
                 onClick={onNavigate(link.href)}
                 data-menu-link
-                className="type-headline flex items-baseline gap-4 py-2 text-[2.6rem]"
+                className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)]"
                 tabIndex={open ? 0 : -1}
               >
                 <span className="type-label w-7 shrink-0 text-signal">
@@ -144,7 +175,7 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
               href="#start"
               onClick={onNavigate("#start")}
               data-menu-link
-              className="type-headline flex items-baseline gap-4 py-2 text-[2.6rem] text-signal"
+              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] text-signal"
               tabIndex={open ? 0 : -1}
             >
               <span className="type-label w-7 shrink-0">06</span>
