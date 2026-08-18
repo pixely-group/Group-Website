@@ -156,8 +156,8 @@ export default function Navigation() {
         <div
           className={`flex min-h-10 items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) ${
             scrolled
-              ? `mx-3 mt-3 rounded-(--radius-panel) border border-(--line) ${glass} px-5 py-2 backdrop-blur-xl sm:mx-5 lg:mx-8`
-              : "mx-0 mt-0 border border-transparent bg-transparent px-6 py-6 sm:px-10 lg:px-14"
+              ? `mx-3 mt-3 rounded-(--radius-panel) border border-(--line) ${glass} py-2 pr-2 pl-5 backdrop-blur-xl sm:mx-5 lg:mx-8`
+              : "mx-0 mt-0 border border-transparent bg-transparent py-6 pr-6 pl-6 sm:pl-10 lg:pl-14"
           }`}
         >
           <a

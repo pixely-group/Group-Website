@@ -133,8 +133,8 @@ export default function MobileMenu({
         data-menu-meta
         className={`flex min-h-10 items-center justify-between border border-transparent ${
           scrolled
-            ? "mx-3 mt-3 px-5 py-2 sm:mx-5"
-            : "mx-0 mt-0 px-6 py-6 sm:px-10"
+            ? "mx-3 mt-3 py-2 pr-2 pl-5 sm:mx-5"
+            : "mx-0 mt-0 py-6 pr-6 pl-6 sm:pl-10"
         }`}
       >
         <Wordmark />

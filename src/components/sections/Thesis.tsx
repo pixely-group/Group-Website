@@ -140,7 +140,7 @@ export default function Thesis() {
             cy="350"
             rx="300"
             ry="140"
-            stroke="#6b7dec"
+            stroke="#7290ff"
             strokeOpacity="0.3"
             transform="rotate(-12 600 350)"
           />

@@ -46,7 +46,7 @@ function HeroPoster() {
           cy="430"
           rx="190"
           ry="64"
-          stroke="#6b7dec"
+          stroke="#7290ff"
           strokeOpacity="0.25"
           transform="rotate(-16 1010 430)"
         />
