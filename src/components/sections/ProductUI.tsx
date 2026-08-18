@@ -272,6 +272,9 @@ export default function ProductUI() {
 
               <div
                 data-panel="events"
+                // A dark panel inside a light chapter: the cursor has to
+                // ignore the section theme and stay light over it.
+                data-cursor-theme="ink"
                 className="flex-1 rounded-[5px] border border-ink/8 bg-ink p-3 text-bone/80"
               >
                 <p className="mb-2 flex items-center justify-between font-mono text-[9px] tracking-[0.1em] text-bone/45 uppercase">

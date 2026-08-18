@@ -68,11 +68,15 @@ function NetworkPoster() {
             />
             {Array.from({ length: ring.n }, (_, i) => {
               const a = (i / ring.n) * Math.PI * 2;
+              // Math.sin/cos are not bit-identical across engines, so the
+              // server and the browser disagreed in the last decimal and
+              // every hydration logged a mismatch. Round so both agree.
+              const round = (n: number) => Math.round(n * 1000) / 1000;
               return (
                 <circle
                   key={i}
-                  cx={Math.cos(a) * ring.r}
-                  cy={Math.sin(a) * ring.r}
+                  cx={round(Math.cos(a) * ring.r)}
+                  cy={round(Math.sin(a) * ring.r)}
                   r={1.5}
                   fill="#ece9e1"
                   fillOpacity={0.5}

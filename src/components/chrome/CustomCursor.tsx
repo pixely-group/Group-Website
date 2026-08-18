@@ -7,9 +7,30 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
 type CursorState = "default" | "link" | "explore" | "text";
 
 /**
- * Desktop-only cursor: a tight dot and a lagging ring in difference blend
- * so it self-adapts across ink and bone chapters. States are driven by
- * `data-cursor` attributes (or native anchors/buttons) via event delegation.
+ * Cursor ink for the chapter beneath it: a dark section takes the light
+ * cursor and vice versa. `mix-blend-difference` cannot do this job here —
+ * the fixed, z-indexed container is its own stacking context, which
+ * isolates the blend group, so the cursor would only ever blend against
+ * its own transparent parent.
+ */
+const CURSOR_COLOR = {
+  ink: "#ece9e1",
+  bone: "#131316",
+} as const;
+
+/** Nearest surface that declares a treatment, else the chapter's theme. */
+function resolveTheme(el: Element | null): keyof typeof CURSOR_COLOR {
+  const holder = el?.closest("[data-cursor-theme], [data-theme]");
+  const value =
+    holder?.getAttribute("data-cursor-theme") ??
+    holder?.getAttribute("data-theme");
+  return value === "bone" ? "bone" : "ink";
+}
+
+/**
+ * Desktop-only cursor: a tight dot and a lagging ring that recolour against
+ * whatever chapter they are over. States are driven by `data-cursor`
+ * attributes (or native anchors/buttons) via event delegation.
  */
 export default function CustomCursor() {
   const fine = useFinePointer();
@@ -28,7 +49,9 @@ export default function CustomCursor() {
     const label = labelRef.current;
     if (!dot || !ring || !label) return;
 
-    document.documentElement.dataset.cursor = "on";
+    const root = document.documentElement;
+    root.dataset.cursor = "on";
+    root.style.setProperty("--cursor-color", CURSOR_COLOR.ink);
 
     const dotX = gsap.quickTo(dot, "x", { duration: 0.12, ease: "power3.out" });
     const dotY = gsap.quickTo(dot, "y", { duration: 0.12, ease: "power3.out" });
@@ -63,12 +86,21 @@ export default function CustomCursor() {
       });
     };
 
+    let theme: keyof typeof CURSOR_COLOR | null = null;
+    const applyTheme = (next: keyof typeof CURSOR_COLOR) => {
+      if (next === theme) return;
+      theme = next;
+      // A custom property keeps this off React's render path.
+      root.style.setProperty("--cursor-color", CURSOR_COLOR[next]);
+    };
+
     const onMove = (e: PointerEvent) => {
       setVisible(true);
       dotX(e.clientX);
       dotY(e.clientY);
       ringX(e.clientX);
       ringY(e.clientY);
+      applyTheme(resolveTheme(e.target as Element));
     };
 
     const resolveTarget = (el: Element | null): [CursorState, string?] => {
@@ -103,7 +135,8 @@ export default function CustomCursor() {
     document.documentElement.addEventListener("pointerenter", onEnter);
 
     return () => {
-      delete document.documentElement.dataset.cursor;
+      delete root.dataset.cursor;
+      root.style.removeProperty("--cursor-color");
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerover", onOver);
       window.removeEventListener("pointerdown", onDown);
@@ -123,15 +156,15 @@ export default function CustomCursor() {
     >
       <div
         ref={dotRef}
-        className="absolute -top-[3px] -left-[3px] size-1.5 rounded-full bg-bone mix-blend-difference"
+        className="absolute -top-[3px] -left-[3px] size-1.5 rounded-full bg-(--cursor-color) transition-[background-color] duration-300 ease-(--ease-out-expo)"
       />
       <div
         ref={ringRef}
-        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-bone/70 mix-blend-difference"
+        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-(--cursor-color) transition-[border-color] duration-300 ease-(--ease-out-expo)"
       >
         <span
           ref={labelRef}
-          className="type-label text-[8px] tracking-[0.2em] text-bone opacity-0"
+          className="type-label text-[8px] tracking-[0.2em] text-(--cursor-color) opacity-0"
         />
       </div>
     </div>
