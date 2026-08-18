@@ -5,6 +5,10 @@ import Hero from "@/components/sections/Hero";
 import Manifesto from "@/components/sections/Manifesto";
 import ProductExperience from "@/components/sections/ProductExperience";
 import NetworkNarrative from "@/components/sections/NetworkNarrative";
+import SecurityArchitecture from "@/components/sections/SecurityArchitecture";
+import GlobalCorridors from "@/components/sections/GlobalCorridors";
+import Metrics from "@/components/sections/Metrics";
+import UseCases from "@/components/sections/UseCases";
 
 export default function Home() {
   return (
@@ -16,6 +20,10 @@ export default function Home() {
         <Manifesto />
         <ProductExperience />
         <NetworkNarrative />
+        <SecurityArchitecture />
+        <GlobalCorridors />
+        <Metrics />
+        <UseCases />
       </main>
     </SmoothScroll>
   );
