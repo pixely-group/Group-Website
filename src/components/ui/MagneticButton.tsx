@@ -64,19 +64,22 @@ export default function MagneticButton({
   };
 
   const base =
-    "group relative isolate inline-flex h-12 items-center justify-center overflow-hidden rounded-(--radius-control) font-mono uppercase tracking-[0.14em] transition-colors duration-500 select-none";
-  // Height is fixed at 48px for every size; only the horizontal rhythm and
-  // label size change, so controls line up wherever they appear.
+    "group relative isolate inline-flex items-center justify-center overflow-hidden rounded-(--radius-control) font-mono uppercase tracking-[0.14em] transition-[color,background-color,border-color,scale] duration-500 ease-(--ease-out-expo) select-none active:scale-[0.985]";
+  // Height scales with the button's job rather than being fixed: a closing
+  // call to action should carry more weight than a nav control. Padding is
+  // generous — that is what gave the editorial buttons their confidence.
   const sizing =
     size === "lg"
-      ? "px-7 text-[0.8rem]"
+      ? "h-14 px-9 text-[0.8rem]"
       : size === "sm"
-        ? "px-4 text-[0.65rem]"
-        : "px-5 text-[0.7rem]";
+        ? "h-10 px-5 text-[0.65rem]"
+        : "h-12 px-7 text-[0.7rem]";
   const skin =
     variant === "solid"
-      ? "bg-signal text-bone transition-colors duration-500 ease-(--ease-out-expo) hover:text-ink focus-visible:text-ink"
-      : "border border-(--line-strong) text-(--fg) hover:bg-(--surface)";
+      // The inset hairline catches light along the top edge, giving the
+      // fill a little dimension without resorting to a gradient.
+      ? "bg-signal text-bone shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] hover:text-ink focus-visible:text-ink"
+      : "border border-(--line-strong) text-(--fg) hover:border-(--fg) hover:bg-(--surface)";
 
   const inner = (
     <>

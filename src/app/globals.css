@@ -7,16 +7,18 @@
   --color-ink-3: #1a1a1e;
   --color-bone: #ece9e1;
   --color-bone-2: #f2f0ea;
-  /* Brand blue. It carries plenty of contrast on bone but only 3.1:1 on
-     ink, so a lifted tint covers the dark chapters. `--accent` below picks
-     the right one per chapter; use it for anything text-sized. */
-  --color-signal: #384ce3;
-  --color-signal-lift: #6b8aff;
+  /* Brand blue at full chroma: the same 233° hue as #384CE3, saturation
+     taken to 100%, which is as vivid as this hue can get while still
+     clearing AA as text on bone (5.04:1). Anything brighter drops below
+     4.5:1 there. A lifted tint covers the dark chapters, where the primary
+     itself reaches only ~3:1. `--accent` picks the right one per chapter. */
+  --color-signal: #2d46ff;
+  --color-signal-lift: #7290ff;
   /* Canvas and GL marks are small, alpha-blended and often additive, which
      washes the hue out badly at blue's low luminance. This brighter tint is
      for those surfaces only — never for flat DOM colour. */
-  --color-signal-glow: #8fa8ff;
-  --color-signal-deep: #2438c7;
+  --color-signal-glow: #9fb4ff;
+  --color-signal-deep: #1f33d6;
   --color-positive: #23855c;
   --color-negative: #c2402d;
 
@@ -33,9 +35,12 @@
   --duration-base: 500ms;
   --duration-slow: 900ms;
 
-  /* — Radii. One control height and one corner across the site. */
-  --radius-control: 12px;
-  --radius-chip: 8px;
+  /* — Radii. Small and precise: this page is built from hairlines and
+     sharp rules, and a large corner reads as a foreign, app-like idiom.
+     The corner grows a little with the surface it sits on. */
+  --radius-control: 4px;
+  --radius-chip: 4px;
+  --radius-panel: 6px;
 
   /* — Layers */
   --z-canvas: 0;
@@ -190,7 +195,7 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: var(--radius-chip);
+  border-radius: var(--radius-control);
 }
 
 /* Lenis recommended styles */
@@ -267,30 +272,30 @@ html[data-cursor="on"] label {
 }
 [data-stage="ledger"] [data-panel="balances"] > div {
   box-shadow:
-    0 0 0 1px rgb(56 76 227 / 0.45),
-    0 12px 34px -14px rgb(56 76 227 / 0.28);
+    0 0 0 1px rgb(45 70 255 / 0.45),
+    0 12px 34px -14px rgb(45 70 255 / 0.28);
 }
 [data-stage="payments"] [data-row="FX-EUR-0392"] > td {
-  background: rgb(56 76 227 / 0.07);
+  background: rgb(45 70 255 / 0.07);
 }
 [data-stage="payments"] [data-ui="new-payment"] {
-  box-shadow: 0 0 0 2px rgb(56 76 227 / 0.35);
+  box-shadow: 0 0 0 2px rgb(45 70 255 / 0.35);
 }
 [data-stage="fx"] [data-panel="fx"] {
   box-shadow:
-    0 0 0 1px rgb(56 76 227 / 0.5),
-    0 18px 44px -18px rgb(56 76 227 / 0.32);
+    0 0 0 1px rgb(45 70 255 / 0.5),
+    0 18px 44px -18px rgb(45 70 255 / 0.32);
 }
 [data-stage="fx"] [data-row="FX-EUR-0392"] > td {
-  background: rgb(56 76 227 / 0.07);
+  background: rgb(45 70 255 / 0.07);
 }
 [data-stage="controls"] [data-panel="approvals"] {
   box-shadow:
-    0 0 0 1px rgb(56 76 227 / 0.5),
-    0 18px 44px -18px rgb(56 76 227 / 0.32);
+    0 0 0 1px rgb(45 70 255 / 0.5),
+    0 18px 44px -18px rgb(45 70 255 / 0.32);
 }
 [data-stage="controls"] [data-row="RUN-2026-08"] > td {
-  background: rgb(56 76 227 / 0.07);
+  background: rgb(45 70 255 / 0.07);
 }
 
 /* Stage copies only stack into one frame while the pinned choreography is

@@ -207,7 +207,7 @@ export default function SecurityArchitecture() {
                     <polygon
                       points={diamond(CX, cy, HW, HH)}
                       fill="none"
-                      stroke={on ? "#384ce3" : "currentColor"}
+                      stroke={on ? "#2d46ff" : "currentColor"}
                       strokeOpacity={on ? 1 : 0.42}
                       strokeWidth={on ? 1.6 : 1}
                       className="transition-all duration-500"
@@ -225,7 +225,7 @@ export default function SecurityArchitecture() {
                       y1={cy}
                       x2={VB_W - 16}
                       y2={cy - 26}
-                      stroke={on ? "#384ce3" : "currentColor"}
+                      stroke={on ? "#2d46ff" : "currentColor"}
                       strokeOpacity={on ? 0.9 : 0.24}
                       strokeWidth="1"
                       className="transition-all duration-500"
@@ -234,7 +234,7 @@ export default function SecurityArchitecture() {
                       x={VB_W - 14}
                       y={cy - 31}
                       fontSize="13"
-                      fill={on ? "#384ce3" : "currentColor"}
+                      fill={on ? "#2d46ff" : "currentColor"}
                       fillOpacity={on ? 1 : 0.5}
                       fontFamily="var(--font-mono)"
                       letterSpacing="1.6"
@@ -251,7 +251,7 @@ export default function SecurityArchitecture() {
                 cx={CX}
                 cy={layerY(0) - HH}
                 r="5.5"
-                fill="#384ce3"
+                fill="#2d46ff"
                 opacity="0"
               />
             </svg>

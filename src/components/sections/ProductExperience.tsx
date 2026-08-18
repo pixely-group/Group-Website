@@ -23,13 +23,13 @@ function createPulseLayer(host: HTMLElement) {
     "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5";
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "#384ce3");
+  path.setAttribute("stroke", "#2d46ff");
   path.setAttribute("stroke-width", "1.25");
   path.setAttribute("stroke-dasharray", "3 4");
   path.setAttribute("opacity", "0");
   const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
   dot.setAttribute("r", "3.5");
-  dot.setAttribute("fill", "#384ce3");
+  dot.setAttribute("fill", "#2d46ff");
   dot.setAttribute("opacity", "0");
   svg.append(path, dot);
   host.appendChild(svg);

@@ -296,7 +296,7 @@ const SEG_FRAGMENT = /* glsl */ `
     alpha *= mix(1.0, 0.62, policy * (1.0 - isPolicy));
 
     vec3 boneCol = vec3(0.925, 0.913, 0.882);
-    vec3 signal = vec3(0.56, 0.66, 1.0);
+    vec3 signal = vec3(0.62, 0.71, 1.0);
     vec3 col = mix(boneCol, signal, isPolicy * max(policy, comet * 0.25));
     gl_FragColor = vec4(col, alpha);
   }
