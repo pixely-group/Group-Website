@@ -3,8 +3,14 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mulberry32 } from "@/lib/rng";
 
-/** Mutable channel between DOM scroll/pointer land and the GL scene. */
+/**
+ * Mutable channel between DOM scroll/pointer land and the GL scene. Passed as
+ * a ref and read only inside the render loop, never during React render.
+ */
+export type HeroBusRef = { current: HeroBus };
+
 export type HeroBus = {
   /** 0 → 1 while the hero scrolls out of view. */
   progress: number;
@@ -90,13 +96,14 @@ const FIELD_FRAGMENT = /* glsl */ `
   }
 `;
 
-function FlowField({ bus, count }: { bus: HeroBus; count: number }) {
+function FlowField({ bus, count }: { bus: HeroBusRef; count: number }) {
   const material = useRef<THREE.ShaderMaterial>(null);
   const viewport = useThree((s) => s.viewport);
 
   const { geometry, uniforms } = useMemo(() => {
+    const rand = mulberry32(0x5eed1);
     const seeds = new Float32Array(count * 4);
-    for (let i = 0; i < count * 4; i += 1) seeds[i] = Math.random();
+    for (let i = 0; i < count * 4; i += 1) seeds[i] = rand();
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 4));
     // Positions are computed in the shader; provide a dummy attribute.
@@ -124,15 +131,15 @@ function FlowField({ bus, count }: { bus: HeroBus; count: number }) {
     const mat = material.current;
     if (!mat) return;
     const dt = Math.min(delta, 1 / 30);
-    const velocityBoost = Math.min(Math.abs(bus.velocity) * 0.045, 2.2);
+    const velocityBoost = Math.min(Math.abs(bus.current.velocity) * 0.045, 2.2);
     mat.uniforms.uTime.value +=
-      dt * (0.62 + velocityBoost + bus.progress * 0.9);
+      dt * (0.62 + velocityBoost + bus.current.progress * 0.9);
     mat.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
 
     // Map pointer NDC onto the z=0 plane the field occupies.
     pointerTarget.current.set(
-      (bus.pointer[0] * viewport.width) / 2,
-      (bus.pointer[1] * viewport.height) / 2,
+      (bus.current.pointer[0] * viewport.width) / 2,
+      (bus.current.pointer[1] * viewport.height) / 2,
     );
     (mat.uniforms.uPointer.value as THREE.Vector2).lerp(
       pointerTarget.current,
@@ -165,7 +172,7 @@ function ringGeometry(radius: number, segments = 220) {
 }
 
 /** Faint orbital hairlines — the wordmark's meridian, monumental. */
-function MeridianRings({ bus }: { bus: HeroBus }) {
+function MeridianRings({ bus }: { bus: HeroBusRef }) {
   const outer = useRef<THREE.Line>(null);
   const inner = useRef<THREE.Line>(null);
   const outerGeo = useMemo(() => ringGeometry(5.4), []);
@@ -183,61 +190,44 @@ function MeridianRings({ bus }: { bus: HeroBus }) {
     const t = state.clock.elapsedTime;
     if (outer.current) {
       outer.current.rotation.x = 1.35 + Math.sin(t * 0.11) * 0.08;
-      outer.current.rotation.y = t * 0.05 + bus.pointer[0] * 0.06;
+      outer.current.rotation.y = t * 0.05 + bus.current.pointer[0] * 0.06;
       outer.current.rotation.z = t * 0.02;
     }
     if (inner.current) {
       inner.current.rotation.x = -1.2 + Math.cos(t * 0.09) * 0.1;
-      inner.current.rotation.y = -t * 0.07 + bus.pointer[0] * 0.04;
+      inner.current.rotation.y = -t * 0.07 + bus.current.pointer[0] * 0.04;
     }
   });
 
+  const lines = useMemo(() => {
+    const mk = (geo: THREE.BufferGeometry, color: THREE.Color, opacity: number) =>
+      new THREE.Line(
+        geo,
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity }),
+      );
+    return {
+      outer: mk(outerGeo, BONE, 0.16),
+      inner: mk(innerGeo, SIGNAL, 0.22),
+    };
+  }, [outerGeo, innerGeo]);
+
   return (
     <group position={[2.2, -0.4, -1.5]}>
-      {/* three.js line primitives via React need the `-` escape */}
-      <primitive
-        object={useMemo(
-          () =>
-            new THREE.Line(
-              outerGeo,
-              new THREE.LineBasicMaterial({
-                color: BONE,
-                transparent: true,
-                opacity: 0.16,
-              }),
-            ),
-          [outerGeo],
-        )}
-        ref={outer}
-      />
-      <primitive
-        object={useMemo(
-          () =>
-            new THREE.Line(
-              innerGeo,
-              new THREE.LineBasicMaterial({
-                color: SIGNAL,
-                transparent: true,
-                opacity: 0.22,
-              }),
-            ),
-          [innerGeo],
-        )}
-        ref={inner}
-      />
+      <primitive object={lines.outer} ref={outer} />
+      <primitive object={lines.inner} ref={inner} />
     </group>
   );
 }
 
-function CameraRig({ bus }: { bus: HeroBus }) {
+function CameraRig({ bus }: { bus: HeroBusRef }) {
   const target = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
-    const p = bus.progress;
+    const p = bus.current.progress;
     const cam = state.camera;
     target.current.set(
-      bus.pointer[0] * 0.4,
-      bus.pointer[1] * 0.3 - p * 1.6,
+      bus.current.pointer[0] * 0.4,
+      bus.current.pointer[1] * 0.3 - p * 1.6,
       8 - p * 2.4,
     );
     const k = 1 - Math.pow(0.0015, Math.min(delta, 1 / 30));
@@ -253,7 +243,7 @@ export default function HeroScene({
   count,
   active,
 }: {
-  bus: HeroBus;
+  bus: HeroBusRef;
   count: number;
   active: boolean;
 }) {

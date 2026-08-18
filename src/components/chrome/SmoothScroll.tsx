@@ -45,6 +45,10 @@ export default function SmoothScroll({ children }: PropsWithChildren) {
     const raf = (time: number) => instance.raf(time * 1000);
     gsap.ticker.add(raf);
     gsap.ticker.lagSmoothing(0);
+    // Publishing the instance is exactly the "subscribe to an external
+    // system" case the rule is meant to allow; consumers mount before this
+    // effect runs, so a ref alone would leave them with a null on first pass.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLenis(instance);
     if (process.env.NODE_ENV === "development") {
       (window as unknown as Record<string, unknown>).__lenis = instance;

@@ -1,19 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
-export function useMediaQuery(query: string, initial = false): boolean {
-  const [matches, setMatches] = useState(initial);
+/**
+ * SSR-safe media query. useSyncExternalStore keeps the server snapshot and
+ * the first client paint in agreement without a state-setting effect.
+ */
+export function useMediaQuery(query: string, serverValue = false): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    [query],
+  );
 
-  useEffect(() => {
-    const mql = window.matchMedia(query);
-    setMatches(mql.matches);
-    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => serverValue,
+  );
 }
 
 export const useReducedMotion = () =>
@@ -21,9 +28,12 @@ export const useReducedMotion = () =>
 
 export const useFinePointer = () => useMediaQuery("(pointer: fine)");
 
-/** True once the component is mounted on the client. */
-export function useMounted(): boolean {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
-}
+const noopSubscribe = () => () => {};
+
+/** True once hydrated on the client, false during SSR and first paint. */
+export const useMounted = (): boolean =>
+  useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );

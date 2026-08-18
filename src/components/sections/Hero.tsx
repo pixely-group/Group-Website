@@ -189,7 +189,7 @@ export default function Hero() {
           <HeroPoster />
         ) : (
           <HeroScene
-            bus={bus.current}
+            bus={bus}
             count={small ? 4500 : 14000}
             active={active}
           />

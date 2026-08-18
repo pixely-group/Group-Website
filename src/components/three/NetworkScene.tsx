@@ -3,11 +3,21 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mulberry32 } from "@/lib/rng";
+
+/** Passed as a ref; read only inside the render loop. */
+export type NetworkBusRef = { current: NetworkBus };
 
 export type NetworkBus = {
   /** 0..1 across the whole narrative (mapped to 4 stages in-scene). */
   progress: number;
   pointer: [number, number];
+  /**
+   * How far the graph swings aside to clear the copy column. 1 on wide
+   * viewports where copy alternates left/right, 0 where copy is full width
+   * and the graph simply sits behind it.
+   */
+  spread: number;
 };
 
 const BONE = new THREE.Color("#ece9e1");
@@ -39,17 +49,6 @@ type NetworkModel = {
   baseSegVerts: number;
   totalSegVerts: number;
 };
-
-function mulberry32(seed: number) {
-  let a = seed;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function buildNetwork(): NetworkModel {
   const rand = mulberry32(20260818);
@@ -204,14 +203,16 @@ function buildNetwork(): NetworkModel {
 }
 
 const STAGE_GLSL = /* glsl */ `
-  uniform float uProgress; // 0..4
+  // Explicit precision: this block is shared by vertex and fragment
+  // stages, and a mismatched default breaks program linking.
+  uniform mediump float uProgress; // 0..4
   float easeAssemble(float rand) {
     float assemble = smoothstep(0.02, 0.92, clamp(uProgress, 0.0, 1.0));
     float t = clamp(assemble * 1.35 - rand * 0.35, 0.0, 1.0);
     return t * t * (3.0 - 2.0 * t);
   }
-  float flowAmount() { return smoothstep(1.05, 1.8, uProgress); }
-  float policyAmount() { return smoothstep(2.05, 2.8, uProgress); }
+  float flowAmount() { return smoothstep(0.45, 1.0, uProgress); }
+  float policyAmount() { return smoothstep(1.45, 2.0, uProgress); }
 `;
 
 const NODE_VERTEX = /* glsl */ `
@@ -232,8 +233,8 @@ const NODE_VERTEX = /* glsl */ `
     float core = 1.0 - smoothstep(0.0, 4.0, aInfo.x);
     vCore = core;
     float pulse = 0.85 + 0.15 * sin(uTime * 1.4 + aInfo.y * 40.0);
-    gl_PointSize = (2.0 + core * 1.6) * uPixelRatio * (10.0 / -mv.z) * pulse;
-    vAlpha = mix(0.35, 0.85, t) * (0.6 + 0.4 * aInfo.y);
+    gl_PointSize = (2.7 + core * 1.9) * uPixelRatio * (10.0 / -mv.z) * pulse;
+    vAlpha = mix(0.42, 1.0, t) * (0.68 + 0.32 * aInfo.y);
   }
 `;
 
@@ -283,16 +284,16 @@ const SEG_FRAGMENT = /* glsl */ `
     float policy = policyAmount();
     float isPolicy = vInfo.y;
 
-    float base = 0.16 * vAssemble;
+    float base = 0.34 * vAssemble;
     // travelling packet: a comet head sliding start -> end
     float speed = 0.22 + vInfo.x * 0.35;
     float f = fract(vT * (0.6 + vInfo.x * 0.8) - uTime * speed - vInfo.x * 7.0);
     float comet = pow(smoothstep(0.38, 0.0, f), 2.2);
 
     float alpha = base
-      + comet * flow * 0.5 * mix(1.0, 0.25, policy * (1.0 - isPolicy))
-      + isPolicy * policy * 0.22;
-    alpha *= mix(1.0, 0.55, policy * (1.0 - isPolicy));
+      + comet * flow * 0.72 * mix(1.0, 0.3, policy * (1.0 - isPolicy))
+      + isPolicy * policy * 0.34;
+    alpha *= mix(1.0, 0.62, policy * (1.0 - isPolicy));
 
     vec3 boneCol = vec3(0.925, 0.913, 0.882);
     vec3 signal = vec3(1.0, 0.30, 0.0);
@@ -305,8 +306,8 @@ function withStage(shader: string) {
   return shader.replace("${STAGE}", STAGE_GLSL);
 }
 
-function NetworkMesh({ bus }: { bus: NetworkBus }) {
-  const model = useMemo(buildNetwork, []);
+function NetworkMesh({ bus }: { bus: NetworkBusRef }) {
+  const model = useMemo(() => buildNetwork(), []);
   const groupRef = useRef<THREE.Group>(null);
   const nodeMat = useRef<THREE.ShaderMaterial>(null);
   const segMat = useRef<THREE.ShaderMaterial>(null);
@@ -327,7 +328,7 @@ function NetworkMesh({ bus }: { bus: NetworkBus }) {
   );
 
   useFrame((state, delta) => {
-    const p = bus.progress * 4;
+    const p = bus.current.progress * 4;
     const dt = Math.min(delta, 1 / 30);
     if (nodeMat.current) {
       nodeMat.current.uniforms.uProgress.value = p;
@@ -340,7 +341,7 @@ function NetworkMesh({ bus }: { bus: NetworkBus }) {
     }
 
     // SCALE stage: grow draw ranges into the expansion shells.
-    const scaleT = THREE.MathUtils.smoothstep(p, 3.05, 3.8);
+    const scaleT = THREE.MathUtils.smoothstep(p, 2.5, 3.6);
     if (nodeGeo.current) {
       const count = Math.round(
         model.baseNodeCount +
@@ -357,9 +358,12 @@ function NetworkMesh({ bus }: { bus: NetworkBus }) {
     }
 
     if (groupRef.current) {
+      const swing = stageSwing(p) * bus.current.spread;
+      groupRef.current.position.x +=
+        (swing - groupRef.current.position.x) * (1 - Math.pow(0.0025, dt));
       groupRef.current.rotation.z += dt * 0.03;
-      const targetX = -0.5 + bus.pointer[1] * 0.05;
-      const targetY = bus.pointer[0] * 0.09;
+      const targetX = -0.5 + bus.current.pointer[1] * 0.05;
+      const targetY = bus.current.pointer[0] * 0.09;
       groupRef.current.rotation.x +=
         (targetX - groupRef.current.rotation.x) * (1 - Math.pow(0.002, dt));
       groupRef.current.rotation.y +=
@@ -429,73 +433,84 @@ function NetworkMesh({ bus }: { bus: NetworkBus }) {
 }
 
 function CoreGlyph() {
-  const ring = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
+  const objects = useMemo(() => {
+    const ringPts: THREE.Vector3[] = [];
     for (let i = 0; i <= 64; i += 1) {
       const a = (i / 64) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0));
+      ringPts.push(
+        new THREE.Vector3(Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0),
+      );
     }
-    return new THREE.BufferGeometry().setFromPoints(pts);
+    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+    const meridianGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -9, 0),
+      new THREE.Vector3(0, 9, 0),
+    ]);
+    return {
+      ring: new THREE.LineLoop(
+        ringGeo,
+        new THREE.LineBasicMaterial({
+          color: BONE,
+          transparent: true,
+          opacity: 0.5,
+        }),
+      ),
+      meridian: new THREE.Line(
+        meridianGeo,
+        new THREE.LineBasicMaterial({
+          color: BONE,
+          transparent: true,
+          opacity: 0.08,
+        }),
+      ),
+    };
   }, []);
-  const meridian = useMemo(
-    () =>
-      new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0, -9, 0),
-        new THREE.Vector3(0, 9, 0),
-      ]),
-    [],
-  );
+
   useEffect(
     () => () => {
-      ring.dispose();
-      meridian.dispose();
+      objects.ring.geometry.dispose();
+      (objects.ring.material as THREE.Material).dispose();
+      objects.meridian.geometry.dispose();
+      (objects.meridian.material as THREE.Material).dispose();
     },
-    [ring, meridian],
+    [objects],
   );
+
   return (
     <>
-      <primitive
-        object={useMemo(
-          () =>
-            new THREE.LineLoop(
-              ring,
-              new THREE.LineBasicMaterial({
-                color: BONE,
-                transparent: true,
-                opacity: 0.5,
-              }),
-            ),
-          [ring],
-        )}
-      />
-      <primitive
-        object={useMemo(
-          () =>
-            new THREE.Line(
-              meridian,
-              new THREE.LineBasicMaterial({
-                color: BONE,
-                transparent: true,
-                opacity: 0.08,
-              }),
-            ),
-          [meridian],
-        )}
-      />
+      <primitive object={objects.ring} />
+      <primitive object={objects.meridian} />
     </>
   );
 }
 
-function NetworkCamera({ bus }: { bus: NetworkBus }) {
+/** World-space x of the graph per stage, opposite that stage's copy column. */
+const STAGE_OFFSET = [3.4, -3.4, 3.4, -3.4];
+
+/**
+ * The graph itself moves aside, not the camera: `camera.lookAt(0,0,0)`
+ * re-centres the subject every frame, so a camera offset would only orbit it.
+ */
+function stageSwing(p: number) {
+  const seg = Math.max(0, Math.min(3, Math.floor(p)));
+  return THREE.MathUtils.lerp(
+    STAGE_OFFSET[seg],
+    STAGE_OFFSET[Math.min(3, seg + 1)],
+    THREE.MathUtils.smoothstep(p - seg, 0, 1),
+  );
+}
+
+function NetworkCamera({ bus }: { bus: NetworkBusRef }) {
   const target = useRef(new THREE.Vector3());
   useFrame((state, delta) => {
-    const p = bus.progress * 4;
-    const move = THREE.MathUtils.smoothstep(p, 1.0, 1.8);
-    const control = THREE.MathUtils.smoothstep(p, 2.0, 2.8);
-    const scale = THREE.MathUtils.smoothstep(p, 3.0, 3.9);
+    const p = bus.current.progress * 4;
+    const move = THREE.MathUtils.smoothstep(p, 0.45, 1.0);
+    const control = THREE.MathUtils.smoothstep(p, 1.45, 2.0);
+    const scale = THREE.MathUtils.smoothstep(p, 2.5, 3.6);
     const z = 11.5 - move * 2.2 + control * 0.8 + scale * 6.4;
-    const x = bus.pointer[0] * 0.5 + control * 1.2 - scale * 1.2;
-    const y = bus.pointer[1] * 0.4 - 0.4 + scale * 0.9;
+
+    const x = bus.current.pointer[0] * 0.5;
+    const y = bus.current.pointer[1] * 0.4 - 0.4 + scale * 0.9;
     target.current.set(x, y, z);
     const k = 1 - Math.pow(0.0018, Math.min(delta, 1 / 30));
     state.camera.position.lerp(target.current, k);
@@ -508,7 +523,7 @@ export default function NetworkScene({
   bus,
   active,
 }: {
-  bus: NetworkBus;
+  bus: NetworkBusRef;
   active: boolean;
 }) {
   return (

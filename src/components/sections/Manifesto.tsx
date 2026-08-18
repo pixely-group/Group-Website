@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger, SplitText } from "@/lib/gsap";
+import { gsap, SplitText } from "@/lib/gsap";
 
 /**
  * Scroll-scrubbed manifesto: words resolve from faint to full as the
