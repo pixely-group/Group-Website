@@ -155,7 +155,13 @@
 
 /* Fluid display sizes */
 @utility text-hero {
-  font-size: clamp(3.4rem, 10.5vw, 11.5rem);
+  /* Width alone cannot size a full-bleed headline. On short, wide viewports
+     10.5vw overflows the screen: the eyebrow and the first line get pushed
+     up behind the navigation and clipped. The second term is the height
+     actually available — the viewport less the ~430px the rest of the hero
+     stack occupies, over the ~4 line-heights this headline needs. Measured,
+     not guessed. The clamp floor still governs small screens. */
+  font-size: clamp(3.4rem, min(10.5vw, calc((100svh - 430px) / 4)), 11.5rem);
 }
 @utility text-giant {
   font-size: clamp(2.8rem, 8.5vw, 9rem);

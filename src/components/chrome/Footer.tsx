@@ -183,7 +183,7 @@ export default function Footer() {
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © 2026 Pixely — Money should move like light
+          © 2026 Pixely — Money should move like a snap
         </p>
       </div>
     </footer>

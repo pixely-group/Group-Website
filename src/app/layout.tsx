@@ -25,12 +25,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pixely — Money should move like light",
+  title: "Pixely — Money should move like a snap",
   description:
     "Pixely is the settlement layer for companies that operate at internet speed. Accounts in 40+ currencies, value moving in milliseconds, every dollar controlled in code.",
   metadataBase: new URL("https://pixely.com"),
   openGraph: {
-    title: "Pixely — Money should move like light",
+    title: "Pixely — Money should move like a snap",
     description:
       "The settlement layer for companies that operate at internet speed.",
     type: "website",
@@ -49,7 +49,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${archivo.variable} ${instrument.variable} ${plexMono.variable} h-full`}
     >
-      <body className="grain min-h-full bg-ink text-bone">{children}</body>
+      {/* Extensions commonly stamp attributes onto <body> before React
+          hydrates — the reported mismatch was a testing extension adding
+          `data-testim-main-word-scripts-loaded`. This suppresses the warning
+          for this element's own attributes only, one level deep, so genuine
+          mismatches inside the tree are still reported. */}
+      <body
+        suppressHydrationWarning
+        className="grain min-h-full bg-ink text-bone"
+      >
+        {children}
+      </body>
     </html>
   );
 }
