@@ -75,7 +75,7 @@ export default function ProductUI() {
               </svg>
               <span className="type-headline text-[0.7rem]">Meridian</span>
             </div>
-            <nav aria-hidden className="mt-5 flex flex-col gap-0.5">
+            <div aria-hidden className="mt-5 flex flex-col gap-0.5">
               {NAV_ITEMS.map((item, i) => (
                 <span
                   key={item}
@@ -88,7 +88,7 @@ export default function ProductUI() {
                   {item}
                 </span>
               ))}
-            </nav>
+            </div>
           </div>
           <div className="border-t border-ink/8 px-1 pt-3">
             <p className="text-[11px] font-semibold">Helio Systems Inc.</p>

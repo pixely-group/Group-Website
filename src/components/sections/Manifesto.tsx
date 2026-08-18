@@ -50,7 +50,8 @@ export default function Manifesto() {
       data-theme="ink"
       className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14"
     >
-      <p className="type-label section-index mb-12 text-(--muted)">
+      <h2 className="sr-only">Why Meridian exists</h2>
+      <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
         01 — Manifesto
       </p>
       <p

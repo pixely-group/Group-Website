@@ -101,6 +101,9 @@ export default function NetworkNarrative() {
   const stickyRef = useRef<HTMLDivElement>(null);
   const bus = useRef<NetworkBus>({ progress: 0, pointer: [0, 0], spread: 0 });
   const [active, setActive] = useState(false);
+  // The canvas allocates a WebGL context as soon as it mounts, and this
+  // section sits several viewports down, so hold off until it is approached.
+  const [near, setNear] = useState(false);
   const reduced = useReducedMotion();
 
   // Wide viewports alternate the copy column, so the graph swings aside.
@@ -125,6 +128,26 @@ export default function NetworkNarrative() {
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
   }, [reduced]);
+
+  // Mount roughly a viewport early, then keep it: tearing the context down
+  // and rebuilding it on every pass would cost more than it saves. An
+  // observer reads live layout, so unlike a ScrollTrigger it is unaffected by
+  // refreshes that run before the pinned spacers have settled.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNear(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    io.observe(section);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -199,6 +222,9 @@ export default function NetworkNarrative() {
           tl.scrollTrigger?.kill();
           tl.kill();
           st.kill();
+          // See ProductExperience: killed tweens are no longer revertible.
+          gsap.set(copies, { clearProps: "all" });
+          marks.forEach((m) => m.classList.remove("bg-signal"));
         };
       });
       return () => mm.revert();
@@ -224,7 +250,7 @@ export default function NetworkNarrative() {
             : "sticky top-0 h-[100svh] overflow-hidden"
         }
       >
-        {reduced ? (
+        {reduced || !near ? (
           <div className="absolute inset-0">
             <NetworkPoster />
           </div>

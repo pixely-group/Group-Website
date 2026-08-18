@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { STAGES } from "@/lib/data";
 import ProductUI from "@/components/sections/ProductUI";
+import ProductUIMobile from "@/components/sections/ProductUIMobile";
 
 /** Orange packets that travel between panels while a stage is active. */
 const PULSES: Record<
@@ -121,6 +122,8 @@ export default function ProductExperience() {
           }))
           .filter((p): p is { key: string; el: Element } => !!p.el);
 
+        // Stack the copies into one frame only while this runs.
+        pin.setAttribute("data-choreo", "on");
         gsap.set(copies, { opacity: 0, y: 28 });
         gsap.set(copies[0], { opacity: 1, y: 0 });
         gsap.set(annos, { opacity: 0, x: 0 });
@@ -255,6 +258,13 @@ export default function ProductExperience() {
           pulseTween?.kill();
           pulseLayer.svg.remove();
           stageWrap.removeAttribute("data-stage");
+          pin.removeAttribute("data-choreo");
+          // Killing a tween drops it from the context, so matchMedia's revert
+          // can no longer restore its targets. Clear what we set by hand, or
+          // the desktop transforms survive into the mobile layout.
+          gsap.set([copies, annos], { clearProps: "all" });
+          gsap.set(frame, { clearProps: "all" });
+          panels.forEach(({ el }) => gsap.set(el, { clearProps: "all" }));
         };
       },
     );
@@ -290,9 +300,9 @@ export default function ProductExperience() {
           </p>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-10 lg:flex-row lg:items-center lg:gap-12">
+        <div className="flex flex-col gap-10 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-center lg:gap-12">
           {/* — Stage copy rail (pinned mode) / stage list (stacked mode) */}
-          <div className="relative flex shrink-0 gap-6 lg:w-[272px] lg:self-stretch">
+          <div className="relative order-last flex shrink-0 gap-6 lg:order-none lg:w-[272px] lg:self-stretch">
             <div
               aria-hidden
               className="relative hidden w-px self-stretch bg-(--line) lg:block"
@@ -312,13 +322,11 @@ export default function ProductExperience() {
             </div>
 
             <div className="relative flex-1 lg:self-center">
-              {STAGES.map((stage, i) => (
+              {STAGES.map((stage) => (
                 <div
                   key={stage.key}
                   data-stage-copy
-                  className={`border-t border-(--line) pt-5 pb-8 lg:absolute lg:inset-x-0 lg:top-1/2 lg:-translate-y-1/2 lg:border-0 lg:p-0 ${
-                    i === 0 ? "" : ""
-                  }`}
+                  className="border-t border-(--line) pt-5 pb-8"
                 >
                   <p className="type-label mb-3 text-signal">
                     {stage.index} — {stage.title}
@@ -335,13 +343,16 @@ export default function ProductExperience() {
           </div>
 
           {/* — The workspace */}
-          <div className="relative min-w-0 flex-1">
+          <div className="relative order-first min-w-0 lg:order-none lg:flex-1">
             <div
               ref={stageRef}
               className="relative"
               style={{ perspective: "2200px" }}
             >
-              <div className="overflow-x-auto pb-2 lg:overflow-visible lg:pb-0">
+              <div className="lg:hidden">
+                <ProductUIMobile />
+              </div>
+              <div className="hidden lg:block">
                 <div ref={scalerRef} className="w-fit">
                   <ProductUI />
                 </div>

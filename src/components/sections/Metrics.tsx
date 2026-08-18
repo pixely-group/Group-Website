@@ -64,7 +64,8 @@ export default function Metrics() {
       className="relative bg-theme px-6 pt-[6vh] pb-[16vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        <p className="type-label section-index mb-12 text-(--muted)">
+        <h2 className="sr-only">Meridian by the numbers</h2>
+        <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
           06 — By the numbers
         </p>
         <dl className="grid gap-x-12 gap-y-16 sm:grid-cols-2">

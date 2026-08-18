@@ -177,14 +177,17 @@ export default function Navigation() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <MagneticButton
-              href="#start"
-              onClick={scrollTo("#start")}
-              size="sm"
-              className="hidden sm:inline-flex"
-            >
-              Get started
-            </MagneticButton>
+            {/* Wrapped rather than given `hidden` directly: the button's own
+                `inline-flex` is the same specificity and wins by CSS order. */}
+            <span className="hidden sm:block">
+              <MagneticButton
+                href="#start"
+                onClick={scrollTo("#start")}
+                size="sm"
+              >
+                Get started
+              </MagneticButton>
+            </span>
             <button
               type="button"
               aria-expanded={menuOpen}

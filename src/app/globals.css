@@ -270,6 +270,20 @@ html[data-cursor="on"] label {
   background: rgb(255 77 0 / 0.07);
 }
 
+/* Stage copies only stack into one frame while the pinned choreography is
+   running. Without this, desktop users with reduced motion get all four
+   paragraphs absolutely positioned on top of each other. */
+@media (min-width: 1024px) {
+  [data-choreo="on"] [data-stage-copy] {
+    position: absolute;
+    inset: 0;
+    margin-block: auto;
+    height: fit-content;
+    border: 0;
+    padding: 0;
+  }
+}
+
 /* Scroll hint: dash sliding down a hairline */
 @keyframes scroll-hint-slide {
   0% {
