@@ -215,6 +215,7 @@ export default function Navigation() {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         onNavigate={scrollTo}
+        scrolled={scrolled}
       />
     </>
   );

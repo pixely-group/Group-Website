@@ -9,10 +9,18 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onNavigate: (href: string) => (e: React.MouseEvent) => void;
+  /** The header's compact state, mirrored so the close button lands on the
+   *  toggle it replaces instead of jumping sideways. */
+  scrolled: boolean;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
-export default function MobileMenu({ open, onClose, onNavigate }: Props) {
+export default function MobileMenu({
+  open,
+  onClose,
+  onNavigate,
+  scrolled,
+}: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
 
@@ -118,10 +126,17 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
       aria-label="Site menu"
       aria-hidden={!open}
       data-theme="ink"
-      className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink px-6 pt-6 pb-10 text-bone opacity-0 lg:hidden"
+      className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink pb-10 text-bone opacity-0 lg:hidden"
       style={{ pointerEvents: "none" }}
     >
-      <div data-menu-meta className="flex items-center justify-between">
+      <div
+        data-menu-meta
+        className={`flex items-center justify-between border border-transparent ${
+          scrolled
+            ? "mx-3 mt-3 px-5 py-3 sm:mx-5"
+            : "mx-0 mt-0 px-6 py-6 sm:px-10"
+        }`}
+      >
         <Wordmark />
         <button
           type="button"
@@ -129,7 +144,7 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
           aria-label="Close menu"
           data-cursor="link"
           tabIndex={open ? 0 : -1}
-          className="-mr-2 flex size-10 items-center justify-center"
+          className="flex size-10 items-center justify-center"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden fill="none">
             <line
@@ -152,7 +167,7 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
         </button>
       </div>
 
-      <nav aria-label="Menu" className="py-10">
+      <nav aria-label="Menu" className="px-6 py-10 sm:px-10">
         <ul className="flex flex-col gap-1">
           {NAV_LINKS.map((link, i) => (
             <li key={link.href} className="overflow-hidden">
@@ -184,7 +199,7 @@ export default function MobileMenu({ open, onClose, onNavigate }: Props) {
           </li>
         </ul>
       </nav>
-      <div className="flex items-end justify-between border-t border-(--line) pt-6">
+      <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">
           hello@meridian.finance
         </div>
