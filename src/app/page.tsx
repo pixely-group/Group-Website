@@ -9,6 +9,9 @@ import SecurityArchitecture from "@/components/sections/SecurityArchitecture";
 import GlobalCorridors from "@/components/sections/GlobalCorridors";
 import Metrics from "@/components/sections/Metrics";
 import UseCases from "@/components/sections/UseCases";
+import Thesis from "@/components/sections/Thesis";
+import FinalCTA from "@/components/sections/FinalCTA";
+import Footer from "@/components/chrome/Footer";
 
 export default function Home() {
   return (
@@ -24,7 +27,10 @@ export default function Home() {
         <GlobalCorridors />
         <Metrics />
         <UseCases />
+        <Thesis />
+        <FinalCTA />
       </main>
+      <Footer />
     </SmoothScroll>
   );
 }
