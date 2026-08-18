@@ -2,26 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/chrome/Navigation";
+import { useLenis } from "@/components/chrome/SmoothScroll";
 
 const COLUMNS = [
   {
     heading: "Product",
+    href: "#product",
     links: ["Accounts", "Payments", "FX", "Cards", "Treasury", "Controls"],
   },
   {
     heading: "Solutions",
+    href: "#solutions",
     links: ["Startups", "Enterprises", "Platforms", "Financial teams", "Global"],
   },
   {
     heading: "Platform",
+    href: "#network",
     links: ["Network", "Rails", "Ledger", "API reference", "Status", "Changelog"],
   },
   {
     heading: "Company",
+    href: "#thesis",
     links: ["About", "Careers", "Press", "Customers", "Contact"],
   },
   {
     heading: "Resources",
+    href: "#security",
     links: ["Documentation", "Guides", "Security", "Compliance", "Legal"],
   },
 ] as const;
@@ -79,8 +85,19 @@ function ClockStrip() {
 }
 
 export default function Footer() {
+  const lenis = useLenis();
+
+  const scrollTo = (href: string) => (e: React.MouseEvent) => {
+    const el = document.querySelector(href);
+    if (!el) return;
+    e.preventDefault();
+    if (lenis) lenis.scrollTo(el as HTMLElement, { duration: 1.6 });
+    else el.scrollIntoView();
+  };
+
   return (
     <footer
+      id="resources"
       data-theme="ink"
       className="relative overflow-hidden bg-theme px-6 pt-16 pb-8 text-theme sm:px-10 lg:px-14"
     >
@@ -118,7 +135,8 @@ export default function Footer() {
                   {column.links.map((link) => (
                     <li key={link}>
                       <a
-                        href="#top"
+                        href={column.href}
+                        onClick={scrollTo(column.href)}
                         data-cursor="link"
                         className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-(--fg)"
                       >
@@ -152,6 +170,7 @@ export default function Footer() {
                 <a
                   key={link}
                   href="#top"
+                  onClick={scrollTo("#top")}
                   data-cursor="link"
                   className="type-label text-(--muted) transition-colors duration-300 hover:text-(--fg)"
                 >

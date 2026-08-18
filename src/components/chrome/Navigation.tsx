@@ -5,11 +5,16 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
 
+/**
+ * Anchors for a single-page site: every entry has to resolve to something on
+ * this page. "Company" lands on the thesis, which is the company's position,
+ * and "Resources" on the footer, where the reference links live.
+ */
 export const NAV_LINKS = [
   { label: "Product", href: "#product" },
   { label: "Solutions", href: "#solutions" },
   { label: "Platform", href: "#network" },
-  { label: "Company", href: "#company" },
+  { label: "Company", href: "#thesis" },
   { label: "Resources", href: "#resources" },
 ] as const;
 
@@ -119,14 +124,20 @@ export default function Navigation() {
   }, []);
 
   const scrollTo = (href: string) => (e: React.MouseEvent) => {
+    const el = document.querySelector(href);
+    // Let the browser handle anything we cannot resolve, rather than
+    // swallowing the click and going nowhere.
+    if (!el) return;
     e.preventDefault();
     setMenuOpen(false);
-    const el = document.querySelector(href);
-    if (!el) return;
     if (lenis) {
+      // The menu stops Lenis while it is open so the page behind cannot
+      // scroll, and a stopped instance drops scrollTo silently. Resume
+      // first: closing the menu is precisely when scrolling should resume.
+      lenis.start();
       lenis.scrollTo(el as HTMLElement, { duration: 1.6 });
     } else {
-      el.scrollIntoView();
+      el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
