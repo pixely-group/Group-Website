@@ -103,6 +103,11 @@ export default function MagneticButton({
     onPointerMove,
     onPointerLeave,
     "data-cursor": "link",
+    // The solid variant wipes a bone panel over the orange on hover, so
+    // inside a dark chapter it becomes a light surface. The cursor only ever
+    // resolves against this button while it is hovered — which is exactly
+    // when that panel is covering it — so it can be declared light outright.
+    ...(variant === "solid" ? { "data-cursor-theme": "bone" } : null),
   };
 
   return href ? (
