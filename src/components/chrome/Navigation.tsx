@@ -154,9 +154,9 @@ export default function Navigation() {
         className="fixed inset-x-0 top-0 z-(--z-nav)"
       >
         <div
-          className={`flex items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) ${
+          className={`flex min-h-10 items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) sm:min-h-12 ${
             scrolled
-              ? `mx-3 mt-3 rounded-[6px] border border-(--line) ${glass} px-5 py-3 backdrop-blur-xl sm:mx-5 lg:mx-8`
+              ? `mx-3 mt-3 rounded-(--radius-control) border border-(--line) ${glass} px-5 py-2 backdrop-blur-xl sm:mx-5 lg:mx-8`
               : "mx-0 mt-0 border border-transparent bg-transparent px-6 py-6 sm:px-10 lg:px-14"
           }`}
         >

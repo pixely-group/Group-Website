@@ -210,7 +210,7 @@ export default function UseCases() {
               {dimension.rail.map((chip) => (
                 <li
                   key={chip}
-                  className="type-label rounded-[2px] border border-(--line) px-3 py-2 text-(--muted)"
+                  className="type-label rounded-(--radius-chip) border border-(--line) px-3.5 py-2.5 text-(--muted)"
                 >
                   {chip}
                 </li>

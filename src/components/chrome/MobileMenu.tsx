@@ -131,9 +131,9 @@ export default function MobileMenu({
     >
       <div
         data-menu-meta
-        className={`flex items-center justify-between border border-transparent ${
+        className={`flex min-h-10 items-center justify-between border border-transparent sm:min-h-12 ${
           scrolled
-            ? "mx-3 mt-3 px-5 py-3 sm:mx-5"
+            ? "mx-3 mt-3 px-5 py-2 sm:mx-5"
             : "mx-0 mt-0 px-6 py-6 sm:px-10"
         }`}
       >

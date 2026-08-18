@@ -64,16 +64,18 @@ export default function MagneticButton({
   };
 
   const base =
-    "group relative isolate inline-flex items-center justify-center overflow-hidden rounded-[2px] font-mono uppercase tracking-[0.14em] transition-colors duration-500 select-none";
+    "group relative isolate inline-flex h-12 items-center justify-center overflow-hidden rounded-(--radius-control) font-mono uppercase tracking-[0.14em] transition-colors duration-500 select-none";
+  // Height is fixed at 48px for every size; only the horizontal rhythm and
+  // label size change, so controls line up wherever they appear.
   const sizing =
     size === "lg"
-      ? "px-9 py-[1.15rem] text-[0.8rem]"
+      ? "px-7 text-[0.8rem]"
       : size === "sm"
-        ? "px-5 py-[0.62rem] text-[0.65rem]"
-        : "px-6 py-[0.85rem] text-[0.7rem]";
+        ? "px-4 text-[0.65rem]"
+        : "px-5 text-[0.7rem]";
   const skin =
     variant === "solid"
-      ? "bg-signal text-bone transition-colors duration-500 ease-(--ease-out-expo) group-hover:text-ink"
+      ? "bg-signal text-bone transition-colors duration-500 ease-(--ease-out-expo) hover:text-ink focus-visible:text-ink"
       : "border border-(--line-strong) text-(--fg) hover:bg-(--surface)";
 
   const inner = (

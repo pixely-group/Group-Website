@@ -22,7 +22,7 @@ export type HeroBus = {
 
 const INK = new THREE.Color("#0a0a0b");
 const BONE = new THREE.Color("#ece9e1");
-const SIGNAL = new THREE.Color("#8fa0ff");
+const SIGNAL = new THREE.Color("#8fa8ff");
 
 const FIELD_VERTEX = /* glsl */ `
   attribute vec4 aSeed;
@@ -73,7 +73,7 @@ const FIELD_VERTEX = /* glsl */ `
     float base = mix(1.5, 2.3, aSeed.y);
     gl_PointSize = (base + isSignal * 2.6) * uPixelRatio * (7.5 / -mv.z);
 
-    vColor = mix(vec3(0.925, 0.913, 0.882), vec3(0.56, 0.63, 1.0), isSignal);
+    vColor = mix(vec3(0.925, 0.913, 0.882), vec3(0.56, 0.66, 1.0), isSignal);
 
     // Some lanes glow, some barely register — depth without fog.
     float laneGlow = 0.55 + 0.45 * fract(sin(lane * 78.233) * 12543.21);

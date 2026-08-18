@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
+import FitText from "@/components/ui/FitText";
 
 const COLUMNS = [
   {
@@ -152,9 +153,9 @@ export default function Footer() {
 
         {/* Wordmark as a rule across the base of the page. */}
         <div aria-hidden className="mt-20 overflow-hidden">
-          <p className="type-display w-full text-[13.4vw] leading-[0.8] text-(--fg) opacity-[0.07] select-none">
+          <FitText className="type-display leading-[0.78] text-(--fg) opacity-[0.07] select-none">
             Pixely
-          </p>
+          </FitText>
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">

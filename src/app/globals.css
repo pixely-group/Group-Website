@@ -11,11 +11,11 @@
      ink, so a lifted tint covers the dark chapters. `--accent` below picks
      the right one per chapter; use it for anything text-sized. */
   --color-signal: #384ce3;
-  --color-signal-lift: #6b7dec;
+  --color-signal-lift: #6b8aff;
   /* Canvas and GL marks are small, alpha-blended and often additive, which
      washes the hue out badly at blue's low luminance. This brighter tint is
      for those surfaces only — never for flat DOM colour. */
-  --color-signal-glow: #8fa0ff;
+  --color-signal-glow: #8fa8ff;
   --color-signal-deep: #2438c7;
   --color-positive: #23855c;
   --color-negative: #c2402d;
@@ -32,6 +32,10 @@
   --duration-fast: 200ms;
   --duration-base: 500ms;
   --duration-slow: 900ms;
+
+  /* — Radii. One control height and one corner across the site. */
+  --radius-control: 12px;
+  --radius-chip: 8px;
 
   /* — Layers */
   --z-canvas: 0;
@@ -186,7 +190,7 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-chip);
 }
 
 /* Lenis recommended styles */

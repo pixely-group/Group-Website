@@ -6,7 +6,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 const BONE = "236, 233, 225";
-const SIGNAL = "143, 160, 255";
+const SIGNAL = "143, 168, 255";
 
 /** Longitude/latitude → normalised canvas space, latitude band compressed. */
 const px = (lon: number, w: number) => ((lon + 180) / 360) * w;
