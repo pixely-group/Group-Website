@@ -178,7 +178,7 @@ export default function MobileMenu({
                 className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)]"
                 tabIndex={open ? 0 : -1}
               >
-                <span className="type-label w-7 shrink-0 text-signal">
+                <span className="type-label w-7 shrink-0 text-accent">
                   0{i + 1}
                 </span>
                 {link.label}
@@ -190,7 +190,7 @@ export default function MobileMenu({
               href="#start"
               onClick={onNavigate("#start")}
               data-menu-link
-              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] text-signal"
+              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] text-accent"
               tabIndex={open ? 0 : -1}
             >
               <span className="type-label w-7 shrink-0">06</span>
@@ -201,7 +201,7 @@ export default function MobileMenu({
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">
-          hello@meridian.finance
+          hello@pixely.com
         </div>
         <div data-menu-meta className="type-label text-(--muted)">
           NYC — LON — SGP

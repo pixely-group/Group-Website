@@ -8,7 +8,7 @@ const DIMENSIONS = [
     id: "startups",
     label: "Startups",
     headline: "Ship a financial product before you own a bank charter.",
-    body: "Issue accounts, move money and hold balances on Meridian's licences. One integration replaces a two-year banking programme.",
+    body: "Issue accounts, move money and hold balances on Pixely's licences. One integration replaces a two-year banking programme.",
     stats: [
       ["6 days", "Median time to first live payment"],
       ["0", "Bank partnerships to negotiate"],
@@ -167,7 +167,7 @@ export default function UseCases() {
               data-cursor="link"
               className={`type-label relative pb-2 transition-colors duration-300 ${
                 active === i
-                  ? "text-signal"
+                  ? "text-accent"
                   : "text-(--muted) hover:text-(--fg)"
               }`}
             >
@@ -177,7 +177,7 @@ export default function UseCases() {
               {d.label}
               <span
                 aria-hidden
-                className={`absolute bottom-0 left-0 h-px bg-signal transition-all duration-500 ease-(--ease-out-expo) ${
+                className={`absolute bottom-0 left-0 h-px bg-accent transition-all duration-500 ease-(--ease-out-expo) ${
                   active === i ? "w-full" : "w-0"
                 }`}
               />

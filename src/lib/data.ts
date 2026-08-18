@@ -68,7 +68,7 @@ export const TRANSACTIONS: {
     status: "Settled",
   },
   {
-    party: "Meridian Payroll",
+    party: "Pixely Payroll",
     ref: "RUN-2026-08",
     rail: "FPS",
     amount: "−£184,220.40",
@@ -105,7 +105,7 @@ export const STAGES = [
     key: "payments",
     title: "Payments",
     heading: "The fastest rail that clears, chosen for you.",
-    body: "RTP, SEPA Instant, Fedwire, FPS or internal book transfer — Meridian routes each payment and settles most in under a second.",
+    body: "RTP, SEPA Instant, Fedwire, FPS or internal book transfer — Pixely routes each payment and settles most in under a second.",
   },
   {
     index: "03",

@@ -23,7 +23,7 @@ const STAGES = [
     index: "02",
     title: "Move",
     heading: "Value takes the shortest path that clears.",
-    body: "A payment is a route, not a request. Meridian prices every viable path — rail, correspondent, internal book — and commits to the one that settles first at the lowest total cost.",
+    body: "A payment is a route, not a request. Pixely prices every viable path — rail, correspondent, internal book — and commits to the one that settles first at the lowest total cost.",
     meta: "Median settlement 184 ms · 99.995% success · No batch windows",
   },
   {
@@ -183,7 +183,7 @@ export default function NetworkNarrative() {
 
         gsap.set(copies, { opacity: 0, y: 34 });
         gsap.set(copies[0], { opacity: 1, y: 0 });
-        marks[0]?.classList.add("bg-signal");
+        marks[0]?.classList.add("bg-accent");
 
         // Timeline units == stage units: stage i is centred at time i.
         const tl = gsap.timeline({
@@ -218,7 +218,7 @@ export default function NetworkNarrative() {
               0,
               Math.min(STAGES.length - 1, Math.round(self.progress * 4)),
             );
-            marks.forEach((m, mi) => m.classList.toggle("bg-signal", mi === i));
+            marks.forEach((m, mi) => m.classList.toggle("bg-accent", mi === i));
           },
         });
 
@@ -228,7 +228,7 @@ export default function NetworkNarrative() {
           st.kill();
           // See ProductExperience: killed tweens are no longer revertible.
           gsap.set(copies, { clearProps: "all" });
-          marks.forEach((m) => m.classList.remove("bg-signal"));
+          marks.forEach((m) => m.classList.remove("bg-accent"));
         };
       });
       return () => mm.revert();
@@ -242,7 +242,7 @@ export default function NetworkNarrative() {
       ref={sectionRef}
       id="network"
       data-theme="ink"
-      aria-label="How the Meridian network works"
+      aria-label="How the Pixely network works"
       className="relative bg-theme text-theme"
       style={{ height: reduced ? undefined : "500svh" }}
     >
@@ -275,7 +275,7 @@ export default function NetworkNarrative() {
           <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 pt-20 sm:px-10 md:grid-cols-2 lg:px-14">
             {STAGES.map((stage) => (
               <div key={stage.title} className="max-w-lg">
-                <p className="type-label mb-4 text-signal">
+                <p className="type-label mb-4 text-accent">
                   {stage.index} — {stage.title}
                 </p>
                 <h3 className="type-headline text-mid">{stage.heading}</h3>
@@ -306,7 +306,7 @@ export default function NetworkNarrative() {
                       aria-hidden
                       className="pointer-events-none absolute -inset-x-10 -inset-y-12 -z-10 bg-[radial-gradient(58%_58%_at_50%_50%,rgba(10,10,11,0.94)_0%,rgba(10,10,11,0.72)_45%,transparent_78%)]"
                     />
-                    <p className="type-label mb-5 text-signal">
+                    <p className="type-label mb-5 text-accent">
                       {stage.index} — {stage.title}
                     </p>
                     <h3 className="type-headline text-mid text-balance">

@@ -296,7 +296,7 @@ const SEG_FRAGMENT = /* glsl */ `
     alpha *= mix(1.0, 0.62, policy * (1.0 - isPolicy));
 
     vec3 boneCol = vec3(0.925, 0.913, 0.882);
-    vec3 signal = vec3(1.0, 0.30, 0.0);
+    vec3 signal = vec3(0.56, 0.63, 1.0);
     vec3 col = mix(boneCol, signal, isPolicy * max(policy, comet * 0.25));
     gl_FragColor = vec4(col, alpha);
   }
@@ -442,7 +442,7 @@ function CoreGlyph() {
       );
     }
     const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
-    const meridianGeo = new THREE.BufferGeometry().setFromPoints([
+    const axisGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, -9, 0),
       new THREE.Vector3(0, 9, 0),
     ]);
@@ -455,8 +455,8 @@ function CoreGlyph() {
           opacity: 0.5,
         }),
       ),
-      meridian: new THREE.Line(
-        meridianGeo,
+      axis: new THREE.Line(
+        axisGeo,
         new THREE.LineBasicMaterial({
           color: BONE,
           transparent: true,
@@ -470,8 +470,8 @@ function CoreGlyph() {
     () => () => {
       objects.ring.geometry.dispose();
       (objects.ring.material as THREE.Material).dispose();
-      objects.meridian.geometry.dispose();
-      (objects.meridian.material as THREE.Material).dispose();
+      objects.axis.geometry.dispose();
+      (objects.axis.material as THREE.Material).dispose();
     },
     [objects],
   );
@@ -479,7 +479,7 @@ function CoreGlyph() {
   return (
     <>
       <primitive object={objects.ring} />
-      <primitive object={objects.meridian} />
+      <primitive object={objects.axis} />
     </>
   );
 }

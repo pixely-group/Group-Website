@@ -22,7 +22,7 @@ export type HeroBus = {
 
 const INK = new THREE.Color("#0a0a0b");
 const BONE = new THREE.Color("#ece9e1");
-const SIGNAL = new THREE.Color("#ff4d00");
+const SIGNAL = new THREE.Color("#8fa0ff");
 
 const FIELD_VERTEX = /* glsl */ `
   attribute vec4 aSeed;
@@ -55,7 +55,7 @@ const FIELD_VERTEX = /* glsl */ `
       + sin(x * 0.093 + laneN * 6.0 + 1.7) * 0.8;
     float y = y0 * (0.9 + 0.22 * sin(x * 0.05 + laneN * 2.0)) + bend;
 
-    // Streams tighten toward the meridian axis on the right.
+    // Streams tighten toward the axis on the right.
     float conv = smoothstep(-uSpan * 0.5, uSpan * 0.5, x);
     y = mix(y, y * 0.45, conv * 0.6);
 
@@ -73,7 +73,7 @@ const FIELD_VERTEX = /* glsl */ `
     float base = mix(1.5, 2.3, aSeed.y);
     gl_PointSize = (base + isSignal * 2.6) * uPixelRatio * (7.5 / -mv.z);
 
-    vColor = mix(vec3(0.925, 0.913, 0.882), vec3(1.0, 0.30, 0.0), isSignal);
+    vColor = mix(vec3(0.925, 0.913, 0.882), vec3(0.56, 0.63, 1.0), isSignal);
 
     // Some lanes glow, some barely register — depth without fog.
     float laneGlow = 0.55 + 0.45 * fract(sin(lane * 78.233) * 12543.21);
@@ -171,8 +171,8 @@ function ringGeometry(radius: number, segments = 220) {
   return new THREE.BufferGeometry().setFromPoints(pts);
 }
 
-/** Faint orbital hairlines — the wordmark's meridian, monumental. */
-function MeridianRings({ bus }: { bus: HeroBusRef }) {
+/** Faint orbital hairlines — the wordmark's axis, monumental. */
+function OrbitalRings({ bus }: { bus: HeroBusRef }) {
   const outer = useRef<THREE.Line>(null);
   const inner = useRef<THREE.Line>(null);
   const outerGeo = useMemo(() => ringGeometry(5.4), []);
@@ -262,7 +262,7 @@ export default function HeroScene({
       aria-hidden
     >
       <FlowField bus={bus} count={count} />
-      <MeridianRings bus={bus} />
+      <OrbitalRings bus={bus} />
       <CameraRig bus={bus} />
     </Canvas>
   );

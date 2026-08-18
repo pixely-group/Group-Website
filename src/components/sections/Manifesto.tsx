@@ -50,7 +50,7 @@ export default function Manifesto() {
       data-theme="ink"
       className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14"
     >
-      <h2 className="sr-only">Why Meridian exists</h2>
+      <h2 className="sr-only">Why Pixely exists</h2>
       <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
         01 — Manifesto
       </p>
@@ -68,7 +68,7 @@ export default function Manifesto() {
         <p className="type-label text-(--faint)">
           Legacy rail latency — T+3 days
         </p>
-        <p className="type-label text-signal">Meridian — T+184 ms</p>
+        <p className="type-label text-accent">Pixely — T+184 ms</p>
       </div>
     </section>
   );

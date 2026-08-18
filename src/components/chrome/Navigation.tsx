@@ -55,7 +55,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
         />
       </svg>
       <span className="type-headline text-[0.95rem] tracking-[0.06em]">
-        Meridian
+        Pixely
       </span>
     </span>
   );
@@ -163,7 +163,7 @@ export default function Navigation() {
           <a
             href="#top"
             onClick={scrollTo("#top")}
-            aria-label="Meridian — back to top"
+            aria-label="Pixely — back to top"
             data-cursor="link"
             className="text-(--fg)"
           >

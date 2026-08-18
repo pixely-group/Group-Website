@@ -78,7 +78,7 @@ export default function FinalCTA() {
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-cta-line className="block">
               moves money
-              <span className="text-signal">.</span>
+              <span className="text-accent">.</span>
             </span>
           </span>
         </h2>

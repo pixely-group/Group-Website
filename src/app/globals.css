@@ -7,8 +7,16 @@
   --color-ink-3: #1a1a1e;
   --color-bone: #ece9e1;
   --color-bone-2: #f2f0ea;
-  --color-signal: #ff4d00;
-  --color-signal-deep: #d63f00;
+  /* Brand blue. It carries plenty of contrast on bone but only 3.1:1 on
+     ink, so a lifted tint covers the dark chapters. `--accent` below picks
+     the right one per chapter; use it for anything text-sized. */
+  --color-signal: #384ce3;
+  --color-signal-lift: #6b7dec;
+  /* Canvas and GL marks are small, alpha-blended and often additive, which
+     washes the hue out badly at blue's low luminance. This brighter tint is
+     for those surfaces only — never for flat DOM colour. */
+  --color-signal-glow: #8fa0ff;
+  --color-signal-deep: #2438c7;
   --color-positive: #23855c;
   --color-negative: #c2402d;
 
@@ -46,6 +54,7 @@
   --line: rgb(236 233 225 / 0.14);
   --line-strong: rgb(236 233 225 / 0.32);
   --surface: rgb(236 233 225 / 0.04);
+  --accent: var(--color-signal-lift);
 }
 
 [data-theme="bone"] {
@@ -56,6 +65,7 @@
   --line: rgb(19 19 22 / 0.16);
   --line-strong: rgb(19 19 22 / 0.4);
   --surface: rgb(19 19 22 / 0.04);
+  --accent: var(--color-signal);
 }
 
 @utility bg-theme {
@@ -75,6 +85,15 @@
 }
 @utility bg-surface {
   background-color: var(--surface);
+}
+@utility text-accent {
+  color: var(--accent);
+}
+@utility bg-accent {
+  background-color: var(--accent);
+}
+@utility border-accent {
+  border-color: var(--accent);
 }
 
 /* ————————————————————————————————————————
@@ -161,11 +180,11 @@ body {
 
 ::selection {
   background: var(--color-signal);
-  color: var(--color-ink);
+  color: var(--color-bone);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-signal);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -228,7 +247,7 @@ html[data-cursor="on"] label {
   content: "";
   width: 2rem;
   height: 1px;
-  background: var(--color-signal);
+  background: var(--accent);
 }
 
 /* ————————————————————————————————————————
@@ -244,30 +263,30 @@ html[data-cursor="on"] label {
 }
 [data-stage="ledger"] [data-panel="balances"] > div {
   box-shadow:
-    0 0 0 1px rgb(255 77 0 / 0.45),
-    0 12px 34px -14px rgb(255 77 0 / 0.28);
+    0 0 0 1px rgb(56 76 227 / 0.45),
+    0 12px 34px -14px rgb(56 76 227 / 0.28);
 }
 [data-stage="payments"] [data-row="FX-EUR-0392"] > td {
-  background: rgb(255 77 0 / 0.07);
+  background: rgb(56 76 227 / 0.07);
 }
 [data-stage="payments"] [data-ui="new-payment"] {
-  box-shadow: 0 0 0 2px rgb(255 77 0 / 0.35);
+  box-shadow: 0 0 0 2px rgb(56 76 227 / 0.35);
 }
 [data-stage="fx"] [data-panel="fx"] {
   box-shadow:
-    0 0 0 1px rgb(255 77 0 / 0.5),
-    0 18px 44px -18px rgb(255 77 0 / 0.32);
+    0 0 0 1px rgb(56 76 227 / 0.5),
+    0 18px 44px -18px rgb(56 76 227 / 0.32);
 }
 [data-stage="fx"] [data-row="FX-EUR-0392"] > td {
-  background: rgb(255 77 0 / 0.07);
+  background: rgb(56 76 227 / 0.07);
 }
 [data-stage="controls"] [data-panel="approvals"] {
   box-shadow:
-    0 0 0 1px rgb(255 77 0 / 0.5),
-    0 18px 44px -18px rgb(255 77 0 / 0.32);
+    0 0 0 1px rgb(56 76 227 / 0.5),
+    0 18px 44px -18px rgb(56 76 227 / 0.32);
 }
 [data-stage="controls"] [data-row="RUN-2026-08"] > td {
-  background: rgb(255 77 0 / 0.07);
+  background: rgb(56 76 227 / 0.07);
 }
 
 /* Stage copies only stack into one frame while the pinned choreography is
@@ -319,7 +338,7 @@ html[data-cursor="on"] label {
   transform: translateY(-300%);
   transition: transform 200ms var(--ease-out-expo);
   background: var(--color-signal);
-  color: var(--color-ink);
+  color: var(--color-bone);
   padding: 0.6rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;

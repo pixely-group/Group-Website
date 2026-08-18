@@ -6,14 +6,14 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 const BONE = "236, 233, 225";
-const SIGNAL = "255, 77, 0";
+const SIGNAL = "143, 160, 255";
 
 /** Longitude/latitude → normalised canvas space, latitude band compressed. */
 const px = (lon: number, w: number) => ((lon + 180) / 360) * w;
 const py = (lat: number, h: number) => ((60 - lat) / 105) * h;
 
 /**
- * Abstract corridor map: financial centres placed on their true meridians,
+ * Abstract corridor map: financial centres placed on their true longitudes,
  * with value moving between them and daylight sweeping west to east.
  */
 export default function GlobalCorridors() {
@@ -84,7 +84,7 @@ export default function GlobalCorridors() {
       ctx.fillStyle = band;
       ctx.fillRect(0, 0, width, height);
 
-      // Meridian grid, every 30°.
+      // Longitude grid, every 30°.
       ctx.lineWidth = 1;
       for (let lon = -180; lon <= 180; lon += 30) {
         const x = px(lon, width);
@@ -256,7 +256,7 @@ export default function GlobalCorridors() {
             </h2>
           </div>
           <p className="max-w-sm pb-2 text-[0.95rem] leading-relaxed text-(--muted)">
-            Money does not wait for a business day to begin. Meridian holds
+            Money does not wait for a business day to begin. Pixely holds
             liquidity on both sides of every corridor, so a payment clears in
             the recipient&rsquo;s morning, not yours.
           </p>
@@ -267,7 +267,7 @@ export default function GlobalCorridors() {
             ref={canvasRef}
             className="block h-[clamp(260px,42vw,460px)] w-full font-mono"
             role="img"
-            aria-label="Corridor map: twelve financial centres on their meridians, with value moving continuously between them"
+            aria-label="Corridor map: twelve financial centres on their longitudes, with value moving continuously between them"
           />
           <div
             aria-hidden

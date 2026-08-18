@@ -46,7 +46,7 @@ function HeroPoster() {
           cy="430"
           rx="190"
           ry="64"
-          stroke="#ff4d00"
+          stroke="#6b7dec"
           strokeOpacity="0.25"
           transform="rotate(-16 1010 430)"
         />
@@ -181,7 +181,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       data-theme="ink"
-      aria-label="Meridian — money should move like light"
+      aria-label="Pixely — money should move like light"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
       <div className="absolute inset-0" aria-hidden>
@@ -205,7 +205,7 @@ export default function Hero() {
           className="type-label mb-7 text-(--muted) opacity-0"
         >
           <span className="section-index">
-            Meridian — Financial infrastructure
+            Pixely — Financial infrastructure
           </span>
         </p>
 
@@ -224,7 +224,7 @@ export default function Hero() {
             <span data-hero-line className="block">
               like{" "}
               <em className="type-serif text-[1.02em] font-normal">light</em>
-              <span className="text-signal">.</span>
+              <span className="text-accent">.</span>
             </span>
           </span>
         </h1>
@@ -232,7 +232,7 @@ export default function Hero() {
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <div data-hero-fade className="max-w-md opacity-0">
             <p className="text-[0.95rem] leading-relaxed text-(--muted)">
-              Meridian is the settlement layer for companies that operate at
+              Pixely is the settlement layer for companies that operate at
               internet speed — money that arrives in milliseconds, in any
               currency, governed entirely by code.
             </p>
@@ -260,7 +260,7 @@ export default function Hero() {
             <div className="flex items-center gap-3">
               <span className="type-label text-(--faint)">Scroll</span>
               <span className="scroll-hint relative h-10 w-px overflow-hidden bg-(--line)">
-                <span className="absolute inset-x-0 h-1/2 bg-signal" />
+                <span className="absolute inset-x-0 h-1/2 bg-accent" />
               </span>
             </div>
           </div>

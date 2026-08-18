@@ -25,12 +25,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Meridian — Money should move like light",
+  title: "Pixely — Money should move like light",
   description:
-    "Meridian is the settlement layer for companies that operate at internet speed. Accounts in 40+ currencies, value moving in milliseconds, every dollar controlled in code.",
-  metadataBase: new URL("https://meridian.example.com"),
+    "Pixely is the settlement layer for companies that operate at internet speed. Accounts in 40+ currencies, value moving in milliseconds, every dollar controlled in code.",
+  metadataBase: new URL("https://pixely.com"),
   openGraph: {
-    title: "Meridian — Money should move like light",
+    title: "Pixely — Money should move like light",
     description:
       "The settlement layer for companies that operate at internet speed.",
     type: "website",

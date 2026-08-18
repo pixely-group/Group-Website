@@ -117,7 +117,7 @@ export default function Thesis() {
               "repeating-linear-gradient(to right, rgba(236,233,225,0.07) 0 1px, transparent 1px 88px), repeating-linear-gradient(to bottom, rgba(236,233,225,0.07) 0 1px, transparent 1px 88px)",
           }}
         />
-        {/* The new one: a single meridian arc. */}
+        {/* The new one: a single orbital arc. */}
         <svg
           data-arc
           aria-hidden
@@ -140,7 +140,7 @@ export default function Thesis() {
             cy="350"
             rx="300"
             ry="140"
-            stroke="#ff4d00"
+            stroke="#6b7dec"
             strokeOpacity="0.3"
             transform="rotate(-12 600 350)"
           />
@@ -152,7 +152,7 @@ export default function Thesis() {
               <h2 className="type-display text-[clamp(1.85rem,6.9vw,6.25rem)] max-w-[16ch]">
                 {OLD_LINES.join(" ")}
               </h2>
-              <h2 className="type-display text-[clamp(1.85rem,6.9vw,6.25rem)] max-w-[16ch] text-signal">
+              <h2 className="type-display text-[clamp(1.85rem,6.9vw,6.25rem)] max-w-[16ch] text-accent">
                 {NEW_LINES.join(" ")}
               </h2>
             </div>
@@ -175,7 +175,7 @@ export default function Thesis() {
                 <span
                   data-strike
                   aria-hidden
-                  className="absolute top-1/2 -left-2 h-[3px] w-[min(100%,52ch)] bg-signal"
+                  className="absolute top-1/2 -left-2 h-[3px] w-[min(100%,52ch)] bg-accent"
                 />
               </div>
 
@@ -187,7 +187,7 @@ export default function Thesis() {
                   <span key={line} className="block overflow-hidden pb-[0.02em]">
                     <span
                       data-new-line
-                      className={`block whitespace-normal lg:whitespace-nowrap ${i === 1 ? "text-signal" : ""}`}
+                      className={`block whitespace-normal lg:whitespace-nowrap ${i === 1 ? "text-accent" : ""}`}
                     >
                       {line}
                     </span>
@@ -198,7 +198,7 @@ export default function Thesis() {
               <span
                 data-sweep
                 aria-hidden
-                className="absolute top-1/2 -left-[100vw] h-px w-[200vw] bg-signal/60"
+                className="absolute top-1/2 -left-[100vw] h-px w-[200vw] bg-accent opacity-60"
               />
             </div>
           )}

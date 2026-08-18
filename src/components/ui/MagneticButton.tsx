@@ -73,7 +73,7 @@ export default function MagneticButton({
         : "px-6 py-[0.85rem] text-[0.7rem]";
   const skin =
     variant === "solid"
-      ? "bg-signal text-ink"
+      ? "bg-signal text-bone transition-colors duration-500 ease-(--ease-out-expo) group-hover:text-ink"
       : "border border-(--line-strong) text-(--fg) hover:bg-(--surface)";
 
   const inner = (

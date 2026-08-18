@@ -6,7 +6,7 @@ import { STAGES } from "@/lib/data";
 import ProductUI from "@/components/sections/ProductUI";
 import ProductUIMobile from "@/components/sections/ProductUIMobile";
 
-/** Orange packets that travel between panels while a stage is active. */
+/** Packets that travel between panels while a stage is active. */
 const PULSES: Record<
   string,
   { from: string; to: string } | undefined
@@ -23,13 +23,13 @@ function createPulseLayer(host: HTMLElement) {
     "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5";
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "#ff4d00");
+  path.setAttribute("stroke", "#384ce3");
   path.setAttribute("stroke-width", "1.25");
   path.setAttribute("stroke-dasharray", "3 4");
   path.setAttribute("opacity", "0");
   const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
   dot.setAttribute("r", "3.5");
-  dot.setAttribute("fill", "#ff4d00");
+  dot.setAttribute("fill", "#384ce3");
   dot.setAttribute("opacity", "0");
   svg.append(path, dot);
   host.appendChild(svg);
@@ -184,7 +184,7 @@ export default function ProductExperience() {
           if (i === currentStage) return;
           currentStage = i;
           stageWrap.setAttribute("data-stage", STAGES[i].key);
-          dots.forEach((d, di) => d.classList.toggle("bg-signal", di <= i));
+          dots.forEach((d, di) => d.classList.toggle("bg-accent", di <= i));
           // Let the camera move settle before measuring pulse endpoints.
           gsap.delayedCall(0.7, () => {
             if (currentStage === i) playPulse(STAGES[i].key);
@@ -309,7 +309,7 @@ export default function ProductExperience() {
             >
               <span
                 data-progress-fill
-                className="absolute inset-x-0 top-0 h-full origin-top scale-y-0 bg-signal"
+                className="absolute inset-x-0 top-0 h-full origin-top scale-y-0 bg-accent"
               />
               {STAGES.map((s, i) => (
                 <span
@@ -328,7 +328,7 @@ export default function ProductExperience() {
                   data-stage-copy
                   className="border-t border-(--line) pt-5 pb-8"
                 >
-                  <p className="type-label mb-3 text-signal">
+                  <p className="type-label mb-3 text-accent">
                     {stage.index} — {stage.title}
                   </p>
                   <h3 className="text-[1.35rem] leading-snug font-semibold tracking-[-0.01em]">
@@ -364,7 +364,7 @@ export default function ProductExperience() {
                   aria-hidden
                   className={`type-label absolute hidden w-max items-center gap-2 text-(--muted) opacity-0 lg:flex ${a.pos}`}
                 >
-                  <span className="inline-block size-1 rotate-45 bg-signal" />
+                  <span className="inline-block size-1 rotate-45 bg-accent" />
                   {a.label}
                 </p>
               ))}

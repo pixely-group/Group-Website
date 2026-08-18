@@ -207,7 +207,7 @@ export default function SecurityArchitecture() {
                     <polygon
                       points={diamond(CX, cy, HW, HH)}
                       fill="none"
-                      stroke={on ? "#ff4d00" : "currentColor"}
+                      stroke={on ? "#384ce3" : "currentColor"}
                       strokeOpacity={on ? 1 : 0.42}
                       strokeWidth={on ? 1.6 : 1}
                       className="transition-all duration-500"
@@ -225,7 +225,7 @@ export default function SecurityArchitecture() {
                       y1={cy}
                       x2={VB_W - 16}
                       y2={cy - 26}
-                      stroke={on ? "#ff4d00" : "currentColor"}
+                      stroke={on ? "#384ce3" : "currentColor"}
                       strokeOpacity={on ? 0.9 : 0.24}
                       strokeWidth="1"
                       className="transition-all duration-500"
@@ -234,7 +234,7 @@ export default function SecurityArchitecture() {
                       x={VB_W - 14}
                       y={cy - 31}
                       fontSize="13"
-                      fill={on ? "#ff4d00" : "currentColor"}
+                      fill={on ? "#384ce3" : "currentColor"}
                       fillOpacity={on ? 1 : 0.5}
                       fontFamily="var(--font-mono)"
                       letterSpacing="1.6"
@@ -251,7 +251,7 @@ export default function SecurityArchitecture() {
                 cx={CX}
                 cy={layerY(0) - HH}
                 r="5.5"
-                fill="#ff4d00"
+                fill="#384ce3"
                 opacity="0"
               />
             </svg>
@@ -270,7 +270,7 @@ export default function SecurityArchitecture() {
                 >
                   <span
                     className={`type-label pt-1 transition-colors duration-500 ${
-                      on ? "text-signal" : "text-(--faint)"
+                      on ? "text-accent" : "text-(--faint)"
                     }`}
                   >
                     {layer.index}
