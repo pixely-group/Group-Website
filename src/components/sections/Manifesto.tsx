@@ -48,10 +48,11 @@ export default function Manifesto() {
       ref={sectionRef}
       id="manifesto"
       data-theme="ink"
-      /* The device parks with its centre on this section's top edge, so from
-         lg up the copy starts below the half of it that hangs into here —
-         265px of device against the 22vh the section already had. */
-      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[calc(22vh+180px)]"
+      /* The device parks just inside this section's top edge and grows as the
+         reader continues, so the copy starts clear of it at its largest —
+         roughly 96px of drop plus half of a 620px device at 1.04. Enough to
+         clear, close enough to read as one composition. */
+      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[26rem]"
     >
       <h2 className="sr-only">Why Pixely exists</h2>
       {/* One centred column rather than a left-aligned block with the right

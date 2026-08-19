@@ -26,12 +26,17 @@ const SCREEN_R = 52;
  * the device used to be a single plane, which meant turning it only
  * foreshortened the front — there was no side there to come into view.
  */
+/* Kept because the body is pushed forward by it, which is what sets the
+   device's apparent size under the perspective. Nothing is drawn in the
+   depth any more: the side rails and the back panel are gone, so no turn of
+   the device can reveal either. */
 const THICK = 50;
-/** The rails run between the corners, so they do not cut across the radius. */
-const CORNER = 57;
 
 /**
- * Resting three-quarter view, and how far the pointer may push it.
+ * Square to the reader at rest, and how far the pointer may push it. The
+ * device has no sides and no back to show — see the note on THICK — so the
+ * swing is a parallax cue rather than a turn, and is kept small enough to
+ * read as one.
  *
  * Ten degrees either side of rest, and read against a much nearer camera
  * than before. Degrees on their own do not make a turn visible: at the 1600px
@@ -54,10 +59,10 @@ const CORNER = 57;
  * side is presented the whole time — enough to read as an edge, not so much
  * that the screen turns away.
  */
-const REST_Y = -14;
-const REST_X = 2;
-const SWING_Y = 7;
-const SWING_X = 6;
+const REST_Y = 0;
+const REST_X = 0;
+const SWING_Y = 4;
+const SWING_X = 3;
 const PERSPECTIVE = 820;
 
 export default function HeroDevice({
@@ -207,164 +212,6 @@ export default function HeroDevice({
             transformStyle: "preserve-3d",
           }}
         >
-          {/* The two sides of the device, standing at right angles to the
-              front so a turn actually reveals one. Each hinges on its own
-              edge and runs back exactly the body's depth, which puts the
-              front face at z = THICK and the back at z = 0. */}
-          {(
-            [
-              {
-                side: "right" as const,
-                origin: "100% 50%",
-                rotate: 90,
-                buttons: [
-                  { top: 234, h: 96 },  // side button
-                  { top: 366, h: 38 },  // Camera Control
-                ],
-              },
-              {
-                side: "left" as const,
-                origin: "0% 50%",
-                rotate: -90,
-                buttons: [
-                  { top: 165, h: 30 },  // Action button
-                  { top: 222, h: 58 },  // volume up
-                  { top: 295, h: 58 },  // volume down
-                ],
-              },
-            ]
-          ).map((rail) => (
-            <div
-              key={rail.side}
-              aria-hidden
-              style={{
-                position: "absolute",
-                top: CORNER,
-                bottom: CORNER,
-                [rail.side]: 0,
-                width: THICK,
-                transformOrigin: rail.origin,
-                transform: `rotateY(${rail.rotate}deg)`,
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-                background:
-                  "linear-gradient(90deg,#0b0c10 0%,#23262e 22%,#3a3e48 48%,#1c1f26 78%,#090a0d 100%)",
-                boxShadow: "inset 0 1px 0 rgba(236,233,225,0.20)",
-              }}
-            >
-              {rail.buttons.map((b) => (
-                <span
-                  key={b.top}
-                  style={{
-                    position: "absolute",
-                    top: b.top - CORNER,
-                    height: b.h,
-                    left: THICK * 0.28,
-                    width: THICK * 0.44,
-                    borderRadius: 3,
-                    background:
-                      "linear-gradient(90deg,#2c303a 0%,#4a4f5c 45%,#20232b 100%)",
-                    boxShadow:
-                      "inset 0 1px 0 rgba(236,233,225,0.28), 0 1px 2px rgba(0,0,0,0.6)",
-                  }}
-                />
-              ))}
-            </div>
-          ))}
-
-          {/* The back, at z = 0 and turned to face away, so a full turn has
-              something to land on. Without it the rails hide their own
-              backfaces and the device is see-through from behind. */}
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-[57px]"
-            style={{
-              transform: "rotateY(180deg)",
-              transformStyle: "preserve-3d",
-              backfaceVisibility: "hidden",
-              background:
-                "linear-gradient(155deg,#15181f 0%,#0b0d12 38%,#04050700 39%,#0a0c11 62%,#191d25 100%)",
-              boxShadow:
-                "inset 0 0 0 1px rgba(236,233,225,0.18), inset 0 1px 0 rgba(236,233,225,0.30)",
-            }}
-          >
-            {/* Camera plateau, mirrored to the left because the whole face is. */}
-            <div
-              style={{
-                position: "absolute",
-                top: 30,
-                left: 30,
-                width: 170,
-                height: 170,
-                borderRadius: 46,
-                background: "linear-gradient(150deg,#20242d 0%,#0d1015 55%,#171b23 100%)",
-                boxShadow:
-                  "inset 0 0 0 1px rgba(236,233,225,0.14), 0 6px 18px -6px rgba(0,0,0,0.85)",
-              }}
-            >
-              {[
-                { top: 22, left: 22 },
-                { top: 22, left: 92 },
-                { top: 92, left: 22 },
-              ].map((lens) => (
-                <span
-                  key={`${lens.top}-${lens.left}`}
-                  style={{
-                    position: "absolute",
-                    top: lens.top,
-                    left: lens.left,
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle at 38% 32%,#3b4250 0%,#12151b 46%,#05070a 100%)",
-                    boxShadow:
-                      "inset 0 0 0 3px #1b1f27, inset 0 0 0 4px rgba(236,233,225,0.10), 0 2px 6px rgba(0,0,0,0.7)",
-                  }}
-                >
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 12,
-                      left: 14,
-                      width: 12,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "rgba(236,233,225,0.22)",
-                      filter: "blur(1px)",
-                    }}
-                  />
-                </span>
-              ))}
-              <span
-                style={{
-                  position: "absolute",
-                  top: 100,
-                  left: 100,
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: "radial-gradient(circle at 40% 35%,#4a5160 0%,#1a1e26 70%)",
-                  boxShadow: "inset 0 0 0 2px rgba(236,233,225,0.10)",
-                }}
-              />
-            </div>
-            {/* The wordmark reads correctly once the face is turned. */}
-            <span
-              style={{
-                position: "absolute",
-                top: "46%",
-                left: 0,
-                right: 0,
-                textAlign: "center",
-                font: "500 34px/1 var(--font-display), system-ui, sans-serif",
-                letterSpacing: "0.24em",
-                color: "rgba(236,233,225,0.16)",
-              }}
-            >
-              PIXELY
-            </span>
-          </div>
-
           {/* Body: matte, with one hairline edge and a cast shadow. Pushed
               forward by the body's own depth so it caps the rails. */}
           <div

@@ -11,6 +11,14 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 /** Where the travel begins, as a fraction of the hero's height scrolled. */
 const BEGIN = 0.14;
+/** How far below the seam the device parks, so it sits nearer the copy that
+ *  follows rather than stranded in the gap between the two sections. */
+const DROP = 96;
+/** Scale on arrival, and what it grows to as the reader keeps going. */
+const LANDED = 0.86;
+const CLOSE = 1.04;
+/** Scroll past the stop over which that growth happens. */
+const ZOOM = 460;
 
 /**
  * The device is fixed to the viewport rather than parked inside the hero,
@@ -68,9 +76,10 @@ export default function TravellingDevice() {
 
       begin = heroH * BEGIN;
       /* Stops when the seam reaches the middle of the screen, which puts the
-         device's own centre on the seam — between the hero and section 01,
-         which is where it was asked to stop. */
-      stop = seam - window.innerHeight / 2;
+         device's own centre on the seam — between the hero and section 01 —
+         then DROP lower again, so it settles nearer the copy below rather
+         than in the middle of the gap. */
+      stop = seam - window.innerHeight / 2 + DROP;
       dx = window.innerWidth / 2 - (box.left + box.width / 2);
       dy = window.innerHeight / 2 - (box.top + box.height / 2);
     };
@@ -97,9 +106,15 @@ export default function TravellingDevice() {
          page and the page carries it away. */
       const past = Math.max(0, y - stop);
 
+      /* Once parked it keeps coming forward, slowly, for as long as the
+         reader keeps scrolling — the wallet is the thing being read by then,
+         and it was sitting too far off to be read. */
+      const near = clamp01(past / ZOOM);
+      const scale = p < 1 ? 1 - (1 - LANDED) * p : LANDED + (CLOSE - LANDED) * near;
+
       flatten.current = p;
       holder.style.transform =
-        `translate3d(${dx * p}px, ${dy * p - past}px, 0) scale(${1 - 0.15 * p})`;
+        `translate3d(${dx * p}px, ${dy * p - past}px, 0) scale(${scale})`;
 
       if (p >= 1 !== arrived.current) {
         arrived.current = p >= 1;
