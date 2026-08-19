@@ -19,8 +19,9 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
 const SCREEN_R = 52;
 
 /**
- * Square to the reader at rest, and how far the pointer may push it. The
- * device has no sides and no back to show, so the
+ * A slight turn at rest — square to the reader reads flat — and how far the
+ * pointer may push it. Safe at any angle now: the device has no sides and no
+ * back to show, so the
  * swing is a parallax cue rather than a turn, and is kept small enough to
  * read as one.
  *
@@ -45,8 +46,8 @@ const SCREEN_R = 52;
  * side is presented the whole time — enough to read as an edge, not so much
  * that the screen turns away.
  */
-const REST_Y = 0;
-const REST_X = 0;
+const REST_Y = -7;
+const REST_X = 1.5;
 const SWING_Y = 4;
 const SWING_X = 3;
 const PERSPECTIVE = 820;
@@ -86,8 +87,14 @@ export default function HeroDevice({
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const ro = new ResizeObserver(() => {
-      const h = stage.getBoundingClientRect().height;
+    /* Read from the observer's own box, not from a rect. getBoundingClientRect
+       reports the painted size, which includes every ancestor transform — and
+       this device spends the scroll inside one that scales to 1.42. Measured
+       that way it saw 880 where its layout box was 620 and redrew itself at
+       0.99 instead of 0.695, which is a phone half again too big. The
+       observer's borderBoxSize is layout, and layout is what this wants. */
+    const ro = new ResizeObserver(([entry]) => {
+      const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
       if (h > 0) setScale(h / BODY_H);
     });
     ro.observe(stage);

@@ -14,7 +14,7 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 const BEGIN = 0.14;
 /** How far below the seam the device parks. Its lower half lands over the
  *  copy that follows, which is where the fade earns its keep. */
-const DROP = 40;
+const DROP = 120;
 /** Scale on arrival, and what it grows to as the reader keeps going. */
 const LANDED = 0.86;
 const CLOSE = 1.42;
@@ -24,8 +24,9 @@ const CLOSE = 1.42;
  *  reaches full size only once it has left the frame. */
 const ZOOM = 180;
 /** How faint the bottom of the device gets, so the copy in front of it stays
- *  the thing you read. */
-const FAINT = 0.07;
+ *  the thing you read. Low enough for the wallet's light palette: at 0.07 a
+ *  dark screen vanished but a white one still showed through the copy. */
+const FAINT = 0.025;
 /** How far above the copy the fade begins, as a fraction of the device. A
  *  little lead-in, so the first line does not land on a hard edge. */
 const LEAD = 0.06;
@@ -205,7 +206,7 @@ export default function TravellingDevice() {
           const into = (f: number) => ((MASK_PAD + f * h) / (h + MASK_PAD * 2)) * 100;
           mask =
             `linear-gradient(to bottom, #000 0 ${into(startsAt).toFixed(1)}%,` +
-            ` rgb(0 0 0 / 0.28) ${into(midAt).toFixed(1)}%,` +
+            ` rgb(0 0 0 / 0.15) ${into(midAt).toFixed(1)}%,` +
             ` rgb(0 0 0 / ${FAINT}) ${into(1).toFixed(1)}%)`;
         }
         maskEl.style.maskImage = mask;
