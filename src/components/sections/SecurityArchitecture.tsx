@@ -59,16 +59,12 @@ export default function SecurityArchitecture() {
   // moment later. Read from a ref inside the timeline, which outlives renders.
   const [pinned, setPinned] = useState<number | null>(null);
   const pinnedRef = useRef<number | null>(null);
-  const beamRef = useRef<gsap.core.Timeline | null>(null);
 
   const selectLayer = (i: number) => {
     const next = pinnedRef.current === i ? null : i;
     pinnedRef.current = next;
     setPinned(next);
     setActiveLayer(next ?? i);
-    // Hold the beam while a layer is pinned; let it resume when released.
-    if (next === null) beamRef.current?.play();
-    else beamRef.current?.pause();
   };
 
   useEffect(() => {
@@ -105,35 +101,58 @@ export default function SecurityArchitecture() {
           });
         });
 
-        // A request descends the stack, on repeat.
+        // The request travels with the scroll rather than looping on its
+        // own: scrubbed against the section, so it descends as you read down
+        // and climbs back if you scroll up.
         if (!beam) return;
-        const tl = gsap.timeline({
-          repeat: -1,
-          repeatDelay: 0.9,
-          scrollTrigger: { trigger: section, start: "top 80%", end: "bottom 20%", toggleActions: "play pause resume pause" },
-        });
-        tl.set(beam, { opacity: 0, attr: { cy: layerY(0) - HH } });
-        tl.to(beam, { opacity: 1, duration: 0.25 });
-        LAYERS.forEach((_, i) => {
-          tl.to(beam, {
-            attr: { cy: layerY(i) },
-            duration: 0.42,
-            ease: "power1.inOut",
-            onStart: () => {
-              if (pinnedRef.current === null) setActiveLayer(i);
-            },
+        const travelFrom = layerY(0) - HH;
+        const travelTo = layerY(LAYERS.length - 1) + HH;
+
+        const nearestLayer = (cy: number) => {
+          let best = 0;
+          let bestGap = Infinity;
+          LAYERS.forEach((_, i) => {
+            const gap = Math.abs(cy - layerY(i));
+            if (gap < bestGap) {
+              bestGap = gap;
+              best = i;
+            }
           });
-          tl.to(beam, { duration: 0.22 });
+          return best;
+        };
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 72%",
+            end: "bottom 28%",
+            scrub: 0.6,
+          },
         });
-        tl.to(beam, {
-          attr: { cy: layerY(LAYERS.length - 1) + HH + 26 },
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in",
-        });
-        beamRef.current = tl;
+
+        tl.fromTo(
+          beam,
+          { attr: { cy: travelFrom }, opacity: 0 },
+          {
+            attr: { cy: travelTo },
+            opacity: 1,
+            duration: 1,
+            ease: "none",
+            onUpdate: () => {
+              // Read the beam itself, so the highlight follows the smoothed
+              // position rather than the raw scroll value.
+              const cy = Number(gsap.getProperty(beam, "cy"));
+              if (pinnedRef.current === null) setActiveLayer(nearestLayer(cy));
+            },
+          },
+          0,
+        );
+        // Only the ends fade; the middle of the run stays lit.
+        tl.to(beam, { opacity: 1, duration: 0.06, ease: "none" }, 0);
+        tl.to(beam, { opacity: 0, duration: 0.06, ease: "none" }, 0.94);
+
         return () => {
-          beamRef.current = null;
+          tl.scrollTrigger?.kill();
           tl.kill();
         };
       });
