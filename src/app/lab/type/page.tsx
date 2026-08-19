@@ -1,7 +1,16 @@
 "use client";
 
+import { Bitcount_Prop_Double } from "next/font/google";
 import { useState } from "react";
 import ZnapDots from "@/components/ui/ZnapDots";
+
+/* Declared here rather than in the root layout: nothing on the site uses this
+   face any more, so it ships with this route alone. */
+const bitcount = Bitcount_Prop_Double({
+  subsets: ["latin"],
+  axes: ["CRSV", "ELSH", "ELXP", "slnt"],
+  variable: "--font-dots",
+});
 
 export default function TypeLab() {
   const [weight, setWeight] = useState(1.35);
@@ -10,7 +19,7 @@ export default function TypeLab() {
   const [take, setTake] = useState(0);
 
   return (
-    <main data-theme="ink" className="min-h-[100svh] bg-ink px-6 py-16 text-bone sm:px-10 lg:px-14">
+    <main data-theme="ink" className={`${bitcount.variable} min-h-[100svh] bg-ink px-6 py-16 text-bone sm:px-10 lg:px-14`}>
       <p className="type-label section-index mb-3 text-(--muted)">Pixely — Bitcount</p>
       <p className="mb-14 max-w-xl text-[0.9rem] leading-relaxed text-(--muted)">
         The dots are read out of the font itself, then drawn and animated one at
