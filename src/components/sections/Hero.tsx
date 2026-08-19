@@ -132,21 +132,29 @@ export default function Hero() {
         });
         // The device is nearer the reader than the type, so it leaves by
         // more. Same trigger, so the two stay in step.
-        gsap.to(section.querySelector("[data-hero-device]"), {
-          yPercent: -20,
-          opacity: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "78% top",
-            scrub: true,
-          },
-        });
+        //
+        // Guarded, and the effect waits for the mount: the device is behind a
+        // media query, so on the first pass this selector finds nothing and
+        // GSAP tweens an empty target without complaining — the type would
+        // depart and the phone would sit there.
+        const device = section.querySelector("[data-hero-device]");
+        if (device) {
+          gsap.to(device, {
+            yPercent: -20,
+            opacity: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: section,
+              start: "top top",
+              end: "78% top",
+              scrub: true,
+            },
+          });
+        }
       }
     }, section);
     return () => ctx.revert();
-  }, []);
+  }, [hasDeviceColumn]);
 
   // Entrance choreography once fonts are ready.
   useEffect(() => {
