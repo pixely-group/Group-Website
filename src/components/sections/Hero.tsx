@@ -7,6 +7,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
+import ZnapSignature from "@/components/ui/ZnapSignature";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
   ssr: false,
@@ -69,6 +70,8 @@ export default function Hero() {
     pointer: [0, 0],
   });
   const [active, setActive] = useState(true);
+  /** The signature holds undrawn until the headline reveal cues it. */
+  const [signing, setSigning] = useState(false);
   const reduced = useReducedMotion();
   const small = useMediaQuery("(max-width: 767px)");
   /** The device only has a column to stand in from lg up. Gating the mount
@@ -175,6 +178,8 @@ export default function Hero() {
 
     if (reducedNow) {
       gsap.set([lines, fades], { yPercent: 0, y: 0, opacity: 1 });
+      // The signature draws itself already-complete under reduced motion,
+      // so it needs no cue here.
       gsap.set(headline, { opacity: 1 });
       return;
     }
@@ -185,7 +190,7 @@ export default function Hero() {
       if (cancelled) return;
       // Position lines below their masks before unhiding the block —
       // the h1 ships with `opacity-0` so nothing flashes pre-hydration.
-      gsap.set(lines, { yPercent: 112 });
+      gsap.set(lines, { yPercent: 140 });
       gsap.set(headline, { opacity: 1 });
       tl = gsap
         .timeline({ delay: 0.1 })
@@ -200,7 +205,10 @@ export default function Hero() {
           { opacity: 0, y: 22 },
           { opacity: 1, y: 0, duration: 0.9, stagger: 0.07, ease: "power3.out" },
           "-=0.7",
-        );
+        )
+        // The word writes itself once its line has settled, rather than
+        // arriving already written.
+        .call(() => setSigning(true), undefined, "-=1.05");
     });
     return () => {
       cancelled = true;
@@ -270,13 +278,25 @@ export default function Hero() {
               move
             </span>
           </span>
-          <span className="block overflow-hidden pb-[0.06em]">
+          {/* The lettering runs above the ascender and below the descender of
+              the line it sits on, so the reveal mask is grown to clear it and
+              pulled back by an equal margin to keep the layout unchanged. */}
+          <span className="-my-[0.42em] block overflow-hidden py-[0.42em]">
             <span data-hero-line className="block">
               in a{" "}
-              {/* The mark belongs to the word, so it carries the word's face. */}
-              <em className="type-serif text-[1.02em] font-normal">
-                Znap<span className="text-accent">!</span>
-              </em>
+              {/* The lettering is taller than the line it sits on, so it hangs
+                  out of a short wrapper instead of stretching the line box and
+                  opening a gap under "move". */}
+              {/* The negative margin takes back the empty run-in inside the
+                  viewBox, which otherwise stacks on the word space and leaves
+                  the lettering floating away from "in a". */}
+              <span className="relative -ml-[0.22em] inline-block h-[0.8em] w-[3.4em] align-baseline">
+                <ZnapSignature
+                  play={signing}
+                  weight={15}
+                  className="absolute bottom-[-0.38em] left-0 w-full"
+                />
+              </span>
             </span>
           </span>
         </h1>
