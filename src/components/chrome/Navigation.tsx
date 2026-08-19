@@ -22,13 +22,24 @@ export const NAV_LINKS = [
 const CONDENSE_OVER = 160;
 
 /**
- * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Width is
- * deliberately absent: the bar holds one measure throughout, so only its
- * treatment changes. Animating width here would be both busier and broken —
- * `max-width` cannot interpolate away from `none`, so it snaps.
+ * Breakpoint ends for the horizontal inset: the bar spans the page's gutter
+ * at rest and draws in to a floating pill as it condenses.
+ */
+export const NAV_INSETS =
+  "[--nav-gutter:24px] [--nav-inset:12px] " +
+  "sm:[--nav-gutter:40px] sm:[--nav-inset:20px] " +
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:32px]";
+
+/**
+ * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
+ * value here is a length, which is the point: the inset is carried by
+ * padding rather than a max-width cap, because `max-width` cannot
+ * interpolate away from `none` and snaps mid-transition.
  */
 export const NAV_GEOMETRY = {
   offsetTop: "calc(var(--nav-p) * 12px)",
+  padInline:
+    "calc(var(--nav-gutter) + (var(--nav-inset) - var(--nav-gutter)) * var(--nav-p))",
   padBlock: "calc(24px - var(--nav-p) * 16px)",
   padLeft: "calc(var(--nav-p) * 20px)",
   padRight: "calc(var(--nav-p) * 8px)",
@@ -189,14 +200,18 @@ export default function Navigation() {
         className="fixed inset-x-0 top-0 z-(--z-nav)"
         style={{ "--nav-p": 0 } as React.CSSProperties}
       >
-        {/* The bar keeps the page's content measure at every scroll position,
-            matching the footer's column, so nothing about its width moves. */}
+        {/* Full-bleed at rest, so the wordmark sits on the page's gutter and
+            lines up with the hero headline; it draws in to a floating pill as
+            the bar condenses. */}
         <div
-          className="px-6 sm:px-10 lg:px-14"
-          style={{ paddingTop: NAV_GEOMETRY.offsetTop }}
+          className={NAV_INSETS}
+          style={{
+            paddingTop: NAV_GEOMETRY.offsetTop,
+            paddingInline: NAV_GEOMETRY.padInline,
+          }}
         >
           <div
-            className="relative mx-auto flex min-h-10 max-w-7xl items-center justify-between text-(--fg)"
+            className="relative flex min-h-10 items-center justify-between text-(--fg)"
             style={{
               paddingBlock: NAV_GEOMETRY.padBlock,
               paddingLeft: NAV_GEOMETRY.padLeft,

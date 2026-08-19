@@ -5,6 +5,7 @@ import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import {
   NAV_GEOMETRY,
+  NAV_INSETS,
   NAV_LINKS,
   Wordmark,
 } from "@/components/chrome/Navigation";
@@ -132,16 +133,17 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
           progress it held when the menu opened. */}
       <div
         data-menu-meta
-        className="px-6 sm:px-10"
+        className={NAV_INSETS}
         style={
           {
             "--nav-p": navP,
             paddingTop: NAV_GEOMETRY.offsetTop,
+            paddingInline: NAV_GEOMETRY.padInline,
           } as React.CSSProperties
         }
       >
         <div
-          className="mx-auto flex min-h-10 max-w-7xl items-center justify-between"
+          className="flex min-h-10 items-center justify-between"
           style={{
             paddingBlock: NAV_GEOMETRY.padBlock,
             paddingLeft: NAV_GEOMETRY.padLeft,
