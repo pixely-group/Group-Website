@@ -105,7 +105,7 @@ function QuickAction({ label, d, c, onPress }: { label: string; d: string; c: C;
   return (
     <button
       type="button" onClick={onPress} data-cursor="link" aria-label={label}
-      className="flex h-[104px] w-full flex-col justify-between rounded-[24px] p-[14px] text-left transition-transform duration-200 active:scale-[0.97]"
+      className="flex h-[104px] w-full flex-col justify-between rounded-[24px] p-[14px] text-left transition-opacity duration-200 active:opacity-60"
       style={{ background: c.SURFACE }}
     >
       <span className="flex size-[32px] items-center justify-center rounded-full" style={{ background: c.CHIP }}>
@@ -124,7 +124,7 @@ function TxRow({ t, c, onOpen }: { t: Tx; c: C; onOpen: (t: Tx) => void }) {
       role="button" tabIndex={0} data-cursor="link"
       onClick={() => onOpen(t)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(t); } }}
-      className="flex cursor-pointer items-center gap-[13px] py-[11px] transition-transform duration-200 active:scale-[0.99]">
+      className="flex cursor-pointer items-center gap-[13px] py-[11px] transition-opacity duration-200 active:opacity-60">
       <span className="flex size-[40px] shrink-0 items-center justify-center rounded-full"
             style={{ background: c.CHIP, color: c.FG, fontSize: 14, fontWeight: 700 }}>
         {t.initials}
@@ -159,7 +159,7 @@ function ThemeSelect({ value, onChange, c }: { value: ThemeId; onChange: (v: The
       <button
         type="button" onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu" aria-expanded={open} aria-label="Switch theme" data-cursor="link"
-        className="flex size-[36px] items-center justify-center rounded-full transition-transform duration-200 active:scale-[0.94]"
+        className="flex size-[36px] items-center justify-center rounded-full transition-opacity duration-200 active:opacity-60"
         style={{ background: c.CHIP }}
       >
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={c.FG} strokeWidth="1.6" aria-hidden>
@@ -221,7 +221,7 @@ function Pushed({
       <div className="flex items-center gap-[12px] px-[20px]">
         <button
           type="button" onClick={onBack} aria-label="Back" data-cursor="link"
-          className="flex size-[36px] shrink-0 items-center justify-center rounded-full transition-transform duration-200 active:scale-[0.94]"
+          className="flex size-[36px] shrink-0 items-center justify-center rounded-full transition-opacity duration-200 active:opacity-60"
           style={{ background: c.CHIP }}
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={c.FG} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -241,7 +241,7 @@ function Primary({ label, onPress, c }: { label: string; onPress: () => void; c:
   return (
     <button
       type="button" onClick={onPress} data-cursor="link"
-      className="flex h-[54px] w-full items-center justify-center rounded-[20px] transition-transform duration-200 active:scale-[0.98]"
+      className="flex h-[54px] w-full items-center justify-center rounded-[20px] transition-opacity duration-200 active:opacity-60"
       style={{ background: c.ACCENT, color: c.ON_ACCENT, fontSize: 16, fontWeight: 700 }}
     >
       {label}
@@ -492,7 +492,7 @@ export default function WalletScreen() {
               <button
                 type="button" onClick={() => setCopied(true)} data-cursor="link"
                 aria-label="Open profile"
-                className="flex min-w-0 flex-1 items-center gap-[12px] text-left transition-transform duration-200 active:scale-[0.99]"
+                className="flex min-w-0 flex-1 items-center gap-[12px] text-left transition-opacity duration-200 active:opacity-60"
               >
                 <span className="size-[44px] shrink-0 rounded-full"
                       style={{ background: "radial-gradient(120% 120% at 30% 22%, #bfe9ff 0%, #7ea8f5 45%, #5b3fd6 100%)" }} />
