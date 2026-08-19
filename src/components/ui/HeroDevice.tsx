@@ -102,9 +102,15 @@ export default function HeroDevice({ className = "" }: { className?: string }) {
         transition: "opacity 600ms var(--ease-out-expo)",
       }}
     >
+      {/* Transparent, and deliberately untouchable. Under `preserve-3d` this
+          wrapper's plane is coplanar with the content it carries, so the hit
+          test resolves unstably between the two as the device drifts — about
+          a third of the time it answered "the wrapper", and a click on the
+          app inside would quietly do nothing. It paints nothing, so it has no
+          business being hit at all. */}
       <div
         ref={tiltRef}
-        className="relative size-full"
+        className="pointer-events-none relative size-full"
         style={{
           transformStyle: "preserve-3d",
           willChange: "transform",
@@ -116,6 +122,7 @@ export default function HeroDevice({ className = "" }: { className?: string }) {
         <div
           style={{
             position: "absolute",
+            pointerEvents: "auto",
             top: 0,
             left: 0,
             width: BODY_W,

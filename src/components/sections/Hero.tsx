@@ -219,15 +219,19 @@ export default function Hero() {
       {hasDeviceColumn && (
         <div
           data-hero-device
-          className="absolute inset-y-0 right-[4%] z-(--z-content) flex items-center xl:right-[5.5%]"
+          // Above the content block, not level with it. That block is
+          // h-full and comes later in the DOM, so at the same z-index it
+          // covers the device and swallows every click meant for the app
+          // inside it. Nothing of the content reaches into this column.
+          className="absolute top-[88px] right-[4%] bottom-[164px] z-20 flex items-center xl:right-[5.5%]"
         >
-          <HeroDevice className="h-[min(76svh,640px)]" />
+          <HeroDevice className="h-full max-h-[600px]" />
         </div>
       )}
 
       <div
         ref={contentRef}
-        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14 lg:pr-[32%]"
+        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14"
       >
         <p
           data-hero-fade
@@ -238,7 +242,7 @@ export default function Hero() {
           </span>
         </p>
 
-        <h1 className="type-display text-hero -ml-[0.06em] opacity-0 lg:text-hero-aside">
+        <h1 className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside">
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
               Money

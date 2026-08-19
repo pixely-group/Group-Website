@@ -31,7 +31,7 @@ function StatusChip({ status }: { status: TxStatus }) {
         : "bg-signal/10 text-signal-deep";
   return (
     <span
-      className={`inline-block rounded-[3px] px-1.5 py-0.5 font-mono text-[9.5px] tracking-[0.06em] whitespace-nowrap uppercase ${skin}`}
+      className={`inline-block rounded-(--radius-control) px-1.5 py-0.5 font-mono text-[9.5px] tracking-[0.06em] whitespace-nowrap uppercase ${skin}`}
     >
       {status === "Approval" ? "Needs approval" : status}
     </span>
@@ -57,7 +57,7 @@ export default function ProductUI() {
   return (
     <div
       data-product-frame
-      className="relative w-full min-w-[880px] rounded-[6px] border border-ink/10 bg-[#f7f5f0] text-ink shadow-[0_60px_120px_-60px_rgba(10,10,11,0.5)]"
+      className="relative w-full min-w-[880px] rounded-(--radius-panel) border border-ink/10 bg-[#f7f5f0] text-ink shadow-[0_60px_120px_-60px_rgba(10,10,11,0.5)]"
       role="img"
       aria-label="Pixely treasury workspace: accounts, payments, FX and controls in one view"
     >
@@ -79,7 +79,7 @@ export default function ProductUI() {
               {NAV_ITEMS.map((item, i) => (
                 <span
                   key={item}
-                  className={`rounded-[4px] px-2.5 py-1.5 text-[11.5px] font-medium ${
+                  className={`rounded-(--radius-control) px-2.5 py-1.5 text-[11.5px] font-medium ${
                     i === 0
                       ? "bg-ink/85 text-bone"
                       : "text-ink/62 hover:bg-ink/4"
@@ -110,13 +110,13 @@ export default function ProductUI() {
               <span className="font-medium text-ink">Overview</span>
             </p>
             <div className="flex items-center gap-2.5">
-              <span className="flex items-center gap-6 rounded-[4px] border border-ink/10 bg-white/70 px-2.5 py-1 text-[11px] text-ink/45">
+              <span className="flex items-center gap-6 rounded-(--radius-control) border border-ink/10 bg-white/70 px-2.5 py-1 text-[11px] text-ink/45">
                 Search
                 <kbd className="font-mono text-[9px] text-ink/35">⌘K</kbd>
               </span>
               <span
                 data-ui="new-payment"
-                className="rounded-[4px] bg-signal px-3 py-1.5 text-[11px] font-semibold text-white"
+                className="rounded-(--radius-control) bg-signal px-3 py-1.5 text-[11px] font-semibold text-white"
               >
                 New payment
               </span>
@@ -133,7 +133,7 @@ export default function ProductUI() {
                 {ACCOUNTS.map((acct) => (
                   <div
                     key={acct.name}
-                    className="rounded-[5px] border border-ink/8 bg-[#fdfcfa] p-3"
+                    className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-3"
                   >
                     <div className="flex items-baseline justify-between">
                       <p className="text-[11px] font-semibold">{acct.name}</p>
@@ -160,7 +160,7 @@ export default function ProductUI() {
               {/* — Transactions */}
               <div
                 data-panel="table"
-                className="mt-3 overflow-hidden rounded-[5px] border border-ink/8 bg-[#fdfcfa]"
+                className="mt-3 overflow-hidden rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa]"
               >
                 <div className="flex items-center justify-between border-b border-ink/7 px-3.5 py-2">
                   <p className="text-[11px] font-semibold">Latest activity</p>
@@ -192,7 +192,7 @@ export default function ProductUI() {
                           {tx.ref}
                         </td>
                         <td>
-                          <span className="rounded-[3px] border border-ink/10 px-1 py-px font-mono text-[9px] text-ink/55">
+                          <span className="rounded-(--radius-control) border border-ink/10 px-1 py-px font-mono text-[9px] text-ink/55">
                             {tx.rail}
                           </span>
                         </td>
@@ -221,7 +221,7 @@ export default function ProductUI() {
             >
               <div
                 data-panel="fx"
-                className="rounded-[5px] border border-ink/8 bg-[#fdfcfa] p-3"
+                className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-3"
               >
                 <div className="flex items-baseline justify-between">
                   <p className="text-[11px] font-semibold">FX — EUR → USD</p>
@@ -246,7 +246,7 @@ export default function ProductUI() {
 
               <div
                 data-panel="approvals"
-                className="rounded-[5px] border border-ink/8 bg-[#fdfcfa] p-3"
+                className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-3"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-semibold">Approvals</p>
@@ -275,7 +275,7 @@ export default function ProductUI() {
                 // A dark panel inside a light chapter: the cursor has to
                 // ignore the section theme and stay light over it.
                 data-cursor-theme="ink"
-                className="flex-1 rounded-[5px] border border-ink/8 bg-ink p-3 text-bone/80"
+                className="flex-1 rounded-(--radius-control) border border-ink/8 bg-ink p-3 text-bone/80"
               >
                 <p className="mb-2 flex items-center justify-between font-mono text-[9px] tracking-[0.1em] text-bone/45 uppercase">
                   Event stream
