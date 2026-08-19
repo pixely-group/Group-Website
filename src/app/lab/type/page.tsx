@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 import {
-  Bodoni_Moda,
-  DM_Serif_Display,
-  Fraunces,
-  Instrument_Serif,
-  Playfair_Display,
+  Chakra_Petch,
+  Orbitron,
+  Sora,
+  Space_Grotesk,
+  Unbounded,
 } from "next/font/google";
 import { useState } from "react";
 
@@ -15,71 +15,97 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 });
 
 /* Declared here rather than in the root layout, so the candidates ship with
-   this page alone and never reach the site's own bundle. */
-const fraunces = Fraunces({ subsets: ["latin"], style: ["italic"], variable: "--f-fraunces" });
-const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["italic"], variable: "--f-instrument" });
-const playfair = Playfair_Display({ subsets: ["latin"], style: ["italic"], variable: "--f-playfair" });
-const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400", style: ["italic"], variable: "--f-dm" });
-const bodoni = Bodoni_Moda({ subsets: ["latin"], style: ["italic"], variable: "--f-bodoni" });
+   this route and never reach the site's bundle. */
+const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--f-grotesk" });
+const chakra = Chakra_Petch({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--f-chakra" });
+const sora = Sora({ subsets: ["latin"], variable: "--f-sora" });
+const unbounded = Unbounded({ subsets: ["latin"], variable: "--f-unbounded" });
+const orbitron = Orbitron({ subsets: ["latin"], variable: "--f-orbitron" });
 
 type Candidate = {
   id: string;
   name: string;
   family: string;
   note: string;
-  /** Fraunces alone has axes worth setting; the rest ignore this. */
-  variation?: string;
-  /** Optical size differs enough between these to need trimming by eye. */
+  weight: number;
+  /** x-heights differ enough that 1em would compare metrics, not shapes. */
   scale: number;
+  tracking: string;
 };
 
 const CANDIDATES: Candidate[] = [
   {
-    id: "fraunces",
-    name: "Fraunces",
-    family: "var(--f-fraunces)",
-    variation: '"opsz" 144, "SOFT" 0, "WONK" 1',
-    scale: 1.02,
-    note: "What is on the site. Drawn rather than set — the WONK axis gives it the single-storey forms that stop it reading as a generic italic beside Archivo.",
+    id: "mono",
+    name: "Plex Mono",
+    family: "var(--font-plex-mono)",
+    weight: 500,
+    scale: 0.92,
+    tracking: "-0.02em",
+    note: "Already in the system as the machine voice — every micro-label on the site is set in it, and it costs nothing to add. The one word the sentence is about, set in the typeface the machine speaks in.",
   },
   {
-    id: "instrument",
-    name: "Instrument Serif",
-    family: "var(--f-instrument)",
-    scale: 1.1,
-    note: "What you had before. Narrower and quieter, with high contrast and a long elegant tail. Recedes more; lets the caps around it lead.",
-  },
-  {
-    id: "playfair",
-    name: "Playfair Display",
-    family: "var(--f-playfair)",
+    id: "grotesk",
+    name: "Space Grotesk",
+    family: "var(--f-grotesk)",
+    weight: 700,
     scale: 1.0,
-    note: "The familiar editorial choice. Sharp brackets, strong vertical stress. Handsome and very legible at size, but the most-used serif on the web.",
+    tracking: "-0.03em",
+    note: "The current default for technology brands, and deservedly so: geometric underneath with just enough irregularity in the g and the a to not read as generic. Modern without costume.",
   },
   {
-    id: "dm",
-    name: "DM Serif Display",
-    family: "var(--f-dm)",
+    id: "chakra",
+    name: "Chakra Petch",
+    family: "var(--f-chakra)",
+    weight: 700,
     scale: 1.0,
-    note: "Heavier and more solid. Holds its weight against the caps rather than contrasting with them — the word reads as part of the line, not an aside.",
+    tracking: "-0.01em",
+    note: "Squared terminals and clipped corners — an instrument-panel feel without going full science fiction. The most overtly technical of the five that still behaves as text.",
   },
   {
-    id: "bodoni",
-    name: "Bodoni Moda",
-    family: "var(--f-bodoni)",
-    scale: 1.06,
-    note: "A true Didone: hairline joins against thick stems, unmodulated. The most dramatic of the five, and the most fragile at small sizes.",
+    id: "sora",
+    name: "Sora",
+    family: "var(--f-sora)",
+    weight: 700,
+    scale: 0.98,
+    tracking: "-0.03em",
+    note: "Drawn for technology products specifically. Cleaner and more even than Space Grotesk, with a wider aperture — confident rather than characterful.",
+  },
+  {
+    id: "unbounded",
+    name: "Unbounded",
+    family: "var(--f-unbounded)",
+    weight: 700,
+    scale: 0.9,
+    tracking: "-0.04em",
+    note: "Contemporary display, very wide and very present. Reads as a brand mark rather than a word, which may be exactly right for the one word carrying the name.",
+  },
+  {
+    id: "orbitron",
+    name: "Orbitron",
+    family: "var(--f-orbitron)",
+    weight: 700,
+    scale: 0.88,
+    tracking: "-0.02em",
+    note: "The far end, included for calibration. Unmistakably futuristic and unmistakably a costume — worth seeing so you know where the line is, even if it sits past it.",
   },
 ];
 
 export default function TypeLab() {
-  const [id, setId] = useState("fraunces");
-  const current = CANDIDATES.find((c) => c.id === id)!;
+  const [id, setId] = useState("grotesk");
+  const c = CANDIDATES.find((x) => x.id === id)!;
+
+  const face = {
+    fontFamily: c.family,
+    fontWeight: c.weight,
+    fontStyle: "normal" as const,
+    letterSpacing: c.tracking,
+    textTransform: "none" as const,
+  };
 
   return (
     <main
       data-theme="ink"
-      className={`${fraunces.variable} ${instrument.variable} ${playfair.variable} ${dmSerif.variable} ${bodoni.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
+      className={`${grotesk.variable} ${chakra.variable} ${sora.variable} ${unbounded.variable} ${orbitron.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
     >
       <div
         aria-hidden
@@ -100,18 +126,7 @@ export default function TypeLab() {
           <span className="block">move</span>
           <span className="block">
             in a{" "}
-            <em
-              className="font-normal"
-              style={{
-                fontFamily: current.family,
-                fontStyle: "italic",
-                fontSize: `${current.scale}em`,
-                fontVariationSettings: current.variation,
-                textTransform: "none",
-              }}
-            >
-              Znap
-            </em>
+            <span style={{ ...face, fontSize: `${c.scale}em` }}>Znap</span>
             <span className="text-accent">!</span>
           </span>
         </h1>
@@ -134,27 +149,28 @@ export default function TypeLab() {
 
       <div className="fixed inset-x-0 top-5 z-50 flex justify-center px-4">
         <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-(--radius-panel) border border-(--line-strong) bg-ink/85 p-1.5 backdrop-blur-xl">
-          {CANDIDATES.map((c) => {
-            const on = c.id === id;
+          {CANDIDATES.map((x) => {
+            const on = x.id === id;
             return (
               <button
-                key={c.id}
+                key={x.id}
                 type="button"
-                onClick={() => setId(c.id)}
+                onClick={() => setId(x.id)}
                 data-cursor="link"
                 className={`type-label rounded-[calc(var(--radius-panel)-6px)] px-4 py-2.5 transition-colors duration-300 ${
                   on ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
                 }`}
               >
-                {c.name}
+                {x.name}
               </button>
             );
           })}
         </div>
+
       </div>
 
       <p className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-2xl px-6 text-center text-[0.8rem] leading-relaxed text-(--muted)">
-        <span className="text-(--fg)">{current.name}</span> — {current.note}
+        <span className="text-(--fg)">{c.name}</span> — {c.note}
       </p>
     </main>
   );
