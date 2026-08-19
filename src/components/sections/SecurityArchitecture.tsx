@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CURSOR_DOT_LINK_PX } from "@/components/chrome/CustomCursor";
 import { gsap } from "@/lib/gsap";
 
 const LAYERS = [
@@ -57,18 +58,26 @@ export default function SecurityArchitecture() {
   // A layer the reader has chosen. While one is held the descending request
   // stops driving the highlight, so their selection is not overwritten a
   // moment later. Read from a ref inside the timeline, which outlives renders.
-  const [pinned, setPinned] = useState<number | null>(null);
   const pinnedRef = useRef<number | null>(null);
   const beamElRef = useRef<SVGCircleElement | null>(null);
   // Where the scroll says the request should be. The timeline drives this
   // rather than the element, so a held selection can take the element over
   // without the scrub being disabled and left stale.
   const beamPos = useRef({ cy: 0 });
+  const registerRef = useRef<HTMLOListElement>(null);
+  const registerDotRef = useRef<HTMLSpanElement>(null);
+  const registerDotPlaced = useRef(false);
+  /** Armed a moment after a selection, so the ticks that immediately follow
+   *  a click cannot cancel it before the request has arrived. */
+  const releaseArmed = useRef(true);
 
   const selectLayer = (i: number) => {
     const next = pinnedRef.current === i ? null : i;
     pinnedRef.current = next;
-    setPinned(next);
+    releaseArmed.current = false;
+    window.setTimeout(() => {
+      releaseArmed.current = true;
+    }, 400);
     setActiveLayer(next ?? i);
 
     const beam = beamElRef.current;
@@ -86,6 +95,32 @@ export default function SecurityArchitecture() {
       overwrite: true,
     });
   };
+
+  // One marker that travels down the register to whichever layer is
+  // current — the same idea as the nav's, at the same size as the cursor's
+  // own dot so the two read as one language.
+  useEffect(() => {
+    const ol = registerRef.current;
+    const dot = registerDotRef.current;
+    if (!ol || !dot) return;
+    const heading = ol.querySelectorAll("h3")[activeLayer];
+    if (!heading) return;
+
+    const olBox = ol.getBoundingClientRect();
+    const box = heading.getBoundingClientRect();
+    const y = box.top - olBox.top + box.height / 2 - CURSOR_DOT_LINK_PX / 2;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (registerDotPlaced.current && !reduced) {
+      gsap.to(dot, { y, opacity: 1, duration: 0.45, ease: "expo.out", overwrite: true });
+    } else {
+      gsap.set(dot, { y });
+      gsap.to(dot, { opacity: 1, duration: reduced ? 0 : 0.25, overwrite: true });
+    }
+    registerDotPlaced.current = true;
+  }, [activeLayer]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -149,8 +184,8 @@ export default function SecurityArchitecture() {
             duration: 1,
             ease: "none",
             onUpdate: () => {
-              // A held selection owns the element; the scroll keeps tracking
-              // underneath so releasing has somewhere to return to.
+              // A held layer owns the element; the scroll keeps tracking
+              // underneath, so releasing has somewhere to return to.
               if (pinnedRef.current !== null) return;
               const t = tl.progress();
               const fade = 0.06;
@@ -167,7 +202,17 @@ export default function SecurityArchitecture() {
           0,
         );
 
+        // Genuine scrolling hands control back. Guarded by a moment's grace
+        // so the ticks that follow a click cannot cancel it before the
+        // request has even arrived.
+        const releaseOnScroll = () => {
+          if (pinnedRef.current === null || !releaseArmed.current) return;
+          pinnedRef.current = null;
+        };
+        window.addEventListener("scroll", releaseOnScroll, { passive: true });
+
         return () => {
+          window.removeEventListener("scroll", releaseOnScroll);
           tl.scrollTrigger?.kill();
           tl.kill();
         };
@@ -251,7 +296,12 @@ export default function SecurityArchitecture() {
                 const cy = layerY(i);
                 const on = activeLayer === i;
                 return (
-                  <g key={layer.name} data-plate>
+                  <g
+                    key={layer.name}
+                    data-plate
+                    onClick={() => selectLayer(i)}
+                    style={{ cursor: "pointer" }}
+                  >
                     {/* side wall, gives the plate thickness */}
                     <path
                       d={`M ${CX - HW} ${cy} L ${CX} ${cy + HH} L ${CX + HW} ${cy} L ${CX + HW} ${cy + 11} L ${CX} ${cy + HH + 11} L ${CX - HW} ${cy + 11} Z`}
@@ -321,7 +371,17 @@ export default function SecurityArchitecture() {
           </div>
 
           {/* — The register */}
-          <ol className="relative">
+          <ol ref={registerRef} className="relative">
+            <span
+              ref={registerDotRef}
+              aria-hidden
+              style={{
+                width: CURSOR_DOT_LINK_PX,
+                height: CURSOR_DOT_LINK_PX,
+                opacity: 0,
+              }}
+              className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
+            />
             {LAYERS.map((layer, i) => {
               const on = activeLayer === i;
               return (
@@ -331,7 +391,7 @@ export default function SecurityArchitecture() {
                     onClick={() => selectLayer(i)}
                     aria-current={on ? "true" : undefined}
                     data-cursor="link"
-                    className={`group block w-full py-5 text-left transition-opacity duration-500 ${
+                    className={`group block w-full py-5 pl-5 text-left transition-opacity duration-500 ${
                       on ? "opacity-100" : "opacity-60 hover:opacity-90"
                     }`}
                   >
@@ -342,12 +402,6 @@ export default function SecurityArchitecture() {
                         }`}
                       >
                         {layer.name}
-                        {pinned === i && (
-                          <span
-                            aria-hidden
-                            className="inline-block size-1 rotate-45 bg-accent"
-                          />
-                        )}
                       </h3>
                       <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
                         {layer.note}
