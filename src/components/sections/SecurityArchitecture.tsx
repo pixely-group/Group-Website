@@ -127,6 +127,11 @@ type Geo = {
   VB_H: number;
 };
 
+// VB_H is written as its arithmetic rather than a literal: headroom above
+// the first plate, the gaps between, the last plate's lower half, then a
+// margin. Changing a gap has to carry the drawing's height — and with it
+// every register entry, which hangs on a fraction of that height — or the
+// two silently part company.
 const NARROW: Geo = {
   HW: 168,
   HH: 84,
@@ -134,17 +139,17 @@ const NARROW: Geo = {
   CX: 210,
   TOP: 96,
   VB_W: 470,
-  VB_H: 632,
+  VB_H: 96 + 82 * (LAYERS.length - 1) + 84 + 124,
 };
 
 const WIDE: Geo = {
   HW: 200,
   HH: 100,
-  GAP: 160,
+  GAP: 116,
   CX: 260,
   TOP: 110,
   VB_W: 520,
-  VB_H: 890,
+  VB_H: 110 + 116 * (LAYERS.length - 1) + 100 + 40,
 };
 
 const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
@@ -664,6 +669,16 @@ export default function SecurityArchitecture() {
                     ? { c: "currentColor", o: 0.16, w: 1 }
                     : { c: "currentColor", o: 0.42, w: 1 };
               const wallDepth = Math.round(geo.HH * 0.13);
+              // Lettering sits above the plate's centre line, because the
+              // plate below is drawn after this one and covers everything
+              // under its own top vertex — only 16 units below centre now
+              // that the run has closed up. It cannot go far up either: the
+              // diamond narrows, and the longest word (LEDGER, 70 units set)
+              // ran past the edge from 0.71·HH out. 0.55·HH out and 0.26·HH
+              // up clears both by more than 20. Expressed as the one point
+              // in the face's own plane that lands there.
+              const faceX = -geo.HH * 0.535;
+              const faceY = geo.HH * 0.015;
 
               return (
                 <g
@@ -700,24 +715,29 @@ export default function SecurityArchitecture() {
                     fillOpacity={hatch}
                     className="transition-[fill-opacity] duration-500"
                   />
-                  {/* Set in the plane of the face, the way a drawing
-                      would letter it. */}
-                  <text
-                    transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
-                    x="0"
-                    y={geo.HH * 0.69}
-                    textAnchor="middle"
-                    fontSize={faceSize}
-                    fontFamily="var(--font-mono)"
-                    letterSpacing="2"
-                    fill={passed || active ? tone : "currentColor"}
-                    fillOpacity={
-                      unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
-                    }
-                    className="transition-all duration-500"
-                  >
-                    {layer.face}
-                  </text>
+                  {/* Set in the plane of the face, the way a drawing would
+                      letter it — but only where there is a face to letter.
+                      In the tight stack the plates overlap until the clear
+                      band is thinner than the word, and the register
+                      directly beneath already names every layer. */}
+                  {wide && (
+                    <text
+                      transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
+                      x={faceX}
+                      y={faceY}
+                      textAnchor="middle"
+                      fontSize={faceSize}
+                      fontFamily="var(--font-mono)"
+                      letterSpacing="2"
+                      fill={passed || active ? tone : "currentColor"}
+                      fillOpacity={
+                        unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
+                      }
+                      className="transition-all duration-500"
+                    >
+                      {layer.face}
+                    </text>
+                  )}
                   <polygon
                     points={diamond(geo.CX, cy, geo.HW, geo.HH)}
                     fill="none"
@@ -866,10 +886,10 @@ export default function SecurityArchitecture() {
                         {layer.ms.toFixed(1)} ms
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
+                    <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted) lg:mt-1">
                       {layer.note}
                     </p>
-                    <p className="type-label mt-3 text-(--faint)">
+                    <p className="type-label mt-3 text-(--faint) lg:mt-2">
                       {layer.spec}
                     </p>
                   </button>
