@@ -41,15 +41,22 @@ const CORNER = 57;
  * at ten degrees it reads plainly.
  */
 /**
- * Positive yaw swings the right edge away, which is what turns the right
- * rail — the side carrying the lock button and Camera Control — toward the
- * camera. Measured rather than reasoned: at +20 that rail projects 27px
- * against the left's 14, and at -20 the two swap. At five degrees either
- * way it was a hairline; at twenty it is a face.
+ * Which rail you see is decided by surface normals, not by bounding boxes —
+ * I checked it the second way first and got it backwards.
+ *
+ * The right rail carries its own rotateY(90deg), so under a parent yaw P its
+ * normal points along cos(P + 90) = -sin(P): it faces the camera only while
+ * P is negative. The left rail is the mirror of that. So negative yaw shows
+ * the lock button and Camera Control; positive shows the Action button and
+ * the volume pair.
+ *
+ * Held at -14 with a 7 degree swing, so P stays between -21 and -7 and that
+ * side is presented the whole time — enough to read as an edge, not so much
+ * that the screen turns away.
  */
-const REST_Y = 20;
+const REST_Y = -14;
 const REST_X = 2;
-const SWING_Y = 10;
+const SWING_Y = 7;
 const SWING_X = 6;
 const PERSPECTIVE = 820;
 
