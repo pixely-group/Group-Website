@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
 import type { HeroBus } from "@/components/three/HeroScene";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 
@@ -13,58 +14,48 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
-  loading: () => <HeroBackdrop />,
+  loading: () => <HeroPoster />,
 });
 
-/**
- * The sheet the hero is drawn on: column rules, a ticked horizon, and the
- * scrim that keeps the corner the type occupies clean.
- *
- * Kept separate from the ground because it composites *over* the environment.
- * The canvas clears to opaque ink, so anything meant to be seen with the
- * scene has to sit on top of it, not behind.
- */
-function HeroSheet() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-[6]">
-      {[13, 31, 49.5, 68, 86.5].map((x) => (
-        <span
-          key={x}
-          className="absolute inset-y-0 w-px"
-          style={{ left: `${x}%`, background: "rgb(236 233 225 / 0.04)" }}
-        />
-      ))}
-      <span
-        className="absolute inset-x-0 h-px"
-        style={{ top: "63%", background: "rgb(236 233 225 / 0.045)" }}
-      />
-      {Array.from({ length: 24 }, (_, i) => (
-        <span
-          key={i}
-          className="absolute h-[5px] w-px"
-          style={{
-            left: `${2 + i * 4.2}%`,
-            top: "63%",
-            background: "rgb(236 233 225 / 0.06)",
-          }}
-        />
-      ))}
-      <div className="absolute inset-0 bg-[radial-gradient(150%_115%_at_10%_86%,rgba(10,10,11,0.97)_0%,rgba(10,10,11,0.82)_30%,rgba(10,10,11,0.4)_52%,transparent_76%)]" />
-    </div>
-  );
-}
-
-/**
- * The ground, for when there is no environment over it — reduced motion, a
- * failed chunk, or the moment before the scene arrives. Two slow pools so the
- * frame is never dead, and the same sheet on top.
- */
-function HeroBackdrop() {
+/** Static fallback: reduced motion, WebGL unavailable, or chunk loading. */
+function HeroPoster() {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden bg-ink">
-      <div className="hero-pool absolute top-[6%] right-[2%] h-[86%] w-[62%] bg-[radial-gradient(closest-side,rgba(45,70,255,0.30),rgba(45,70,255,0.09)_46%,transparent_72%)]" />
-      <div className="hero-pool-slow absolute -top-[18%] -left-[10%] h-[70%] w-[52%] bg-[radial-gradient(closest-side,rgba(236,233,225,0.07),transparent_70%)]" />
-      <HeroSheet />
+      <svg
+        className="absolute inset-0 size-full"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+        fill="none"
+      >
+        {Array.from({ length: 9 }, (_, i) => (
+          <path
+            key={i}
+            d={`M -60 ${140 + i * 88} C 360 ${110 + i * 88 + (i % 3) * 40}, 900 ${180 + i * 80}, 1500 ${300 + i * 52}`}
+            stroke="#ece9e1"
+            strokeOpacity={0.07 + (i % 3) * 0.02}
+            strokeWidth="1"
+          />
+        ))}
+        <ellipse
+          cx="1010"
+          cy="430"
+          rx="330"
+          ry="120"
+          stroke="#ece9e1"
+          strokeOpacity="0.14"
+          transform="rotate(-16 1010 430)"
+        />
+        <ellipse
+          cx="1010"
+          cy="430"
+          rx="190"
+          ry="64"
+          stroke="#7290ff"
+          strokeOpacity="0.25"
+          transform="rotate(-16 1010 430)"
+        />
+      </svg>
+      <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_100%,transparent_40%,#0a0a0b_100%)]" />
     </div>
   );
 }
@@ -72,18 +63,24 @@ function HeroBackdrop() {
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  /** The device only has a column to stand in from lg up. Gating the mount
-   *  rather than hiding it keeps its markup and its ticker off phones. */
-  const bus = useRef<HeroBus>({ progress: 0, pointer: [0, 0] });
+  const bus = useRef<HeroBus>({
+    progress: 0,
+    velocity: 0,
+    pointer: [0, 0],
+  });
   const [active, setActive] = useState(true);
   const reduced = useReducedMotion();
   const small = useMediaQuery("(max-width: 767px)");
+  /** The device only has a column to stand in from lg up. Gating the mount
+   *  rather than hiding it keeps its markup and its ticker off phones. */
   const hasDeviceColumn = useMediaQuery("(min-width: 1024px)");
   /** Below xl the corridor between the headline and the scroll marker is
    *  barely wider than the device, so it gets a smaller one and less room
    *  to slide. */
   const roomy = useMediaQuery("(min-width: 1280px)");
-  // Pointer → NDC for the scene.
+  const lenis = useLenis();
+
+  // Pointer → NDC for the scene + subtle content parallax.
   useEffect(() => {
     if (reduced) return;
     const onMove = (e: PointerEvent) => {
@@ -95,6 +92,15 @@ export default function Hero() {
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
   }, [reduced]);
+
+  useEffect(() => {
+    if (!lenis) return;
+    const onScroll = ({ velocity }: { velocity: number }) => {
+      bus.current.velocity = velocity;
+    };
+    lenis.on("scroll", onScroll);
+    return () => lenis.off("scroll", onScroll);
+  }, [lenis]);
 
   // Scroll progress + content departure.
   useEffect(() => {
@@ -111,7 +117,6 @@ export default function Hero() {
           bus.current.progress = self.progress;
         },
       });
-      // Nothing renders while the hero is off screen.
       ScrollTrigger.create({
         trigger: section,
         start: "top bottom",
@@ -133,10 +138,10 @@ export default function Hero() {
         // The device is nearer the reader than the type, so it leaves by
         // more. Same trigger, so the two stay in step.
         //
-        // Guarded, and the effect waits for the mount: the device is behind a
-        // media query, so on the first pass this selector finds nothing and
+        // Guarded, and the effect waits for the mount: the device sits behind
+        // a media query, so on the first pass this selector finds nothing and
         // GSAP tweens an empty target without complaining — the type would
-        // depart and the phone would sit there.
+        // depart on scroll and the phone would sit where it was.
         const device = section.querySelector("[data-hero-device]");
         if (device) {
           gsap.to(device, {
@@ -211,16 +216,17 @@ export default function Hero() {
       aria-label="Pixely — money should move in a snap"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
-      {reduced ? (
-        <HeroBackdrop />
-      ) : (
-        <>
-          <div className="absolute inset-0" aria-hidden>
-            <HeroScene bus={bus} count={small ? 900 : 2600} active={active} />
-          </div>
-          <HeroSheet />
-        </>
-      )}
+      <div className="absolute inset-0" aria-hidden>
+        {reduced ? (
+          <HeroPoster />
+        ) : (
+          <HeroScene
+            bus={bus}
+            count={small ? 4500 : 14000}
+            active={active}
+          />
+        )}
+      </div>
 
       {hasDeviceColumn && (
         <div
