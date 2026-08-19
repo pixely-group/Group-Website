@@ -26,6 +26,7 @@
   --font-display: var(--font-archivo);
   --font-serif: var(--font-fraunces);
   --font-mono: var(--font-plex-mono);
+  --font-dots: var(--font-bitcount);
 
   /* — Motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

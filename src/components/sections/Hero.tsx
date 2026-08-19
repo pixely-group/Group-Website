@@ -7,7 +7,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
-import ZnapSignature from "@/components/ui/ZnapSignature";
+import ZnapDots from "@/components/ui/ZnapDots";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
   ssr: false,
@@ -287,18 +287,10 @@ export default function Hero() {
               {/* The lettering is taller than the line it sits on, so it hangs
                   out of a short wrapper instead of stretching the line box and
                   opening a gap under "move". */}
-              {/* The negative margin takes back the empty run-in inside the
-                  viewBox, which otherwise stacks on the word space and leaves
-                  the lettering floating away from "in a". */}
-              <span className="relative -ml-[0.22em] inline-block h-[0.8em] w-[3.4em] align-baseline">
-                {/* Each hand carries its own stroke weight; Marker's holds
-                    against the display caps where the lighter hands read thin. */}
-                <ZnapSignature
-                  hand="marker"
-                  play={signing}
-                  className="absolute bottom-[-0.51em] left-0 w-full"
-                />
-              </span>
+              {/* Pulled left so the dots sit against "in a" rather than a word space
+                  plus the grid's own left inset, and kept clear of the device
+                  column, which paints above the headline. */}
+              <ZnapDots play={signing} className="-ml-[0.12em] align-baseline" />
             </span>
           </span>
         </h1>

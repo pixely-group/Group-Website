@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Fraunces, IBM_Plex_Mono, Nunito } from "next/font/google";
+import {
+  Archivo,
+  Bitcount_Prop_Double,
+  Fraunces,
+  IBM_Plex_Mono,
+  Nunito,
+} from "next/font/google";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -35,6 +41,18 @@ const nunito = Nunito({
   weight: ["400", "500", "600", "700"],
 });
 
+/**
+ * The word "Znap" is built from dots rather than strokes, which is the whole
+ * point of it — the dots are what animates. CRSV is loaded so the letterforms
+ * can be held upright; at its 0.5 default the dots run together into strokes.
+ */
+const bitcount = Bitcount_Prop_Double({
+  subsets: ["latin"],
+  axes: ["CRSV", "ELSH", "ELXP", "slnt"],
+  variable: "--font-bitcount",
+  display: "swap",
+});
+
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -65,7 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} ${nunito.variable} h-full`}
+      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} ${nunito.variable} ${bitcount.variable} h-full`}
     >
       {/* Extensions commonly stamp attributes onto <body> before React
           hydrates — the reported mismatch was a testing extension adding
