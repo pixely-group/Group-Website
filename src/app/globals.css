@@ -35,12 +35,21 @@
   --duration-base: 500ms;
   --duration-slow: 900ms;
 
-  /* — Radii. Small and precise: this page is built from hairlines and
-     sharp rules. The corner still grows with the surface it sits on — the
-     panel keeps the same 1.5x on the control it always had. */
-  --radius-control: 8px;
-  --radius-chip: 8px;
-  --radius-panel: 12px;
+  /* — Radii. Soft and generous: the corner is now a deliberate part of the
+     voice rather than something kept out of the way. The corner still grows
+     with the surface it sits on, and the two are related on purpose — a
+     control sitting 4px inside a panel wants exactly the panel's corner less
+     that 4px, which is what 22 and 18 give. The nav's button is that case. */
+  --radius-control: 18px;
+  --radius-chip: 18px;
+  --radius-panel: 22px;
+  /* The product mocks are miniatures: their controls stand 28px tall and
+     their badges 15px, against 40-56px out here. They take the same corner
+     at the same ratio rather than the same number of pixels — an 18px corner
+     on a 15px badge is not this corner, it is whatever the browser clamps it
+     to. Derived, so they follow the three above wherever those go. */
+  --radius-mock: calc(var(--radius-control) / 2);
+  --radius-mock-tag: calc(var(--radius-control) / 4);
 
   /* — Layers */
   --z-canvas: 0;

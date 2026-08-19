@@ -587,7 +587,7 @@ export default function SecurityArchitecture() {
                           }
                         : undefined
                     }
-                    className={`type-label rounded-[4px] px-3 py-2 transition-colors duration-300 ${
+                    className={`type-label rounded-[calc(var(--radius-chip)-4px)] px-3 py-2 transition-colors duration-300 ${
                       on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
                     }`}
                   >

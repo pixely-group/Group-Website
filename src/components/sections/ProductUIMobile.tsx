@@ -22,7 +22,7 @@ export default function ProductUIMobile() {
           </svg>
           <span className="type-headline text-[0.68rem]">Treasury</span>
         </div>
-        <span className="rounded-(--radius-control) bg-signal px-2.5 py-1 text-[10px] font-semibold text-white">
+        <span className="rounded-(--radius-mock) bg-signal px-2.5 py-1 text-[10px] font-semibold text-white">
           New payment
         </span>
       </div>
@@ -42,7 +42,7 @@ export default function ProductUIMobile() {
           {[eur, gbp].map((acct) => (
             <div
               key={acct.name}
-              className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-2.5"
+              className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-2.5"
             >
               <p className="font-mono text-[8.5px] tracking-[0.1em] text-ink/45 uppercase">
                 {acct.name}
@@ -54,7 +54,7 @@ export default function ProductUIMobile() {
           ))}
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa]">
+        <div className="mt-4 overflow-hidden rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa]">
           <p className="flex items-center justify-between border-b border-ink/7 px-3 py-2 text-[10.5px] font-semibold">
             Latest activity
             <span className="font-mono text-[8.5px] font-normal tracking-[0.1em] text-ink/40 uppercase">
@@ -88,14 +88,14 @@ export default function ProductUIMobile() {
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-3">
+          <div className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-3">
             <p className="text-[10px] font-semibold">EUR → USD</p>
             <p className="type-mono mt-1.5 text-[15px] font-medium">1.0842</p>
             <p className="mt-1 font-mono text-[8.5px] tracking-[0.08em] text-ink/45 uppercase">
               Mid · locked 28s
             </p>
           </div>
-          <div className="rounded-(--radius-control) border border-ink/8 bg-[#fdfcfa] p-3">
+          <div className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-3">
             <p className="flex items-center justify-between text-[10px] font-semibold">
               Approvals
               <span className="rounded-full bg-signal/10 px-1.5 font-mono text-[8.5px] text-signal-deep">
