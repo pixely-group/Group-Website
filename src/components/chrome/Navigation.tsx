@@ -31,9 +31,9 @@ const CONDENSE_OVER = 200;
  * which reads as the bar collapsing rather than settling.
  */
 export const NAV_INSETS =
-  "[--nav-gutter:24px] [--nav-inset:40px] " +
-  "sm:[--nav-gutter:40px] sm:[--nav-inset:72px] " +
-  "lg:[--nav-gutter:56px] lg:[--nav-inset:104px]";
+  "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:88rem] " +
+  "sm:[--nav-gutter:40px] sm:[--nav-inset:96px] " +
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:144px]";
 
 /**
  * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
@@ -43,9 +43,13 @@ export const NAV_INSETS =
  */
 export const NAV_GEOMETRY = {
   offsetTop: "calc(var(--nav-p) * 12px)",
+  // The condensed end is the breakpoint's inset, or whatever centres the bar
+  // within `--nav-max` on a display wide enough to need it — a fixed inset
+  // alone leaves the bar at ~90% of a large screen, which reads as no
+  // condensing at all. Both are lengths, so the range still interpolates.
   padInline:
-    "calc(var(--nav-gutter) + (var(--nav-inset) - var(--nav-gutter)) * var(--nav-p))",
-  padBlock: "calc(24px - var(--nav-p) * 18px)",
+    "calc(var(--nav-gutter) + (max(var(--nav-inset), (100% - var(--nav-max)) / 2) - var(--nav-gutter)) * var(--nav-p))",
+  padBlock: "calc(24px - var(--nav-p) * 20px)",
   padLeft: "calc(var(--nav-p) * 20px)",
   padRight: "calc(var(--nav-p) * 8px)",
 } as const;
