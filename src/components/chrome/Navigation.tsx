@@ -22,13 +22,16 @@ export const NAV_LINKS = [
 const CONDENSE_OVER = 160;
 
 /**
- * Breakpoint ends for the horizontal inset: the bar spans the page's gutter
- * at rest and draws in to a floating pill as it condenses.
+ * Breakpoint ends for the horizontal inset. At rest the bar spans the page's
+ * gutter; condensed it draws inward to a floating pill — genuinely narrower,
+ * which is what "condensing" should look like. `--nav-max` caps the
+ * condensed width so wide screens contract markedly rather than leaving a
+ * near-full-width bar hanging at the top.
  */
 export const NAV_INSETS =
-  "[--nav-gutter:24px] [--nav-inset:12px] " +
-  "sm:[--nav-gutter:40px] sm:[--nav-inset:20px] " +
-  "lg:[--nav-gutter:56px] lg:[--nav-inset:32px]";
+  "[--nav-gutter:24px] [--nav-inset:32px] [--nav-max:72rem] " +
+  "sm:[--nav-gutter:40px] sm:[--nav-inset:56px] " +
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:80px]";
 
 /**
  * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
@@ -38,8 +41,11 @@ export const NAV_INSETS =
  */
 export const NAV_GEOMETRY = {
   offsetTop: "calc(var(--nav-p) * 12px)",
+  // The condensed end is whichever is larger: the breakpoint's own inset, or
+  // whatever centres the bar within `--nav-max`. Both are lengths, so the
+  // whole expression interpolates — unlike a max-width cap, which snaps.
   padInline:
-    "calc(var(--nav-gutter) + (var(--nav-inset) - var(--nav-gutter)) * var(--nav-p))",
+    "calc(var(--nav-gutter) + (max(var(--nav-inset), (100% - var(--nav-max)) / 2) - var(--nav-gutter)) * var(--nav-p))",
   padBlock: "calc(24px - var(--nav-p) * 16px)",
   padLeft: "calc(var(--nav-p) * 20px)",
   padRight: "calc(var(--nav-p) * 8px)",
