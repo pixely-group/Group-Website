@@ -59,12 +59,32 @@ export default function SecurityArchitecture() {
   // moment later. Read from a ref inside the timeline, which outlives renders.
   const [pinned, setPinned] = useState<number | null>(null);
   const pinnedRef = useRef<number | null>(null);
+  const beamElRef = useRef<SVGCircleElement | null>(null);
+  // Where the scroll says the request should be. The timeline drives this
+  // rather than the element, so a held selection can take the element over
+  // without the scrub being disabled and left stale.
+  const beamPos = useRef({ cy: 0 });
 
   const selectLayer = (i: number) => {
     const next = pinnedRef.current === i ? null : i;
     pinnedRef.current = next;
     setPinned(next);
     setActiveLayer(next ?? i);
+
+    const beam = beamElRef.current;
+    if (!beam) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    // Selecting sends the request to that plate; releasing glides it back to
+    // wherever the scroll has since moved to.
+    gsap.to(beam, {
+      attr: { cy: next === null ? beamPos.current.cy : layerY(next) },
+      opacity: 1,
+      duration: reduced ? 0 : 0.6,
+      ease: "expo.out",
+      overwrite: true,
+    });
   };
 
   useEffect(() => {
@@ -87,20 +107,6 @@ export default function SecurityArchitecture() {
           scrollTrigger: { trigger: section, start: "top 72%" },
         });
 
-        // Exploded view: the stack separates slightly as you scroll past.
-        plates.forEach((plate, i) => {
-          gsap.to(plate, {
-            y: (i - (LAYERS.length - 1) / 2) * 26,
-            ease: "none",
-            scrollTrigger: {
-              trigger: section,
-              start: "top 60%",
-              end: "bottom 40%",
-              scrub: 0.6,
-            },
-          });
-        });
-
         // The request travels with the scroll rather than looping on its
         // own: scrubbed against the section, so it descends as you read down
         // and climbs back if you scroll up.
@@ -121,35 +127,45 @@ export default function SecurityArchitecture() {
           return best;
         };
 
+        // Triggered on the diagram, not the section: anchored to the section
+        // the request began travelling while only the heading was on screen,
+        // so most of its journey happened out of sight.
+        const stack = section.querySelector("[data-stack]") ?? section;
+        beamPos.current.cy = travelFrom;
+
         const tl = gsap.timeline({
           scrollTrigger: {
-            trigger: section,
-            start: "top 72%",
-            end: "bottom 28%",
+            trigger: stack,
+            start: "top 70%",
+            end: "bottom 30%",
             scrub: 0.6,
           },
         });
 
-        tl.fromTo(
-          beam,
-          { attr: { cy: travelFrom }, opacity: 0 },
+        tl.to(
+          beamPos.current,
           {
-            attr: { cy: travelTo },
-            opacity: 1,
+            cy: travelTo,
             duration: 1,
             ease: "none",
             onUpdate: () => {
-              // Read the beam itself, so the highlight follows the smoothed
-              // position rather than the raw scroll value.
-              const cy = Number(gsap.getProperty(beam, "cy"));
-              if (pinnedRef.current === null) setActiveLayer(nearestLayer(cy));
+              // A held selection owns the element; the scroll keeps tracking
+              // underneath so releasing has somewhere to return to.
+              if (pinnedRef.current !== null) return;
+              const t = tl.progress();
+              const fade = 0.06;
+              const opacity =
+                t < fade
+                  ? t / fade
+                  : t > 1 - fade
+                    ? Math.max(0, (1 - t) / fade)
+                    : 1;
+              gsap.set(beam, { attr: { cy: beamPos.current.cy }, opacity });
+              setActiveLayer(nearestLayer(beamPos.current.cy));
             },
           },
           0,
         );
-        // Only the ends fade; the middle of the run stays lit.
-        tl.to(beam, { opacity: 1, duration: 0.06, ease: "none" }, 0);
-        tl.to(beam, { opacity: 0, duration: 0.06, ease: "none" }, 0.94);
 
         return () => {
           tl.scrollTrigger?.kill();
@@ -193,7 +209,7 @@ export default function SecurityArchitecture() {
 
         <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-6">
           {/* — The stack */}
-          <div className="relative">
+          <div data-stack className="relative">
             <svg
               viewBox={`0 0 ${VB_W} ${VB_H}`}
               className="w-full"
@@ -293,6 +309,7 @@ export default function SecurityArchitecture() {
               })}
 
               <circle
+                ref={beamElRef}
                 data-beam
                 cx={CX}
                 cy={layerY(0) - HH}
@@ -314,26 +331,23 @@ export default function SecurityArchitecture() {
                     onClick={() => selectLayer(i)}
                     aria-current={on ? "true" : undefined}
                     data-cursor="link"
-                    className={`group grid w-full grid-cols-[3.2rem_1fr] gap-4 py-5 text-left transition-opacity duration-500 ${
+                    className={`group block w-full py-5 text-left transition-opacity duration-500 ${
                       on ? "opacity-100" : "opacity-60 hover:opacity-90"
                     }`}
                   >
-                    <span
-                      className={`type-label flex items-start gap-1.5 pt-1 transition-colors duration-500 ${
-                        on ? "text-accent" : "text-(--faint) group-hover:text-accent"
-                      }`}
-                    >
-                      {layer.index}
-                      {pinned === i && (
-                        <span
-                          aria-hidden
-                          className="mt-px inline-block size-1 rotate-45 bg-accent"
-                        />
-                      )}
-                    </span>
                     <div>
-                      <h3 className="text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 group-hover:text-accent">
+                      <h3
+                        className={`flex items-center gap-2 text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 group-hover:text-accent ${
+                          on ? "text-accent" : ""
+                        }`}
+                      >
                         {layer.name}
+                        {pinned === i && (
+                          <span
+                            aria-hidden
+                            className="inline-block size-1 rotate-45 bg-accent"
+                          />
+                        )}
                       </h3>
                       <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
                         {layer.note}
