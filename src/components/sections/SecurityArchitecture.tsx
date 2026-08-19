@@ -64,9 +64,13 @@ export default function SecurityArchitecture() {
   // rather than the element, so a held selection can take the element over
   // without the scrub being disabled and left stale.
   const beamPos = useRef({ cy: 0, opacity: 0 });
-  /** What is actually drawn. It eases toward the scroll's value every frame,
-   *  so control can change hands without the request ever teleporting. */
+  /** What is actually drawn. */
   const beamRender = useRef({ cy: 0 });
+  /** Distance between the drawn position and the scroll's own, captured the
+   *  moment control returns and then melted away. Without it the request
+   *  eases toward wherever the scroll target sat when the layer was picked —
+   *  travelling backwards to a stale position before following the scroll. */
+  const beamOffset = useRef(0);
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -210,11 +214,28 @@ export default function SecurityArchitecture() {
           "(prefers-reduced-motion: reduce)",
         ).matches;
         let lastIndex = -1;
+        let wasHeld = false;
         const draw = () => {
+          const held = pinnedRef.current !== null;
+          if (wasHeld && !held) {
+            // Control just came back. Keep the request exactly where it is
+            // and let it follow the scroll from here.
+            beamOffset.current = beamRender.current.cy - beamPos.current.cy;
+          }
+          wasHeld = held;
+
           // A held layer is being tweened directly; leave it alone.
-          if (pinnedRef.current === null) {
-            const gap = beamPos.current.cy - beamRender.current.cy;
-            beamRender.current.cy += reduced ? gap : gap * 0.12;
+          if (!held) {
+            if (reduced) beamOffset.current = 0;
+            // The offset is kept rather than closed. Anything that closes it
+            // walks the request back toward where the scroll happened to be
+            // when the layer was picked, which is the position it was moved
+            // away from. It travels by exactly what the scroll travels,
+            // starting from where it was left, and is held to the run's ends.
+            beamRender.current.cy = Math.min(
+              travelTo,
+              Math.max(travelFrom, beamPos.current.cy + beamOffset.current),
+            );
           }
           gsap.set(beam, {
             attr: { cy: beamRender.current.cy },
@@ -227,6 +248,7 @@ export default function SecurityArchitecture() {
           }
         };
         gsap.ticker.add(draw);
+
 
         // Genuine scrolling hands control back. Guarded by a moment's grace
         // so the ticks that follow a click cannot cancel it before the
