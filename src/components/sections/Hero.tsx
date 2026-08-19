@@ -213,7 +213,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       data-theme="ink"
-      aria-label="Znapy — money should move in a Znap"
+      aria-label="Znapy — money should move in a Znap!"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
       <div className="absolute inset-0" aria-hidden>
@@ -274,7 +274,7 @@ export default function Hero() {
             <span data-hero-line className="block">
               in a{" "}
               <em className="type-serif text-[1.02em] font-normal">Znap</em>
-              <span className="text-accent">.</span>
+              <span className="text-accent">!</span>
             </span>
           </span>
         </h1>

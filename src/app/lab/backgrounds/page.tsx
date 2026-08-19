@@ -48,7 +48,7 @@ export default function BackgroundsLab() {
             <span className="block">move</span>
           <span className="block">
             in a <em className="type-serif text-[1.02em] font-normal">Znap</em>
-            <span className="text-accent">.</span>
+            <span className="text-accent">!</span>
           </span>
         </h1>
 
