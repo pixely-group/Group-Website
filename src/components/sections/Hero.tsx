@@ -1,61 +1,63 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
-import type { HeroBus } from "@/components/three/HeroScene";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { useLenis } from "@/components/chrome/SmoothScroll";
-import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
+import { useEffect, useRef } from "react";
+import { gsap } from "@/lib/gsap";
+import { useMediaQuery } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
   ssr: false,
 });
 
-const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
-  ssr: false,
-  loading: () => <HeroPoster />,
-});
-
-/** Static fallback: reduced motion, WebGL unavailable, or chunk loading. */
-function HeroPoster() {
+/**
+ * The hero's ground.
+ *
+ * This was a WebGL flow field, and before the device arrived it had the frame
+ * to itself. It does not any more: a moving scene competes with both the
+ * headline and the phone, and whichever motif it wore, something in the frame
+ * lost. So there is no scene — a drawing sheet, two pools of light, and a
+ * horizon. Nothing here moves quickly enough to take the eye off the two
+ * things that should have it, and the page drops a WebGL bundle from its
+ * first load.
+ */
+function HeroBackdrop() {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden bg-ink">
-      <svg
-        className="absolute inset-0 size-full"
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-        fill="none"
-      >
-        {Array.from({ length: 9 }, (_, i) => (
-          <path
-            key={i}
-            d={`M -60 ${140 + i * 88} C 360 ${110 + i * 88 + (i % 3) * 40}, 900 ${180 + i * 80}, 1500 ${300 + i * 52}`}
-            stroke="#ece9e1"
-            strokeOpacity={0.07 + (i % 3) * 0.02}
-            strokeWidth="1"
+      {/* The device stands in this one; it is the only warm thing here. */}
+      <div className="hero-pool absolute top-[6%] right-[2%] h-[86%] w-[62%] bg-[radial-gradient(closest-side,rgba(45,70,255,0.30),rgba(45,70,255,0.09)_46%,transparent_72%)]" />
+      {/* And this one keeps the far corner from going flat. */}
+      <div className="hero-pool-slow absolute -top-[18%] -left-[10%] h-[70%] w-[52%] bg-[radial-gradient(closest-side,rgba(236,233,225,0.07),transparent_70%)]" />
+
+      {/* The sheet everything else on this page is drawn on. */}
+      <div className="absolute inset-0">
+        {[13, 31, 49.5, 68, 86.5].map((x) => (
+          <span
+            key={x}
+            className="absolute inset-y-0 w-px"
+            style={{ left: `${x}%`, background: "rgb(236 233 225 / 0.045)" }}
           />
         ))}
-        <ellipse
-          cx="1010"
-          cy="430"
-          rx="330"
-          ry="120"
-          stroke="#ece9e1"
-          strokeOpacity="0.14"
-          transform="rotate(-16 1010 430)"
+        <span
+          className="absolute inset-x-0 h-px"
+          style={{ top: "63%", background: "rgb(236 233 225 / 0.05)" }}
         />
-        <ellipse
-          cx="1010"
-          cy="430"
-          rx="190"
-          ry="64"
-          stroke="#7290ff"
-          strokeOpacity="0.25"
-          transform="rotate(-16 1010 430)"
-        />
-      </svg>
-      <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_100%,transparent_40%,#0a0a0b_100%)]" />
+        {/* Ticks along the horizon, the way the drawings elsewhere are marked. */}
+        {Array.from({ length: 24 }, (_, i) => (
+          <span
+            key={i}
+            className="absolute h-[5px] w-px"
+            style={{
+              left: `${2 + i * 4.2}%`,
+              top: "63%",
+              background: "rgb(236 233 225 / 0.07)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Keeps the corner the type sits in clean. */}
+      <div className="absolute inset-0 bg-[radial-gradient(130%_100%_at_14%_88%,rgba(10,10,11,0.95)_0%,rgba(10,10,11,0.55)_38%,transparent_72%)]" />
     </div>
   );
 }
@@ -63,14 +65,6 @@ function HeroPoster() {
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const bus = useRef<HeroBus>({
-    progress: 0,
-    velocity: 0,
-    pointer: [0, 0],
-  });
-  const [active, setActive] = useState(true);
-  const reduced = useReducedMotion();
-  const small = useMediaQuery("(max-width: 767px)");
   /** The device only has a column to stand in from lg up. Gating the mount
    *  rather than hiding it keeps its markup and its ticker off phones. */
   const hasDeviceColumn = useMediaQuery("(min-width: 1024px)");
@@ -78,51 +72,13 @@ export default function Hero() {
    *  barely wider than the device, so it gets a smaller one and less room
    *  to slide. */
   const roomy = useMediaQuery("(min-width: 1280px)");
-  const lenis = useLenis();
-
-  // Pointer → NDC for the scene + subtle content parallax.
-  useEffect(() => {
-    if (reduced) return;
-    const onMove = (e: PointerEvent) => {
-      bus.current.pointer = [
-        (e.clientX / window.innerWidth) * 2 - 1,
-        -((e.clientY / window.innerHeight) * 2 - 1),
-      ];
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [reduced]);
-
-  useEffect(() => {
-    if (!lenis) return;
-    const onScroll = ({ velocity }: { velocity: number }) => {
-      bus.current.velocity = velocity;
-    };
-    lenis.on("scroll", onScroll);
-    return () => lenis.off("scroll", onScroll);
-  }, [lenis]);
-
-  // Scroll progress + content departure.
+  // Content departure.
   useEffect(() => {
     const section = sectionRef.current;
     const content = contentRef.current;
     if (!section || !content) return;
 
     const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom top",
-        onUpdate: (self) => {
-          bus.current.progress = self.progress;
-        },
-      });
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top bottom",
-        end: "bottom top",
-        onToggle: (self) => setActive(self.isActive),
-      });
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.to(content, {
           yPercent: -12,
@@ -208,17 +164,7 @@ export default function Hero() {
       aria-label="Pixely — money should move in a snap"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
-      <div className="absolute inset-0" aria-hidden>
-        {reduced ? (
-          <HeroPoster />
-        ) : (
-          <HeroScene
-            bus={bus}
-            count={small ? 4500 : 14000}
-            active={active}
-          />
-        )}
-      </div>
+      <HeroBackdrop />
 
       {hasDeviceColumn && (
         <div
