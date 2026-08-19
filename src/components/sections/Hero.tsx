@@ -49,7 +49,7 @@ function HeroSheet() {
           }}
         />
       ))}
-      <div className="absolute inset-0 bg-[radial-gradient(130%_100%_at_14%_88%,rgba(10,10,11,0.94)_0%,rgba(10,10,11,0.5)_38%,transparent_72%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(150%_115%_at_10%_86%,rgba(10,10,11,0.97)_0%,rgba(10,10,11,0.82)_30%,rgba(10,10,11,0.4)_52%,transparent_76%)]" />
     </div>
   );
 }

@@ -26,7 +26,7 @@ const INK = new THREE.Color("#0a0a0b");
  * dark for the headline. That is the difference between a background with a
  * subject and a background competing with one.
  */
-const FOCUS_X = 4.0; // world x of the device's column
+const FOCUS_X = 5.6; // world x of the device's column
 
 /* ————————————————————————————— deep field ————————————————————————————— */
 
@@ -89,7 +89,7 @@ const NEBULA_FRAG = /* glsl */ `
     float n = fbm(p + vec2(uTime * 0.012, uTime * -0.008));
     n = smoothstep(0.32, 0.95, n);
     // Cool violet through the brand blue, never bright enough to be weather.
-    vec3 col = mix(vec3(0.07, 0.06, 0.20), vec3(0.16, 0.22, 0.72), n);
+    vec3 col = mix(vec3(0.09, 0.05, 0.22), vec3(0.30, 0.16, 0.74), n);
     // Fade to nothing at the edges so it never shows a seam.
     float edge = smoothstep(0.0, 0.42, vUv.x) * smoothstep(1.0, 0.58, vUv.x)
                * smoothstep(0.0, 0.34, vUv.y) * smoothstep(1.0, 0.66, vUv.y);
@@ -107,27 +107,70 @@ const PASS_VERT = /* glsl */ `
 
 /* ————————————————————————————— beam ————————————————————————————— */
 
+/** Stretched value noise. Sampled with a wildly anisotropic scale it gives
+ *  filaments rather than blobs, which is what the column is made of. */
+const NOISE_GLSL = /* glsl */ `
+  float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), u.x),
+               mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  const vec3 VIOLET = vec3(0.44, 0.22, 0.93);
+  const vec3 HOT = vec3(1.0, 0.98, 1.0);
+`;
+
 const BEAM_FRAG = /* glsl */ `
   precision mediump float;
   uniform float uTime;
   varying vec2 vUv;
+  ${NOISE_GLSL}
 
   void main() {
-    // A tight core inside a wide falloff, so it reads as light and not a bar.
-    float x = abs(vUv.x - 0.5) * 2.0;
-    float core = exp(-x * x * 34.0);
-    float halo = exp(-x * x * 4.5) * 0.34;
+    float x = (vUv.x - 0.5) * 2.0;
 
-    // Charge running up it, and a slow breath over the whole column.
-    float run = smoothstep(0.55, 1.0, fract(vUv.y * 1.6 - uTime * 0.14));
-    float breath = 0.78 + 0.22 * sin(uTime * 0.55);
+    // Long filaments: the noise is sampled ~90x tighter across than along, so
+    // it smears into threads instead of clouds. They fall, slowly.
+    float streak = pow(vnoise(vec2(vUv.x * 240.0, vUv.y * 1.9 - uTime * 0.5)), 2.1);
 
-    // Held off the very top and bottom edges.
-    float ends = smoothstep(0.0, 0.22, vUv.y) * smoothstep(1.0, 0.72, vUv.y);
+    float core = exp(-x * x * 130.0);   // white centre
+    float body = exp(-x * x * 12.0);    // the threaded violet column
+    float halo = exp(-x * x * 5.0);     // the glow it throws
 
-    float a = (core * (0.5 + run * 0.5) + halo) * ends * breath;
-    vec3 col = mix(vec3(0.18, 0.27, 1.0), vec3(0.72, 0.80, 1.0), core * 0.9 + run * 0.3);
-    gl_FragColor = vec4(col, a * 0.62);
+    float top = smoothstep(1.0, 0.52, vUv.y);        // thins out overhead
+    float foot = smoothstep(0.30, 0.0, vUv.y);       // blooms where it lands
+
+    float a = (core * 1.2 + body * (0.3 + streak * 0.95) + halo * 0.14) * top
+            + foot * (core * 0.9 + body * 0.55);
+
+    vec3 col = mix(VIOLET, HOT, clamp(core * 1.35 + streak * 0.22 + foot * 0.3, 0.0, 1.0));
+    gl_FragColor = vec4(col, clamp(a, 0.0, 1.0) * 0.58);
+  }
+`;
+
+/** The floor the column lands on, thrown outward from the point of impact. */
+const FLOOR_FRAG = /* glsl */ `
+  precision mediump float;
+  uniform float uTime;
+  varying vec2 vUv;
+  ${NOISE_GLSL}
+
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0;
+    float r = length(p);
+    float ang = atan(p.y, p.x);
+
+    // Same trick in polar: tight across the angle, loose along the radius,
+    // so the noise runs away from the centre as spokes.
+    float streak = pow(vnoise(vec2(ang * 58.0, r * 3.0 - uTime * 0.38)), 2.0);
+
+    float spread = exp(-r * r * 7.5);
+    float bloom = exp(-r * r * 70.0);
+
+    float a = spread * (0.14 + streak * 0.95) + bloom * 1.5;
+    vec3 col = mix(VIOLET, HOT, clamp(bloom * 1.6 + streak * 0.18, 0.0, 1.0));
+    gl_FragColor = vec4(col, clamp(a, 0.0, 1.0) * 0.44);
   }
 `;
 
@@ -239,12 +282,36 @@ function Beam() {
     if (mat.current) mat.current.uniforms.uTime.value += Math.min(delta, 1 / 30);
   });
   return (
-    <mesh position={[FOCUS_X, 0, -4.5]}>
-      <planeGeometry args={[7.5, 22]} />
+    <mesh position={[FOCUS_X, 1.4, -4.5]}>
+      <planeGeometry args={[7.0, 20]} />
       <shaderMaterial
         ref={mat}
         vertexShader={PASS_VERT}
         fragmentShader={BEAM_FRAG}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </mesh>
+  );
+}
+
+/** The plane the column lands on. Flat and seen at a grazing angle, so the
+ *  spokes read as light thrown across a surface rather than a disc. */
+function Floor() {
+  const mat = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
+  useFrame((_, delta) => {
+    if (mat.current) mat.current.uniforms.uTime.value += Math.min(delta, 1 / 30);
+  });
+  return (
+    <mesh position={[FOCUS_X, -4.6, -4.5]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[26, 26]} />
+      <shaderMaterial
+        ref={mat}
+        vertexShader={PASS_VERT}
+        fragmentShader={FLOOR_FRAG}
         uniforms={uniforms}
         transparent
         depthWrite={false}
@@ -267,9 +334,9 @@ function Gyroscope() {
   });
   const u = useMemo(
     () => ({
-      a: mk("#7290ff", 0.95),
-      b: mk("#9fb4ff", 0.7),
-      c: mk("#3f57ff", 0.55),
+      a: mk("#b79cff", 0.5),
+      b: mk("#d9ccff", 0.34),
+      c: mk("#7c4dff", 0.28),
     }),
     [],
   );
@@ -328,10 +395,10 @@ function CameraRig({ bus }: { bus: HeroBusRef }) {
     const p = bus.current.progress;
     const [px, py] = bus.current.pointer;
     const cam = state.camera;
-    target.current.set(px * 0.85, py * 0.6 - p * 1.4, 10 + p * 3.5);
+    target.current.set(px * 0.85, 0.9 + py * 0.55 - p * 1.4, 10 + p * 3.5);
     const k = 1 - Math.pow(0.0018, Math.min(delta, 1 / 30));
     cam.position.lerp(target.current, k);
-    cam.lookAt(FOCUS_X * 0.42, 0, -3);
+    cam.lookAt(FOCUS_X * 0.16, -0.6, -3);
   });
   return null;
 }
@@ -349,7 +416,7 @@ export default function HeroScene({
     <Canvas
       frameloop={active ? "always" : "never"}
       dpr={[1, 1.75]}
-      camera={{ position: [0, 0, 10], fov: 50, near: 0.1, far: 80 }}
+      camera={{ position: [0, 0.9, 10], fov: 50, near: 0.1, far: 80 }}
       gl={{
         antialias: false,
         alpha: false,
@@ -361,6 +428,7 @@ export default function HeroScene({
     >
       <Nebula />
       <DeepField count={count} />
+      <Floor />
       <Beam />
       <Gyroscope />
       <CameraRig bus={bus} />
