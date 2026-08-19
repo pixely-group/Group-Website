@@ -216,7 +216,7 @@ export default function Hero() {
       ) : (
         <>
           <div className="absolute inset-0" aria-hidden>
-            <HeroScene bus={bus} count={small ? 700 : 1500} active={active} />
+            <HeroScene bus={bus} count={small ? 900 : 2600} active={active} />
           </div>
           <HeroSheet />
         </>
