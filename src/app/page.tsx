@@ -1,6 +1,7 @@
 import SmoothScroll from "@/components/chrome/SmoothScroll";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import Navigation from "@/components/chrome/Navigation";
+import TravellingDevice from "@/components/chrome/TravellingDevice";
 import Hero from "@/components/sections/Hero";
 import Manifesto from "@/components/sections/Manifesto";
 import ProductExperience from "@/components/sections/ProductExperience";
@@ -18,6 +19,9 @@ export default function Home() {
     <SmoothScroll>
       <CustomCursor />
       <Navigation />
+      {/* Fixed to the viewport so it can ride out of the hero and into the
+          manifesto — a device parked inside a section cannot leave it. */}
+      <TravellingDevice />
       <main>
         <Hero />
         <Manifesto />

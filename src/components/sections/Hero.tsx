@@ -8,10 +8,6 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 
-const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
-  ssr: false,
-});
-
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
   loading: () => <HeroPoster />,
@@ -71,13 +67,6 @@ export default function Hero() {
   const [active, setActive] = useState(true);
   const reduced = useReducedMotion();
   const small = useMediaQuery("(max-width: 767px)");
-  /** The device only has a column to stand in from lg up. Gating the mount
-   *  rather than hiding it keeps its markup and its ticker off phones. */
-  const hasDeviceColumn = useMediaQuery("(min-width: 1024px)");
-  /** Below xl the corridor between the headline and the scroll marker is
-   *  barely wider than the device, so it gets a smaller one and less room
-   *  to slide. */
-  const roomy = useMediaQuery("(min-width: 1280px)");
   const lenis = useLenis();
 
   // Pointer → NDC for the scene + subtle content parallax.
@@ -135,31 +124,10 @@ export default function Hero() {
             scrub: true,
           },
         });
-        // The device is nearer the reader than the type, so it leaves by
-        // more. Same trigger, so the two stay in step.
-        //
-        // Guarded, and the effect waits for the mount: the device sits behind
-        // a media query, so on the first pass this selector finds nothing and
-        // GSAP tweens an empty target without complaining — the type would
-        // depart on scroll and the phone would sit where it was.
-        const device = section.querySelector("[data-hero-device]");
-        if (device) {
-          gsap.to(device, {
-            yPercent: -20,
-            opacity: 0,
-            ease: "none",
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: "78% top",
-              scrub: true,
-            },
-          });
-        }
       }
     }, section);
     return () => ctx.revert();
-  }, [hasDeviceColumn]);
+  }, []);
 
   // Entrance choreography once fonts are ready.
   useEffect(() => {
@@ -228,18 +196,6 @@ export default function Hero() {
         )}
       </div>
 
-      {hasDeviceColumn && (
-        <div
-          data-hero-device
-          // Above the content block, not level with it. That block is
-          // h-full and comes later in the DOM, so at the same z-index it
-          // covers the device and swallows every click meant for the app
-          // inside it. Nothing of the content reaches into this column.
-          className="absolute top-[88px] right-[12.4%] bottom-[192px] z-20 flex items-center"
-        >
-          <HeroDevice shift={roomy ? 24 : 5} className="h-full max-h-[500px] xl:max-h-[620px]" />
-        </div>
-      )}
 
       <div
         ref={contentRef}

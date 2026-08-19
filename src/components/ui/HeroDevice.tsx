@@ -63,10 +63,13 @@ const PERSPECTIVE = 820;
 export default function HeroDevice({
   className = "",
   shift = 0,
+  showcase = null,
 }: {
   /** How far the device may slide either side of rest, in px. Passed in
    *  because only the caller knows what room its column has. */
   shift?: number;
+  /** Forces the app to a particular screen, for the scroll sequence. */
+  showcase?: "cards" | null;
   className?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -256,6 +259,99 @@ export default function HeroDevice({
             </div>
           ))}
 
+          {/* The back, at z = 0 and turned to face away, so a full turn has
+              something to land on. Without it the rails hide their own
+              backfaces and the device is see-through from behind. */}
+          <div
+            aria-hidden
+            className="absolute inset-0 rounded-[57px]"
+            style={{
+              transform: "rotateY(180deg)",
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "hidden",
+              background:
+                "linear-gradient(155deg,#15181f 0%,#0b0d12 38%,#04050700 39%,#0a0c11 62%,#191d25 100%)",
+              boxShadow:
+                "inset 0 0 0 1px rgba(236,233,225,0.18), inset 0 1px 0 rgba(236,233,225,0.30)",
+            }}
+          >
+            {/* Camera plateau, mirrored to the left because the whole face is. */}
+            <div
+              style={{
+                position: "absolute",
+                top: 30,
+                left: 30,
+                width: 170,
+                height: 170,
+                borderRadius: 46,
+                background: "linear-gradient(150deg,#20242d 0%,#0d1015 55%,#171b23 100%)",
+                boxShadow:
+                  "inset 0 0 0 1px rgba(236,233,225,0.14), 0 6px 18px -6px rgba(0,0,0,0.85)",
+              }}
+            >
+              {[
+                { top: 22, left: 22 },
+                { top: 22, left: 92 },
+                { top: 92, left: 22 },
+              ].map((lens) => (
+                <span
+                  key={`${lens.top}-${lens.left}`}
+                  style={{
+                    position: "absolute",
+                    top: lens.top,
+                    left: lens.left,
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle at 38% 32%,#3b4250 0%,#12151b 46%,#05070a 100%)",
+                    boxShadow:
+                      "inset 0 0 0 3px #1b1f27, inset 0 0 0 4px rgba(236,233,225,0.10), 0 2px 6px rgba(0,0,0,0.7)",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      left: 14,
+                      width: 12,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "rgba(236,233,225,0.22)",
+                      filter: "blur(1px)",
+                    }}
+                  />
+                </span>
+              ))}
+              <span
+                style={{
+                  position: "absolute",
+                  top: 100,
+                  left: 100,
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle at 40% 35%,#4a5160 0%,#1a1e26 70%)",
+                  boxShadow: "inset 0 0 0 2px rgba(236,233,225,0.10)",
+                }}
+              />
+            </div>
+            {/* The wordmark reads correctly once the face is turned. */}
+            <span
+              style={{
+                position: "absolute",
+                top: "46%",
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                font: "500 34px/1 var(--font-display), system-ui, sans-serif",
+                letterSpacing: "0.24em",
+                color: "rgba(236,233,225,0.16)",
+              }}
+            >
+              PIXELY
+            </span>
+          </div>
+
           {/* Body: matte, with one hairline edge and a cast shadow. Pushed
               forward by the body's own depth so it caps the rails. */}
           <div
@@ -272,7 +368,7 @@ export default function HeroDevice({
               className="relative size-full overflow-hidden bg-black"
               style={{ borderRadius: SCREEN_R }}
             >
-              <WalletScreen />
+              <WalletScreen showcase={showcase} />
 
               <div
                 aria-hidden

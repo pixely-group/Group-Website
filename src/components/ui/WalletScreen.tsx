@@ -512,7 +512,74 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
   );
 }
 
-export default function WalletScreen() {
+const CARDS = [
+  { id: "primary", name: "Pixely Visa", num: "4021", bal: "412 800,00", cur: "DZD",
+    tint: "linear-gradient(135deg,#2d46ff 0%,#1f33d6 46%,#0b1440 100%)", label: "Primary" },
+  { id: "business", name: "Pixely Business", num: "8817", bal: "1 908 240,00", cur: "DZD",
+    tint: "linear-gradient(135deg,#2a2f3c 0%,#14171e 52%,#05070a 100%)", label: "Business" },
+  { id: "savings", name: "Pixely Savings", num: "2203", bal: "96 500,00", cur: "DZD",
+    tint: "linear-gradient(135deg,#1d6a4f 0%,#124034 45%,#05100c 100%)", label: "Savings" },
+];
+
+/** The wallet as the device shows it once it has turned to face the reader. */
+function CardsScreen({ c }: { c: C }) {
+  return (
+    <div className="absolute inset-x-0 top-0 px-[20px]" style={{ paddingTop: 62 }}>
+      <p style={{ fontSize: 13, color: c.MUTED, letterSpacing: "-0.01em" }}>Wallet</p>
+      <p style={{ fontSize: 26, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em", marginTop: 2 }}>
+        My cards
+      </p>
+
+      <div style={{ position: "relative", marginTop: 22, height: 300 }}>
+        {CARDS.map((card, i) => (
+          <div
+            key={card.id}
+            style={{
+              position: "absolute",
+              top: i * 86,
+              left: 0,
+              right: 0,
+              height: 176,
+              borderRadius: 22,
+              padding: 18,
+              background: card.tint,
+              boxShadow: `0 20px 40px -18px ${c.SHADOW}`,
+              border: "1px solid rgba(236,233,225,0.14)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(236,233,225,0.62)" }}>
+                  {card.label.toUpperCase()}
+                </p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
+              </div>
+              {/* Contactless, drawn rather than iconified. */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                {[6, 10, 14].map((r, k) => (
+                  <path key={r} d={`M${8 + k * 3} 7a7 7 0 0 1 0 10`} stroke="rgba(236,233,225,0.55)" strokeWidth="1.6" strokeLinecap="round" />
+                ))}
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
+                •••• •••• •••• {card.num}
+              </p>
+              <p style={{ fontSize: 19, fontWeight: 700, color: "#ece9e1", marginTop: 6, letterSpacing: "-0.02em" }}>
+                {card.bal} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{card.cur}</span>
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function WalletScreen({ showcase }: { showcase?: "cards" | null } = {}) {
   const [tab, setTab] = useState<Tab>("home");
   const [themeId, setThemeId] = useState<ThemeId>("dark");
   const systemDark = useMediaQuery("(prefers-color-scheme: dark)", true);
@@ -579,7 +646,8 @@ export default function WalletScreen() {
       className="relative size-full overflow-hidden"
       style={{ background: c.BG, fontFamily: font }}
     >
-      {tab === "home" && (
+      {showcase === "cards" && <CardsScreen c={c} />}
+      {!showcase && tab === "home" && (
         <>
           <div className="absolute inset-x-0 top-0 bottom-0 rounded-b-[26px]" style={{ background: c.PANEL }}>
             <div className="h-[54px]" />
@@ -650,8 +718,8 @@ export default function WalletScreen() {
         </>
       )}
 
-      {tab === "search" && <SearchScreen c={c} onOpen={openTx} />}
-      {tab === "activity" && <ActivityScreen c={c} onOpen={openTx} />}
+      {!showcase && tab === "search" && <SearchScreen c={c} onOpen={openTx} />}
+      {!showcase && tab === "activity" && <ActivityScreen c={c} onOpen={openTx} />}
 
       {/* Pushed over whichever tab is showing, under the tab bar. */}
       {view.name === "send" && <SendScreen onBack={home} c={c} />}
@@ -661,7 +729,7 @@ export default function WalletScreen() {
 
       {/* Hidden while a flow is open: these screens are pushed over the tab,
           not a fourth tab, so the bar has nothing to say there. */}
-      {view.name === "none" && (
+      {view.name === "none" && !showcase && (
       <div className="absolute inset-x-0 bottom-[16px] flex justify-center">
         <div className="flex items-center gap-[4px] rounded-full p-[6px]"
              style={{ background: c.SURFACE, boxShadow: `0 12px 26px -10px ${c.SHADOW}` }}>
