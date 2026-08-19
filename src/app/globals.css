@@ -254,6 +254,19 @@ html[data-cursor="on"] * {
   cursor: none !important;
 }
 
+/* The wallet's light/dark switch. Its colours are inline styles on ~100
+   nodes, so the transition has to be declared for the subtree rather than
+   set per element. Reduced motion still flattens it, via the block below. */
+[data-wallet] * {
+  transition:
+    background-color 380ms var(--ease-out-expo),
+    color 380ms var(--ease-out-expo),
+    border-color 380ms var(--ease-out-expo),
+    box-shadow 380ms var(--ease-out-expo),
+    stroke 380ms var(--ease-out-expo),
+    fill 380ms var(--ease-out-expo);
+}
+
 /* Film grain — static, composited once. */
 .grain::before {
   content: "";

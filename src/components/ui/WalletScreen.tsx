@@ -18,17 +18,54 @@ import { useState } from "react";
  * curve just as a token does.
  */
 
-const BG = "#060607";
-const PANEL = "#0b0b0d";
-const SURFACE = "#18181d";
-const FG = "#ece9e1";
-const MUTED = "rgba(236,233,225,0.52)";
-const FAINT = "rgba(236,233,225,0.34)";
-const SEP = "rgba(236,233,225,0.10)";
-const ACCENT = "#2d46ff";
-const ACCENT_FG = "#9fb4ff";
-const UP = "#42c48a";
-const DOWN = "#e2614a";
+type Mode = "dark" | "light";
+
+/**
+ * Both of the app's appearances. The accent stays the brand blue in each,
+ * but the tint that reads on it does not: on ink the primary only reaches
+ * ~3:1, so the icons lift, while on paper the primary itself is the
+ * strongest thing available.
+ */
+const PALETTE: Record<Mode, Record<string, string>> = {
+  dark: {
+    BG: "#060607",
+    PANEL: "#0b0b0d",
+    SURFACE: "#18181d",
+    FG: "#ece9e1",
+    MUTED: "rgba(236,233,225,0.52)",
+    FAINT: "rgba(236,233,225,0.34)",
+    SEP: "rgba(236,233,225,0.10)",
+    ACCENT: "#2d46ff",
+    ACCENT_FG: "#9fb4ff",
+    ON_ACCENT: "#ece9e1",
+    UP: "#42c48a",
+    DOWN: "#e2614a",
+    CHIP: "rgba(236,233,225,0.08)",
+    DISC: "rgba(236,233,225,0.06)",
+    HANDLE: "rgba(236,233,225,0.22)",
+    SHADOW: "rgba(0,0,0,0.9)",
+  },
+  light: {
+    BG: "#e7e8ee",
+    PANEL: "#fbfbfd",
+    SURFACE: "#f1f2f7",
+    FG: "#14161c",
+    MUTED: "rgba(20,22,28,0.56)",
+    FAINT: "rgba(20,22,28,0.40)",
+    SEP: "rgba(20,22,28,0.11)",
+    ACCENT: "#2d46ff",
+    ACCENT_FG: "#2d46ff",
+    ON_ACCENT: "#ffffff",
+    UP: "#12855a",
+    DOWN: "#c03c26",
+    CHIP: "rgba(20,22,28,0.07)",
+    DISC: "rgba(20,22,28,0.05)",
+    HANDLE: "rgba(20,22,28,0.20)",
+    SHADOW: "rgba(20,22,28,0.18)",
+  },
+};
+
+type C = Record<string, string>;
 
 const mono = "var(--font-mono)";
 
@@ -91,14 +128,14 @@ const ACTIVITY = [
 
 const pct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(2)}%`;
 
-function TrendChip({ change, size = 11 }: { change: number; size?: number }) {
+function TrendChip({ change, size = 11, c }: { change: number; size?: number; c: C }) {
   return (
     <span
       style={{
         fontFamily: mono,
         fontSize: size,
         letterSpacing: "0.04em",
-        color: change >= 0 ? UP : DOWN,
+        color: change >= 0 ? c.UP : c.DOWN,
         fontVariantNumeric: "tabular-nums",
       }}
     >
@@ -108,49 +145,49 @@ function TrendChip({ change, size = 11 }: { change: number; size?: number }) {
 }
 
 /** 112pt quick-action tile: round icon chip above, label below. */
-function QuickAction({ label, d }: { label: string; d: string }) {
+function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
   return (
     <div
       className="flex size-[112px] shrink-0 flex-col justify-between rounded-[24px] p-[14px]"
-      style={{ background: SURFACE, boxShadow: `inset 0 0 0 1px ${SEP}` }}
+      style={{ background: c.SURFACE, boxShadow: `inset 0 0 0 1px ${c.SEP}` }}
     >
       <span
         className="flex size-[32px] items-center justify-center rounded-full"
-        style={{ background: "rgba(236,233,225,0.08)" }}
+        style={{ background: c.CHIP }}
       >
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={ACCENT_FG} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={c.ACCENT_FG} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <path d={d} />
         </svg>
       </span>
-      <span style={{ fontSize: 14, fontWeight: 500, color: FG }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 500, color: c.FG }}>{label}</span>
     </div>
   );
 }
 
-function AssetRow({ asset }: { asset: Asset }) {
+function AssetRow({ asset, c }: { asset: Asset; c: C }) {
   const up = asset.change >= 0;
   return (
     <li className="flex items-center gap-[12px] py-[10px]">
       <span
         className="flex size-[40px] shrink-0 items-center justify-center rounded-full"
-        style={{ background: "rgba(236,233,225,0.06)", boxShadow: `inset 0 0 0 1px ${SEP}`, color: FG, fontSize: 16 }}
+        style={{ background: c.DISC, boxShadow: `inset 0 0 0 1px ${c.SEP}`, color: c.FG, fontSize: 16 }}
       >
         {asset.symbol}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate" style={{ fontSize: 15, color: FG }}>{asset.name}</span>
-        <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: FAINT }}>
+        <span className="block truncate" style={{ fontSize: 15, color: c.FG }}>{asset.name}</span>
+        <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: c.FAINT }}>
           {asset.ticker}
         </span>
       </span>
       <svg width="72" height="32" viewBox="0 0 72 32" fill="none" className="shrink-0" aria-hidden>
-        <path d={sparkPath(asset.ticker, asset.change)} stroke={up ? UP : DOWN} strokeWidth="1.5" strokeLinejoin="round" />
+        <path d={sparkPath(asset.ticker, asset.change)} stroke={up ? c.UP : c.DOWN} strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
       <span className="shrink-0 text-right" style={{ minWidth: 64 }}>
-        <span className="block" style={{ fontFamily: mono, fontSize: 14, color: FG, fontVariantNumeric: "tabular-nums" }}>
+        <span className="block" style={{ fontFamily: mono, fontSize: 14, color: c.FG, fontVariantNumeric: "tabular-nums" }}>
           {asset.price}
         </span>
-        <TrendChip change={asset.change} />
+        <TrendChip change={asset.change} c={c} />
       </span>
     </li>
   );
@@ -160,6 +197,8 @@ type Tab = "home" | "activity" | "search";
 
 export default function WalletScreen() {
   const [tab, setTab] = useState<Tab>("home");
+  const [mode, setMode] = useState<Mode>("dark");
+  const c = PALETTE[mode];
   /** The template's SplitView snaps the top section between three stops and
    *  opens at the middle one, just under the quick actions. Reproduced as
    *  two: at rest the markets list fills the sheet, and the handle drops it
@@ -175,66 +214,86 @@ export default function WalletScreen() {
   const sheetTop = expanded ? 636 : 336;
 
   return (
-    <div className="relative size-full overflow-hidden" style={{ background: BG, fontFamily: "var(--font-archivo)" }}>
+    <div
+      data-wallet
+      data-cursor-theme={mode === "light" ? "bone" : "ink"}
+      className="relative size-full overflow-hidden"
+      style={{ background: c.BG, fontFamily: "var(--font-archivo)" }}
+    >
       {/* — Top section */}
-      <div className="absolute inset-x-0 top-0 rounded-b-[26px]" style={{ background: PANEL, bottom: 0 }}>
+      <div className="absolute inset-x-0 top-0 rounded-b-[26px]" style={{ background: c.PANEL, bottom: 0 }}>
         <div className="h-[54px]" />
 
         <div className="flex items-center gap-[12px] px-[20px]">
           <span
             className="size-[40px] shrink-0 rounded-full"
-            style={{ background: "radial-gradient(120% 120% at 30% 22%, #4a5cf0 0%, #1d2450 60%, #0d1030 100%)", boxShadow: `inset 0 0 0 1px ${SEP}` }}
+            style={{ background: "radial-gradient(120% 120% at 30% 22%, #4a5cf0 0%, #1d2450 60%, #0d1030 100%)", boxShadow: `inset 0 0 0 1px ${c.SEP}` }}
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate" style={{ fontSize: 16, fontWeight: 600, color: FG }}>
+            <span className="block truncate" style={{ fontSize: 16, fontWeight: 600, color: c.FG }}>
               Main account
             </span>
-            <span className="flex items-center gap-[6px]" style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", color: FAINT }}>
+            <span className="flex items-center gap-[6px]" style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", color: c.FAINT }}>
               IBAN ···· 4417
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke={FAINT} strokeWidth="1.4" aria-hidden>
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke={c.FAINT} strokeWidth="1.4" aria-hidden>
                 <rect x="4.6" y="4.6" width="8" height="8" rx="1.6" />
                 <path d="M9.4 1.4h-8v8" />
               </svg>
             </span>
           </span>
-          <span className="flex size-[34px] items-center justify-center rounded-full" style={{ boxShadow: `inset 0 0 0 1px ${SEP}` }}>
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke={MUTED} strokeWidth="1.5" aria-hidden>
-              <circle cx="9" cy="9" r="4" />
-              <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.4 3.4l1.4 1.4M13.2 13.2l1.4 1.4M14.6 3.4l-1.4 1.4M4.8 13.2l-1.4 1.4" strokeLinecap="round" />
+          {/* The template's theme control, wired up. It shows the mode it
+              will move to, not the one it is in. */}
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === "dark" ? "light" : "dark"))}
+            aria-label={mode === "dark" ? "Switch app to light mode" : "Switch app to dark mode"}
+            data-cursor="link"
+            className="flex size-[34px] shrink-0 items-center justify-center rounded-full"
+            style={{ boxShadow: `inset 0 0 0 1px ${c.SEP}` }}
+          >
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke={c.MUTED} strokeWidth="1.5" aria-hidden>
+              {mode === "dark" ? (
+                <>
+                  <circle cx="9" cy="9" r="4" />
+                  <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.4 3.4l1.4 1.4M13.2 13.2l1.4 1.4M14.6 3.4l-1.4 1.4M4.8 13.2l-1.4 1.4" strokeLinecap="round" />
+                </>
+              ) : (
+                <path d="M15.2 10.6A6.6 6.6 0 0 1 7.4 2.8a6.6 6.6 0 1 0 7.8 7.8Z" strokeLinejoin="round" />
+              )}
             </svg>
-          </span>
+          </button>
         </div>
 
         <div className="mt-[22px] px-[20px]">
-          <p style={{ fontFamily: mono, fontSize: 30, fontWeight: 700, color: FG, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
+          <p style={{ fontFamily: mono, fontSize: 30, fontWeight: 700, color: c.FG, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
             $12,481.43
           </p>
           <p className="mt-[5px] flex items-center gap-[6px]">
-            <span style={{ fontFamily: mono, fontSize: 12, color: UP, fontVariantNumeric: "tabular-nums" }}>+$286.27</span>
-            <span style={{ fontSize: 12, color: MUTED }}>today</span>
+            <span style={{ fontFamily: mono, fontSize: 12, color: c.UP, fontVariantNumeric: "tabular-nums" }}>+$286.27</span>
+            <span style={{ fontSize: 12, color: c.MUTED }}>today</span>
           </p>
         </div>
 
         {/* Horizontally scrolling row — the fourth tile clips, as on device */}
         <div className="mt-[18px] flex gap-[8px] overflow-hidden pl-[20px]">
-          <QuickAction label="Send" d="M10 16V4m0 0-4 4m4-4 4 4" />
-          <QuickAction label="Receive" d="M10 4v12m0 0 4-4m-4 4-4-4" />
-          <QuickAction label="Convert" d="M3 7h11m0 0-3-3m3 3-3 3M17 13H6m0 0 3-3m-3 3 3 3" />
-          <QuickAction label="Buy/Sell" d="M2.5 5.5h15v9h-15v-9Zm0 3.5h15" />
+          <QuickAction label="Send" d="M10 16V4m0 0-4 4m4-4 4 4" c={c} />
+          <QuickAction label="Receive" d="M10 4v12m0 0 4-4m-4 4-4-4" c={c} />
+          <QuickAction label="Convert" d="M3 7h11m0 0-3-3m3 3-3 3M17 13H6m0 0 3-3m-3 3 3 3" c={c} />
+          <QuickAction label="Buy/Sell" d="M2.5 5.5h15v9h-15v-9Zm0 3.5h15" c={c} />
         </div>
 
         <div className="mt-[26px] px-[20px]">
-          <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: FAINT }}>
+          <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
             Recent activity
           </p>
           <ul className="mt-[8px]">
             {ACTIVITY.slice(0, 3).map(([what, amount, when, credit]) => (
-              <li key={what} className="flex items-center justify-between py-[11px]" style={{ borderTop: `1px solid ${SEP}` }}>
+              <li key={what} className="flex items-center justify-between py-[11px]" style={{ borderTop: `1px solid ${c.SEP}` }}>
                 <span className="min-w-0 pr-3">
-                  <span className="block truncate" style={{ fontSize: 14, color: FG }}>{what}</span>
-                  <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: FAINT }}>{when}</span>
+                  <span className="block truncate" style={{ fontSize: 14, color: c.FG }}>{what}</span>
+                  <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: c.FAINT }}>{when}</span>
                 </span>
-                <span style={{ fontFamily: mono, fontSize: 13, color: credit ? UP : FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
+                <span style={{ fontFamily: mono, fontSize: 13, color: credit ? c.UP : c.FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
               </li>
             ))}
           </ul>
@@ -244,7 +303,7 @@ export default function WalletScreen() {
       {/* — Bottom section of the split view */}
       <div
         className="absolute inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-500 ease-(--ease-out-expo)"
-        style={{ top: sheetTop, background: PANEL, boxShadow: `0 -1px 0 ${SEP}, 0 -24px 40px -24px rgba(0,0,0,0.9)` }}
+        style={{ top: sheetTop, background: c.PANEL, boxShadow: `0 -1px 0 ${c.SEP}, 0 -24px 40px -24px ${c.SHADOW}` }}
       >
         <button
           type="button"
@@ -253,16 +312,16 @@ export default function WalletScreen() {
           data-cursor="link"
           className="flex h-[26px] w-full items-center justify-center"
         >
-          <span className="h-[4px] w-[38px] rounded-full" style={{ background: "rgba(236,233,225,0.22)" }} />
+          <span className="h-[4px] w-[38px] rounded-full" style={{ background: c.HANDLE }} />
         </button>
 
         <div className="flex items-center justify-between pt-[4px] pr-[16px] pb-[6px] pl-[20px]">
-          <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: FAINT }}>
+          <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
             {tab === "activity" ? "All activity" : "Explore markets"}
           </p>
           <span
             className="rounded-full px-[12px] py-[6px]"
-            style={{ fontSize: 12, color: MUTED, boxShadow: `inset 0 0 0 1px ${SEP}` }}
+            style={{ fontSize: 12, color: c.MUTED, boxShadow: `inset 0 0 0 1px ${c.SEP}` }}
           >
             Manage
           </span>
@@ -271,15 +330,15 @@ export default function WalletScreen() {
         <ul className="px-[20px]">
           {tab === "activity"
             ? ACTIVITY.map(([what, amount, when, credit]) => (
-                <li key={what} className="flex items-center justify-between py-[13px]" style={{ borderTop: `1px solid ${SEP}` }}>
+                <li key={what} className="flex items-center justify-between py-[13px]" style={{ borderTop: `1px solid ${c.SEP}` }}>
                   <span className="min-w-0 pr-3">
-                    <span className="block truncate" style={{ fontSize: 15, color: FG }}>{what}</span>
-                    <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: FAINT }}>{when}</span>
+                    <span className="block truncate" style={{ fontSize: 15, color: c.FG }}>{what}</span>
+                    <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: c.FAINT }}>{when}</span>
                   </span>
-                  <span style={{ fontFamily: mono, fontSize: 14, color: credit ? UP : FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
+                  <span style={{ fontFamily: mono, fontSize: 14, color: credit ? c.UP : c.FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
                 </li>
               ))
-            : ASSETS.map((a) => <AssetRow key={a.ticker} asset={a} />)}
+            : ASSETS.map((a) => <AssetRow key={a.ticker} asset={a} c={c} />)}
         </ul>
       </div>
 
@@ -287,7 +346,7 @@ export default function WalletScreen() {
       <div className="absolute inset-x-0 bottom-[16px] flex justify-center">
         <div
           className="flex items-center gap-[4px] rounded-full p-[6px]"
-          style={{ background: SURFACE, boxShadow: `inset 0 0 0 1px ${SEP}, 0 12px 26px -10px rgba(0,0,0,0.9)` }}
+          style={{ background: c.SURFACE, boxShadow: `inset 0 0 0 1px ${c.SEP}, 0 12px 26px -10px ${c.SHADOW}` }}
         >
           {tabs.map((t) => {
             const on = t.id === tab;
@@ -300,10 +359,10 @@ export default function WalletScreen() {
                 aria-current={on ? "page" : undefined}
                 data-cursor="link"
                 className="flex h-[44px] w-[56px] items-center justify-center rounded-full transition-colors duration-300"
-                style={{ background: on ? ACCENT : "transparent" }}
+                style={{ background: on ? c.ACCENT : "transparent" }}
               >
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none"
-                     stroke={on ? FG : "rgba(236,233,225,0.5)"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                     stroke={on ? c.ON_ACCENT : c.MUTED} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d={t.d} />
                 </svg>
               </button>
