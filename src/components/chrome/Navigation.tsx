@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
@@ -18,6 +18,22 @@ export const NAV_LINKS = [
   { label: "Resources", href: "#resources" },
 ] as const;
 
+/** Scroll distance over which the bar gathers itself, in px. */
+const CONDENSE_OVER = 160;
+
+/**
+ * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Width is
+ * deliberately absent: the bar holds one measure throughout, so only its
+ * treatment changes. Animating width here would be both busier and broken —
+ * `max-width` cannot interpolate away from `none`, so it snaps.
+ */
+export const NAV_GEOMETRY = {
+  offsetTop: "calc(var(--nav-p) * 12px)",
+  padBlock: "calc(24px - var(--nav-p) * 16px)",
+  padLeft: "calc(var(--nav-p) * 20px)",
+  padRight: "calc(var(--nav-p) * 8px)",
+} as const;
+
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-2.5 ${className}`}>
@@ -29,21 +45,8 @@ export function Wordmark({ className = "" }: { className?: string }) {
         aria-hidden
         className="shrink-0"
       >
-        <circle
-          cx="11"
-          cy="11"
-          r="9.5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
-        <line
-          x1="11"
-          y1="0"
-          x2="11"
-          y2="22"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
+        <circle cx="11" cy="11" r="9.5" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="11" y1="0" x2="11" y2="22" stroke="currentColor" strokeWidth="1.5" />
         <ellipse
           cx="11"
           cy="11"
@@ -62,26 +65,51 @@ export function Wordmark({ className = "" }: { className?: string }) {
 }
 
 /**
- * Transparent overlay nav that condenses into a floating glass bar on
- * scroll. Adapts its palette to the chapter (`data-theme` section)
- * currently under it.
+ * Overlay nav that gathers into a floating glass bar as you scroll. The
+ * change is scrubbed against scroll position rather than switched at a
+ * threshold, so it tracks the page instead of happening to it. Palette
+ * follows the chapter (`data-theme`) currently beneath the bar.
  */
 export default function Navigation() {
   const lenis = useLenis();
-  const [scrolled, setScrolled] = useState(false);
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
-  // Opening the menu stops Lenis, which can reset scroll and flip `scrolled`
-  // underneath us. The menu mirrors the header's geometry, so it has to keep
-  // the value the bar actually had when the toggle was pressed.
-  const [menuScrolled, setMenuScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const navP = useRef(0);
+  // The menu reproduces the bar's geometry, and opening it stops Lenis —
+  // which can reset scroll and move the bar underneath. So the menu keeps
+  // whatever the bar measured at the moment the toggle was pressed.
+  const [menuNavP, setMenuNavP] = useState(0);
 
+  // Condense on scroll, scrubbed. Lenis emits a scroll event per frame while
+  // it eases, so this stays in step with the page's own motion.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 48);
-    onScroll();
+    const header = headerRef.current;
+    if (!header) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+
+    const apply = () => {
+      frame = 0;
+      const raw = Math.min(1, Math.max(0, window.scrollY / CONDENSE_OVER));
+      // Reduced motion gets the two end states and nothing in between.
+      const p = reduced ? (raw > 0.5 ? 1 : 0) : raw;
+      navP.current = p;
+      header.style.setProperty("--nav-p", p.toFixed(4));
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+
+    apply();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   // Pinned sections make trigger-based theme detection unreliable, so
@@ -101,9 +129,7 @@ export default function Navigation() {
         if (header.contains(el)) continue;
         const themed = el.closest("main [data-theme]");
         if (themed) {
-          setScheme(
-            themed.getAttribute("data-theme") === "bone" ? "bone" : "ink",
-          );
+          setScheme(themed.getAttribute("data-theme") === "bone" ? "bone" : "ink");
           return;
         }
       }
@@ -145,6 +171,11 @@ export default function Navigation() {
     }
   };
 
+  const toggleMenu = useCallback(() => {
+    setMenuNavP(navP.current);
+    setMenuOpen((v) => !v);
+  }, []);
+
   const glass = scheme === "bone" ? "bg-bone/72" : "bg-ink/64";
 
   return (
@@ -156,34 +187,42 @@ export default function Navigation() {
         ref={headerRef}
         data-theme={scheme}
         className="fixed inset-x-0 top-0 z-(--z-nav)"
+        style={{ "--nav-p": 0 } as React.CSSProperties}
       >
-        {/* Once condensed, the bar sits in the same column the footer uses —
-            the page's chrome then shares one measure top and bottom. At the
-            top of the page it stays full-bleed so the wordmark lines up with
-            the hero headline instead. */}
+        {/* The bar keeps the page's content measure at every scroll position,
+            matching the footer's column, so nothing about its width moves. */}
         <div
-          className={`transition-all duration-700 ease-(--ease-out-expo) ${
-            scrolled ? "px-6 pt-3 sm:px-10 lg:px-14" : ""
-          }`}
+          className="px-6 sm:px-10 lg:px-14"
+          style={{ paddingTop: NAV_GEOMETRY.offsetTop }}
         >
           <div
-            className={`mx-auto flex min-h-10 items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) ${
-              scrolled
-                ? `max-w-7xl rounded-(--radius-panel) border border-(--line) ${glass} py-2 pr-2 pl-5 backdrop-blur-xl`
-                : "border border-transparent bg-transparent py-6 pr-6 pl-6 sm:pl-10 lg:pl-14"
-            }`}
+            className="relative mx-auto flex min-h-10 max-w-7xl items-center justify-between text-(--fg)"
+            style={{
+              paddingBlock: NAV_GEOMETRY.padBlock,
+              paddingLeft: NAV_GEOMETRY.padLeft,
+              paddingRight: NAV_GEOMETRY.padRight,
+            }}
           >
+            {/* Glass fades in as one composited layer. Animating background,
+                border and backdrop-filter separately is heavier and never
+                quite lands together. */}
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 rounded-(--radius-panel) border border-(--line) ${glass} backdrop-blur-xl`}
+              style={{ opacity: "var(--nav-p)" }}
+            />
+
             <a
               href="#top"
               onClick={scrollTo("#top")}
               aria-label="Pixely — back to top"
               data-cursor="link"
-              className="text-(--fg)"
+              className="relative text-(--fg)"
             >
               <Wordmark />
             </a>
 
-            <nav aria-label="Primary" className="hidden lg:block">
+            <nav aria-label="Primary" className="relative hidden lg:block">
               <ul className="flex items-center gap-9">
                 {NAV_LINKS.map((link) => (
                   <li key={link.href}>
@@ -200,15 +239,11 @@ export default function Navigation() {
               </ul>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-3">
               {/* Wrapped rather than given `hidden` directly: the button's own
-                `inline-flex` is the same specificity and wins by CSS order. */}
+                  `inline-flex` is the same specificity and wins by CSS order. */}
               <span className="hidden sm:block">
-                <MagneticButton
-                  href="#start"
-                  onClick={scrollTo("#start")}
-                  size="sm"
-                >
+                <MagneticButton href="#start" onClick={scrollTo("#start")} size="sm">
                   Get started
                 </MagneticButton>
               </span>
@@ -216,10 +251,7 @@ export default function Navigation() {
                 type="button"
                 aria-expanded={menuOpen}
                 aria-controls="mobile-menu"
-                onClick={() => {
-                setMenuScrolled(scrolled);
-                setMenuOpen((v) => !v);
-              }}
+                onClick={toggleMenu}
                 data-cursor="link"
                 className="relative flex size-10 flex-col items-center justify-center gap-[7px] lg:hidden"
               >
@@ -243,7 +275,7 @@ export default function Navigation() {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         onNavigate={scrollTo}
-        scrolled={menuOpen ? menuScrolled : scrolled}
+        navP={menuNavP}
       />
     </>
   );

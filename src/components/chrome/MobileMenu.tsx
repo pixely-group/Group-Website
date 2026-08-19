@@ -3,24 +3,23 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import { NAV_LINKS, Wordmark } from "@/components/chrome/Navigation";
+import {
+  NAV_GEOMETRY,
+  NAV_LINKS,
+  Wordmark,
+} from "@/components/chrome/Navigation";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onNavigate: (href: string) => (e: React.MouseEvent) => void;
-  /** The header's compact state, mirrored so the close button lands on the
-   *  toggle it replaces instead of jumping sideways. */
-  scrolled: boolean;
+  /** The bar's condense progress, frozen at the moment the menu opened, so
+   *  the close button lands on the toggle it replaces. */
+  navP: number;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
-export default function MobileMenu({
-  open,
-  onClose,
-  onNavigate,
-  scrolled,
-}: Props) {
+export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
 
@@ -129,13 +128,25 @@ export default function MobileMenu({
       className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink pb-10 text-bone opacity-0 lg:hidden"
       style={{ pointerEvents: "none" }}
     >
-      {/* Mirrors the header's structure, not just its numbers, so the close
-          button lands on the toggle it replaces in either state. */}
-      <div data-menu-meta className={scrolled ? "px-6 pt-3 sm:px-10" : ""}>
+      {/* Reproduces the bar's geometry from the same interpolation, at the
+          progress it held when the menu opened. */}
+      <div
+        data-menu-meta
+        className="px-6 sm:px-10"
+        style={
+          {
+            "--nav-p": navP,
+            paddingTop: NAV_GEOMETRY.offsetTop,
+          } as React.CSSProperties
+        }
+      >
         <div
-          className={`mx-auto flex min-h-10 items-center justify-between border border-transparent ${
-            scrolled ? "max-w-7xl py-2 pr-2 pl-5" : "py-6 pr-6 pl-6 sm:pl-10"
-          }`}
+          className="mx-auto flex min-h-10 max-w-7xl items-center justify-between"
+          style={{
+            paddingBlock: NAV_GEOMETRY.padBlock,
+            paddingLeft: NAV_GEOMETRY.padLeft,
+            paddingRight: NAV_GEOMETRY.padRight,
+          }}
         >
           <Wordmark />
           <button
