@@ -64,12 +64,16 @@ export default function HeroDevice({
   className = "",
   shift = 0,
   showcase = null,
+  flat = false,
 }: {
   /** How far the device may slide either side of rest, in px. Passed in
    *  because only the caller knows what room its column has. */
   shift?: number;
   /** Forces the app to a particular screen, for the scroll sequence. */
   showcase?: "cards" | null;
+  /** Square to the reader: no yaw, no pitch, no pointer follow. A CSS 3D
+   *  turn cannot be made convincing, so the device does not attempt one. */
+  flat?: boolean;
   className?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -102,6 +106,14 @@ export default function HeroDevice({
     const sheen = sheenRef.current;
     if (!tilt || !sheen) return;
     const travel = shift;
+
+    if (flat) {
+      /* Dead straight, and still: the sheen is a lighting cue for a turning
+         surface, so on a flat one it only reads as a smear drifting about. */
+      tilt.style.transform = "none";
+      sheen.style.transform = "translate3d(0,0,0) rotate(-14deg)";
+      return;
+    }
 
     if (!live) {
       tilt.style.transform = `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`;
@@ -150,7 +162,7 @@ export default function HeroDevice({
       window.removeEventListener("pointermove", onMove);
       gsap.ticker.remove(draw);
     };
-  }, [live, shift]);
+  }, [live, shift, flat]);
 
   return (
     <div
@@ -176,7 +188,9 @@ export default function HeroDevice({
         style={{
           transformStyle: "preserve-3d",
           willChange: "transform",
-          transform: `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`,
+          transform: flat
+            ? "none"
+            : `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`,
         }}
       >
         {/* Out of flow: left in it, the drawing's unscaled width becomes the

@@ -11,18 +11,22 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 /**
  * The device is fixed to the viewport rather than parked inside the hero,
- * because it has to outlive it — it rides the scroll out of the hero and into
- * the manifesto, and an element positioned inside a section cannot leave it.
+ * because it has to outlive it — an element positioned inside a section
+ * cannot leave that section.
  *
- * Two stages share one scrub:
- *   0 → 1   right column to the centre of the manifesto, turning a full circle
- *   after   held at centre until the manifesto leaves, then it goes with it
+ * It travels from the hero's right column to the middle of the manifesto and
+ * stops there. It does not turn: a convincing rotation needs real geometry
+ * and real lighting, and CSS 3D gives neither, so the device stays square to
+ * the reader throughout.
  *
- * The turn is a full 360 rather than a half, so the device arrives facing the
- * reader exactly as it left — which is why the back had to be built.
+ * The manifesto is its mask. The device is clipped to that section's bottom
+ * edge, so as the platform section rises it passes in front rather than the
+ * device floating on over it — which is also what stops it: no fade, no exit
+ * tween, it is simply covered.
  */
 export default function TravellingDevice() {
   const holderRef = useRef<HTMLDivElement>(null);
+  const clipRef = useRef<HTMLDivElement>(null);
   const [showcase, setShowcase] = useState<"cards" | null>(null);
   const reduced = useReducedMotion();
   /** Below lg there is no column to start from and no room to travel. */
@@ -31,14 +35,14 @@ export default function TravellingDevice() {
 
   useEffect(() => {
     const holder = holderRef.current;
-    if (!holder || !enabled) return;
+    const clip = clipRef.current;
+    if (!holder || !clip || !enabled) return;
 
-    const hero = document.querySelector("#top");
     const manifesto = document.querySelector("#manifesto");
-    if (!hero || !manifesto) return;
+    if (!manifesto) return;
 
     if (reduced) {
-      gsap.set(holder, { opacity: 1, x: 0, y: 0, rotateY: 0 });
+      gsap.set(holder, { clearProps: "all" });
       return;
     }
 
@@ -72,11 +76,11 @@ export default function TravellingDevice() {
       });
       ro.observe(holder);
 
-      const travel = gsap.timeline({
+      gsap.timeline({
         scrollTrigger: {
           /* Anchored to the manifesto, not the hero: "the hero's bottom" is
              one viewport down, so every sensible-looking hero start resolves
-             to scroll 0 and the device is already mid-turn before the reader
+             to scroll 0 and the device is already moving before the reader
              has scrolled at all. */
           trigger: manifesto,
           start: "top 80%",
@@ -84,18 +88,15 @@ export default function TravellingDevice() {
           scrub: 0.6,
           invalidateOnRefresh: true,
           onRefresh: measure,
-          /* Fires exactly when the turn completes, which is what the screen
+          /* Fires exactly when the device arrives, which is what the screen
              change is meant to wait for. */
           onLeave: () => setShowcase("cards"),
           onEnterBack: () => setShowcase(null),
         },
-      });
-
-      travel.to(holder, {
+      }).to(holder, {
         x: () => dx,
         y: () => dy,
         scale: 0.85,
-        rotateY: 360,
         ease: "none",
         duration: 1,
       });
@@ -117,18 +118,31 @@ export default function TravellingDevice() {
         });
       }
 
-      /* Held at centre through the manifesto, then it leaves with the section
-         it came to visit. */
-      gsap.to(holder, {
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: manifesto,
-          start: "bottom 55%",
-          end: "bottom 18%",
-          scrub: true,
-        },
-      });
+      /* The mask. Driven off the ticker rather than a ScrollTrigger, because
+         it tracks a moving edge every frame rather than a range with two
+         ends — and Lenis already runs on this clock, so the edge and the
+         scroll are read in the same tick and cannot disagree.
+         Clipped from the bottom only: the top edge would hide the device
+         through the whole hero, where the manifesto has not arrived yet. */
+      const maskToSection = () => {
+        const edge = manifesto.getBoundingClientRect().bottom;
+        const box = clip.getBoundingClientRect();
+        const below = Math.max(0, box.bottom - edge);
+        clip.style.clipPath =
+          below <= 0 ? "none" : `inset(0px 0px ${Math.min(below, box.height)}px 0px)`;
+      };
+      maskToSection();
+      gsap.ticker.add(maskToSection);
+      ScrollTrigger.addEventListener("refresh", maskToSection);
+
+      /* gsap.context does not track ticker callbacks, so this one is removed
+         by hand. Returned from the callback rather than registered with
+         ctx.add: ctx is still being assigned while this runs, so touching it
+         here throws before initialisation and takes the page with it. */
+      return () => {
+        gsap.ticker.remove(maskToSection);
+        ScrollTrigger.removeEventListener("refresh", maskToSection);
+      };
     });
 
     return () => {
@@ -141,24 +155,19 @@ export default function TravellingDevice() {
 
   return (
     <div
-      aria-hidden={showcase === "cards" ? undefined : undefined}
+      ref={clipRef}
       /* Matches the column the hero used to hold it in, so it starts exactly
-         where it always sat. `perspective` lives here so the turn has depth;
-         on the device itself it would be re-applied per frame by its own
-         pointer loop. */
+         where it always sat. The clip lives on this wrapper rather than on
+         the holder, so it is applied in viewport space and the travel
+         transform does not drag the mask around with it. */
       className="pointer-events-none fixed top-[88px] right-[12.4%] bottom-[192px] z-30 hidden items-center lg:flex"
-      style={{ perspective: 2200 }}
     >
       <div
         ref={holderRef}
         className="pointer-events-auto h-full max-h-[500px] xl:max-h-[620px]"
-        style={{ transformStyle: "preserve-3d", willChange: "transform" }}
+        style={{ willChange: "transform" }}
       >
-        <HeroDevice
-          shift={roomy ? 24 : 5}
-          showcase={showcase}
-          className="h-full"
-        />
+        <HeroDevice flat shift={roomy ? 24 : 5} showcase={showcase} className="h-full" />
       </div>
     </div>
   );

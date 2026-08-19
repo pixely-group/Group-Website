@@ -512,6 +512,9 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
   );
 }
 
+const CARD_H = 176;
+const CARD_STEP = 86;
+
 const CARDS = [
   { id: "primary", name: "Pixely Visa", num: "4021", bal: "412 800,00", cur: "DZD",
     tint: "linear-gradient(135deg,#2d46ff 0%,#1f33d6 46%,#0b1440 100%)", label: "Primary" },
@@ -530,16 +533,24 @@ function CardsScreen({ c }: { c: C }) {
         My cards
       </p>
 
-      <div style={{ position: "relative", marginTop: 22, height: 300 }}>
+      {/* Height derived from the stack, not guessed: the cards are absolute,
+          so a short container lets the last one overlap whatever follows. */}
+      <div
+        style={{
+          position: "relative",
+          marginTop: 22,
+          height: (CARDS.length - 1) * CARD_STEP + CARD_H,
+        }}
+      >
         {CARDS.map((card, i) => (
           <div
             key={card.id}
             style={{
               position: "absolute",
-              top: i * 86,
+              top: i * CARD_STEP,
               left: 0,
               right: 0,
-              height: 176,
+              height: CARD_H,
               borderRadius: 22,
               padding: 18,
               background: card.tint,
@@ -574,6 +585,57 @@ function CardsScreen({ c }: { c: C }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* The stack leaves the lower half of the screen empty, which reads as
+          an unfinished screen rather than a spacious one. */}
+      <div style={{ marginTop: 26 }}>
+        <p style={{ fontSize: 12, color: c.MUTED, letterSpacing: "0.06em" }}>CARD CONTROLS</p>
+        <div
+          style={{
+            marginTop: 10,
+            borderRadius: 18,
+            background: c.PANEL,
+            border: `1px solid ${c.SEP}`,
+            overflow: "hidden",
+          }}
+        >
+          {[
+            { label: "Freeze card", value: "Off", d: "M12 3v18M3 12h18M6 6l12 12M18 6 6 18" },
+            { label: "Spending limit", value: "250 000 DZD", d: "M4 18V8m5 10V5m5 13v-7m5 7V9" },
+            { label: "Contactless", value: "On", d: "M6 8a8 8 0 0 1 0 8M10 5a13 13 0 0 1 0 14" },
+          ].map((row, i) => (
+            <div
+              key={row.label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "13px 14px",
+                borderTop: i === 0 ? "none" : `1px solid ${c.SEP}`,
+              }}
+            >
+              <span
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 10,
+                  background: c.CHIP,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d={row.d} stroke={c.FG} strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span style={{ flex: 1, fontSize: 13.5, color: c.FG }}>{row.label}</span>
+              <span style={{ fontSize: 12.5, color: c.MUTED }}>{row.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
