@@ -63,7 +63,10 @@ export default function SecurityArchitecture() {
   // Where the scroll says the request should be. The timeline drives this
   // rather than the element, so a held selection can take the element over
   // without the scrub being disabled and left stale.
-  const beamPos = useRef({ cy: 0 });
+  const beamPos = useRef({ cy: 0, opacity: 0 });
+  /** What is actually drawn. It eases toward the scroll's value every frame,
+   *  so control can change hands without the request ever teleporting. */
+  const beamRender = useRef({ cy: 0 });
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -80,16 +83,16 @@ export default function SecurityArchitecture() {
     }, 400);
     setActiveLayer(next ?? i);
 
-    const beam = beamElRef.current;
-    if (!beam) return;
+    if (next === null) {
+      // Nothing to animate: the per-frame ease resumes from where the
+      // request already is and carries it back to the scroll's position.
+      return;
+    }
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    // Selecting sends the request to that plate; releasing glides it back to
-    // wherever the scroll has since moved to.
-    gsap.to(beam, {
-      attr: { cy: next === null ? beamPos.current.cy : layerY(next) },
-      opacity: 1,
+    gsap.to(beamRender.current, {
+      cy: layerY(next),
       duration: reduced ? 0 : 0.6,
       ease: "expo.out",
       overwrite: true,
@@ -167,6 +170,7 @@ export default function SecurityArchitecture() {
         // so most of its journey happened out of sight.
         const stack = section.querySelector("[data-stack]") ?? section;
         beamPos.current.cy = travelFrom;
+        beamRender.current.cy = travelFrom;
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -177,6 +181,7 @@ export default function SecurityArchitecture() {
           },
         });
 
+        // The scrub only moves the target. Nothing writes to the circle here.
         tl.to(
           beamPos.current,
           {
@@ -184,23 +189,44 @@ export default function SecurityArchitecture() {
             duration: 1,
             ease: "none",
             onUpdate: () => {
-              // A held layer owns the element; the scroll keeps tracking
-              // underneath, so releasing has somewhere to return to.
-              if (pinnedRef.current !== null) return;
               const t = tl.progress();
               const fade = 0.06;
-              const opacity =
+              beamPos.current.opacity =
                 t < fade
                   ? t / fade
                   : t > 1 - fade
                     ? Math.max(0, (1 - t) / fade)
                     : 1;
-              gsap.set(beam, { attr: { cy: beamPos.current.cy }, opacity });
-              setActiveLayer(nearestLayer(beamPos.current.cy));
             },
           },
           0,
         );
+
+        // One writer, every frame. Because the drawn value only ever eases
+        // toward its target, releasing a held layer rejoins the scroll from
+        // where the request is rather than jumping to where the scroll got
+        // to while it was held.
+        const reduced = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        let lastIndex = -1;
+        const draw = () => {
+          // A held layer is being tweened directly; leave it alone.
+          if (pinnedRef.current === null) {
+            const gap = beamPos.current.cy - beamRender.current.cy;
+            beamRender.current.cy += reduced ? gap : gap * 0.12;
+          }
+          gsap.set(beam, {
+            attr: { cy: beamRender.current.cy },
+            opacity: beamPos.current.opacity,
+          });
+          const i = nearestLayer(beamRender.current.cy);
+          if (i !== lastIndex) {
+            lastIndex = i;
+            setActiveLayer(i);
+          }
+        };
+        gsap.ticker.add(draw);
 
         // Genuine scrolling hands control back. Guarded by a moment's grace
         // so the ticks that follow a click cannot cancel it before the
@@ -212,6 +238,7 @@ export default function SecurityArchitecture() {
         window.addEventListener("scroll", releaseOnScroll, { passive: true });
 
         return () => {
+          gsap.ticker.remove(draw);
           window.removeEventListener("scroll", releaseOnScroll);
           tl.scrollTrigger?.kill();
           tl.kill();
@@ -300,7 +327,8 @@ export default function SecurityArchitecture() {
                     key={layer.name}
                     data-plate
                     onClick={() => selectLayer(i)}
-                    style={{ cursor: "pointer" }}
+                    data-cursor="link"
+                    className="cursor-pointer"
                   >
                     {/* side wall, gives the plate thickness */}
                     <path

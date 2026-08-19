@@ -226,14 +226,12 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Custom cursor active: suppress native cursor */
+/* Custom cursor active: suppress the native one everywhere. Listing element
+   types missed anything new that set its own cursor — an inline
+   `cursor: pointer` on the security plates showed the hand alongside ours. */
 html[data-cursor="on"],
-html[data-cursor="on"] a,
-html[data-cursor="on"] button,
-html[data-cursor="on"] [role="button"],
-html[data-cursor="on"] summary,
-html[data-cursor="on"] label {
-  cursor: none;
+html[data-cursor="on"] * {
+  cursor: none !important;
 }
 
 /* Film grain — static, composited once. */
