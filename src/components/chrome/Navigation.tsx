@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
@@ -19,17 +20,17 @@ export const NAV_LINKS = [
 ] as const;
 
 /** Scroll distance over which the bar gathers itself, in px. */
-const CONDENSE_OVER = 160;
+const CONDENSE_OVER = 200;
 
 /**
  * Breakpoint ends for the horizontal inset. At rest the bar spans the page's
- * gutter; condensed it draws inward to a floating pill — genuinely narrower,
- * which is what "condensing" should look like. `--nav-max` caps the
- * condensed width so wide screens contract markedly rather than leaving a
- * near-full-width bar hanging at the top.
+ * gutter; condensed it draws inward by a fixed step — 8, 16 or 24px a side.
+ * Deliberately modest and independent of viewport width: centring the bar
+ * within a fixed measure made wide screens contract by hundreds of pixels,
+ * which reads as the bar collapsing rather than settling.
  */
 export const NAV_INSETS =
-  "[--nav-gutter:24px] [--nav-inset:32px] [--nav-max:72rem] " +
+  "[--nav-gutter:24px] [--nav-inset:32px] " +
   "sm:[--nav-gutter:40px] sm:[--nav-inset:56px] " +
   "lg:[--nav-gutter:56px] lg:[--nav-inset:80px]";
 
@@ -41,11 +42,8 @@ export const NAV_INSETS =
  */
 export const NAV_GEOMETRY = {
   offsetTop: "calc(var(--nav-p) * 12px)",
-  // The condensed end is whichever is larger: the breakpoint's own inset, or
-  // whatever centres the bar within `--nav-max`. Both are lengths, so the
-  // whole expression interpolates — unlike a max-width cap, which snaps.
   padInline:
-    "calc(var(--nav-gutter) + (max(var(--nav-inset), (100% - var(--nav-max)) / 2) - var(--nav-gutter)) * var(--nav-p))",
+    "calc(var(--nav-gutter) + (var(--nav-inset) - var(--nav-gutter)) * var(--nav-p))",
   padBlock: "calc(24px - var(--nav-p) * 16px)",
   padLeft: "calc(var(--nav-p) * 20px)",
   padRight: "calc(var(--nav-p) * 8px)",
@@ -98,35 +96,56 @@ export default function Navigation() {
   // whatever the bar measured at the moment the toggle was pressed.
   const [menuNavP, setMenuNavP] = useState(0);
 
-  // Condense on scroll, scrubbed. Lenis emits a scroll event per frame while
-  // it eases, so this stays in step with the page's own motion.
+  // Condensing is driven exactly like every other scrubbed moment on the
+  // page: a GSAP scrub for the smoothing lag, and an eased tween so the
+  // change settles rather than tracking the wheel one-to-one. A raw
+  // scrollY/range mapping is linear and unsmoothed, which is what made this
+  // feel unlike the rest of the site.
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
 
-    const apply = () => {
-      frame = 0;
-      const raw = Math.min(1, Math.max(0, window.scrollY / CONDENSE_OVER));
-      // Reduced motion gets the two end states and nothing in between.
-      const p = reduced ? (raw > 0.5 ? 1 : 0) : raw;
+    const setP = (p: number) => {
       navP.current = p;
       header.style.setProperty("--nav-p", p.toFixed(4));
     };
 
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(apply);
-    };
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
 
-    apply();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const proxy = { p: 0 };
+        const tween = gsap.to(proxy, {
+          p: 1,
+          ease: "power2.inOut",
+          scrollTrigger: {
+            trigger: document.documentElement,
+            start: "top top",
+            end: `+=${CONDENSE_OVER}`,
+            scrub: 0.6,
+          },
+          onUpdate: () => setP(proxy.p),
+        });
+        return () => {
+          tween.scrollTrigger?.kill();
+          tween.kill();
+        };
+      });
+
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        const st = ScrollTrigger.create({
+          trigger: document.documentElement,
+          start: "top top",
+          end: `+=${CONDENSE_OVER}`,
+          onUpdate: (self) => setP(self.progress > 0.5 ? 1 : 0),
+        });
+        return () => st.kill();
+      });
+
+      return () => mm.revert();
+    });
+
+    return () => ctx.revert();
   }, []);
 
   // Pinned sections make trigger-based theme detection unreliable, so
