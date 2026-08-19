@@ -5,6 +5,7 @@ import Hero from "@/components/sections/Hero";
 import Manifesto from "@/components/sections/Manifesto";
 import ProductExperience from "@/components/sections/ProductExperience";
 import NetworkNarrative from "@/components/sections/NetworkNarrative";
+import ConsumerApp from "@/components/sections/ConsumerApp";
 import SecurityArchitecture from "@/components/sections/SecurityArchitecture";
 import GlobalCorridors from "@/components/sections/GlobalCorridors";
 import Metrics from "@/components/sections/Metrics";
@@ -23,6 +24,7 @@ export default function Home() {
         <Manifesto />
         <ProductExperience />
         <NetworkNarrative />
+        <ConsumerApp />
         <SecurityArchitecture />
         <GlobalCorridors />
         <Metrics />

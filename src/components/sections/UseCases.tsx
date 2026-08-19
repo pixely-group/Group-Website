@@ -140,7 +140,7 @@ export default function UseCases() {
     >
       <div className="mx-auto max-w-7xl">
         <p className="type-label section-index mb-6 text-(--muted)">
-          07 — Who it is for
+          08 — Who it is for
         </p>
         <h2 className="type-headline text-big max-w-[16ch] text-balance">
           The same rails, seen from five directions.
