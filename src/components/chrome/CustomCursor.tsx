@@ -99,6 +99,12 @@ export default function CustomCursor() {
       });
     };
 
+    /** An event target is not necessarily an Element — it can be the
+     *  document or the window — and both lookups below call `closest` on it.
+     *  The cast that used to stand here asserted otherwise. */
+    const asElement = (t: EventTarget | null): Element | null =>
+      t instanceof Element ? t : null;
+
     let theme: keyof typeof CURSOR_COLOR | null = null;
     const applyTheme = (next: keyof typeof CURSOR_COLOR) => {
       if (next === theme) return;
@@ -113,7 +119,7 @@ export default function CustomCursor() {
       dotY(e.clientY);
       ringX(e.clientX);
       ringY(e.clientY);
-      applyTheme(resolveTheme(e.target as Element));
+      applyTheme(resolveTheme(asElement(e.target)));
     };
 
     const resolveTarget = (el: Element | null): [CursorState, string?] => {
@@ -127,13 +133,13 @@ export default function CustomCursor() {
     };
 
     const onOver = (e: PointerEvent) => {
-      const [next, text] = resolveTarget(e.target as Element);
+      const [next, text] = resolveTarget(asElement(e.target));
       applyState(next, text);
     };
 
     const onDown = () => gsap.to(ring, { scale: "-=0.2", duration: 0.2 });
     const onUp = (e: PointerEvent) => {
-      const [next, text] = resolveTarget(e.target as Element);
+      const [next, text] = resolveTarget(asElement(e.target));
       state = "default";
       applyState(next, text);
     };

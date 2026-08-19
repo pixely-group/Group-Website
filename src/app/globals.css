@@ -170,6 +170,17 @@
      not guessed. The clamp floor still governs small screens. */
   font-size: clamp(3.4rem, min(10.5vw, calc((100svh - 430px) / 4)), 11.5rem);
 }
+/* The same headline with the device beside it. Measured, not guessed: the
+   longest line sets at 9.4 x the font size, and the column it has to fit is
+   the viewport less a 56px gutter and the 31% reserved for the device — so
+   the largest safe size is (0.69W - 56) / 9.4, which 6.5vw sits under at
+   every width from 1024 up. Above ~2200px the 9rem ceiling takes over. Wrap
+   here would not just look wrong: each line is revealed from behind its own
+   mask, and a second line inside one mask breaks the stagger. */
+@utility text-hero-aside {
+  font-size: clamp(3.4rem, min(6.5vw, calc((100svh - 430px) / 4)), 9rem);
+}
+
 @utility text-giant {
   font-size: clamp(2.8rem, 8.5vw, 9rem);
 }
