@@ -449,7 +449,7 @@ function ReceiveScreen({ onBack, c }: { onBack: () => void; c: C }) {
       <div className="mt-[18px]">
         <Field label="Account name" value="Amine Laissoub" c={c} />
         <Field label="IBAN" value="···· 4417" c={c} />
-        <Field label="BIC" value="PXLYGB21" c={c} />
+        <Field label="BIC" value="ZNPYGB21" c={c} />
       </div>
     </Pushed>
   );
@@ -506,7 +506,7 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
         <Field label="Type" value={tx.detail} c={c} />
         <Field label="When" value={tx.time} c={c} />
         <Field label="Account" value="Main · EUR" c={c} />
-        <Field label="Reference" value={`PXL-${tx.initials}-8841`} c={c} />
+        <Field label="Reference" value={`ZNP-${tx.initials}-8841`} c={c} />
       </div>
     </Pushed>
   );

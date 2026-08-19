@@ -43,12 +43,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pixely — Money should move in a snap",
+  title: "Znapy — Money should move in a Znap",
   description:
-    "Pixely is the settlement layer for companies that operate at internet speed. Accounts in 40+ currencies, value moving in milliseconds, every dollar controlled in code.",
-  metadataBase: new URL("https://pixely.com"),
+    "Znapy is the settlement layer for companies that operate at internet speed. Accounts in 40+ currencies, value moving in milliseconds, every dollar controlled in code.",
+  metadataBase: new URL("https://znapy.com"),
   openGraph: {
-    title: "Pixely — Money should move in a snap",
+    title: "Znapy — Money should move in a Znap",
     description:
       "The settlement layer for companies that operate at internet speed.",
     type: "website",

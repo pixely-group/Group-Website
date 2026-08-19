@@ -23,7 +23,7 @@ const STAGES = [
     index: "02",
     title: "Move",
     heading: "Value takes the shortest path that clears.",
-    body: "A payment is a route, not a request. Pixely prices every viable path — rail, correspondent, internal book — and commits to the one that settles first at the lowest total cost.",
+    body: "A payment is a route, not a request. Znapy prices every viable path — rail, correspondent, internal book — and commits to the one that settles first at the lowest total cost.",
     meta: "Median settlement 184 ms · 99.995% success · No batch windows",
   },
   {
@@ -242,7 +242,7 @@ export default function NetworkNarrative() {
       ref={sectionRef}
       id="network"
       data-theme="ink"
-      aria-label="How the Pixely network works"
+      aria-label="How the Znapy network works"
       className="relative bg-theme text-theme"
       style={{ height: reduced ? undefined : "500svh" }}
     >

@@ -50,7 +50,7 @@ export default function Manifesto() {
       data-theme="ink"
       className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14"
     >
-      <h2 className="sr-only">Why Pixely exists</h2>
+      <h2 className="sr-only">Why Znapy exists</h2>
       {/* One centred column rather than a left-aligned block with the right
           half empty. The text stays ranged left inside it: this is a
           statement, and a 60rem measure set centred would cost more in
@@ -73,7 +73,7 @@ export default function Manifesto() {
           <p className="type-label text-(--faint)">
             Legacy rail latency — T+3 days
           </p>
-          <p className="type-label text-accent">Pixely — T+184 ms</p>
+          <p className="type-label text-accent">Znapy — T+184 ms</p>
         </div>
       </div>
     </section>

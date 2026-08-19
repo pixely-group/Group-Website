@@ -256,7 +256,7 @@ export default function GlobalCorridors() {
             </h2>
           </div>
           <p className="max-w-sm pb-2 text-[0.95rem] leading-relaxed text-(--muted)">
-            Money does not wait for a business day to begin. Pixely holds
+            Money does not wait for a business day to begin. Znapy holds
             liquidity on both sides of every corridor, so a payment clears in
             the recipient&rsquo;s morning, not yours.
           </p>

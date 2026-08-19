@@ -89,7 +89,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
         />
       </svg>
       <span className="type-headline text-[0.95rem] tracking-[0.06em]">
-        Pixely
+        Znapy
       </span>
     </span>
   );
@@ -361,7 +361,7 @@ export default function Navigation() {
             <a
               href="#top"
               onClick={scrollTo("#top")}
-              aria-label="Pixely — back to top"
+              aria-label="Znapy — back to top"
               data-cursor="link"
               className="relative text-(--fg)"
             >

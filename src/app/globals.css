@@ -177,7 +177,7 @@
      actually available — the viewport less the ~430px the rest of the hero
      stack occupies, over the ~4 line-heights this headline needs. Measured,
      not guessed. The clamp floor still governs small screens. */
-  font-size: clamp(3.4rem, min(10.5vw, calc((100svh - 430px) / 4)), 11.5rem);
+  font-size: clamp(3.2rem, min(15vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
 /* The headline with the device beside it. Measured, not guessed: the longest
    line sets at 9.4x the font size and its column is the viewport less a 56px
@@ -187,7 +187,7 @@
    wrong: each line is revealed from behind its own mask, and a second line
    inside one mask breaks the stagger those masks exist for. */
 @utility text-hero-aside {
-  font-size: clamp(3.4rem, min(6.2vw, calc((100svh - 430px) / 4)), 9rem);
+  font-size: clamp(3.2rem, min(10.2vw, calc((100svh - 430px) / 5)), 12rem);
 }
 
 @utility text-giant {

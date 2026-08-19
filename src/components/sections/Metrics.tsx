@@ -64,7 +64,7 @@ export default function Metrics() {
       className="relative bg-theme px-6 pt-[6vh] pb-[16vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        <h2 className="sr-only">Pixely by the numbers</h2>
+        <h2 className="sr-only">Znapy by the numbers</h2>
         <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
           06 — By the numbers
         </p>

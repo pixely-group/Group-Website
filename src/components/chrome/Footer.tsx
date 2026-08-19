@@ -154,15 +154,15 @@ export default function Footer() {
         {/* Wordmark as a rule across the base of the page. */}
         <div aria-hidden className="mt-20 overflow-hidden">
           <FitText className="type-display leading-[0.78] text-(--fg) opacity-[0.07] select-none">
-            Pixely
+            Znapy
           </FitText>
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">
           <p className="type-label max-w-2xl leading-relaxed text-(--faint)">
-            Pixely Financial Technologies Ltd. is an authorised electronic
+            Znapy Financial Technologies Ltd. is an authorised electronic
             money institution. Payment and account services are provided by
-            Pixely and its partner institutions. Balances are safeguarded,
+            Znapy and its partner institutions. Balances are safeguarded,
             not deposits, and are not covered by deposit guarantee schemes.
           </p>
           <div className="flex shrink-0 flex-wrap gap-x-7 gap-y-3">
@@ -183,7 +183,7 @@ export default function Footer() {
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © 2026 Pixely — Money should move in a snap
+          © 2026 Znapy — Money should move in a snap
         </p>
       </div>
     </footer>

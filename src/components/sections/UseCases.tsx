@@ -8,7 +8,7 @@ const DIMENSIONS = [
     id: "startups",
     label: "Startups",
     headline: "Ship a financial product before you own a bank charter.",
-    body: "Issue accounts, move money and hold balances on Pixely's licences. One integration replaces a two-year banking programme.",
+    body: "Issue accounts, move money and hold balances on Znapy's licences. One integration replaces a two-year banking programme.",
     stats: [
       ["6 days", "Median time to first live payment"],
       ["0", "Bank partnerships to negotiate"],

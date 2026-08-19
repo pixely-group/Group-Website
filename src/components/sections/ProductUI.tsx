@@ -59,7 +59,7 @@ export default function ProductUI() {
       data-product-frame
       className="relative w-full min-w-[880px] rounded-(--radius-panel) border border-ink/10 bg-[#f7f5f0] text-ink shadow-[0_60px_120px_-60px_rgba(10,10,11,0.5)]"
       role="img"
-      aria-label="Pixely treasury workspace: accounts, payments, FX and controls in one view"
+      aria-label="Znapy treasury workspace: accounts, payments, FX and controls in one view"
     >
       <div className="flex" style={{ transformStyle: "preserve-3d" }}>
         {/* — Sidebar */}
@@ -73,7 +73,7 @@ export default function ProductUI() {
                 <circle cx="11" cy="11" r="9.5" stroke="currentColor" strokeWidth="2" />
                 <line x1="11" y1="0" x2="11" y2="22" stroke="currentColor" strokeWidth="2" />
               </svg>
-              <span className="type-headline text-[0.7rem]">Pixely</span>
+              <span className="type-headline text-[0.7rem]">Znapy</span>
             </div>
             <div aria-hidden className="mt-5 flex flex-col gap-0.5">
               {NAV_ITEMS.map((item, i) => (

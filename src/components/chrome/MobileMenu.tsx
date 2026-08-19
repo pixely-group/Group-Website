@@ -223,7 +223,7 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">
-          hello@pixely.com
+          hello@znapy.com
         </div>
         <div data-menu-meta className="type-label text-(--muted)">
           NYC — LON — SGP

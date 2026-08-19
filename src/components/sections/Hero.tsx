@@ -213,7 +213,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       data-theme="ink"
-      aria-label="Pixely — money should move in a snap"
+      aria-label="Znapy — money should move in a Znap"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
       <div className="absolute inset-0" aria-hidden>
@@ -250,7 +250,7 @@ export default function Hero() {
           className="type-label mb-7 text-(--muted) opacity-0"
         >
           <span className="section-index">
-            Pixely — Financial infrastructure
+            Znapy — Financial infrastructure
           </span>
         </p>
 
@@ -262,13 +262,18 @@ export default function Hero() {
           </span>
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              should move
+              should
+            </span>
+          </span>
+          <span className="block overflow-hidden pb-[0.02em]">
+            <span data-hero-line className="block">
+              move
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
               in a{" "}
-              <em className="type-serif text-[1.02em] font-normal">snap</em>
+              <em className="type-serif text-[1.02em] font-normal">Znap</em>
               <span className="text-accent">.</span>
             </span>
           </span>
@@ -277,7 +282,7 @@ export default function Hero() {
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <div data-hero-fade className="max-w-md opacity-0">
             <p className="text-[0.95rem] leading-relaxed text-(--muted)">
-              Pixely is the settlement layer for companies that operate at
+              Znapy is the settlement layer for companies that operate at
               internet speed — money that arrives in milliseconds, in any
               currency, governed entirely by code.
             </p>
