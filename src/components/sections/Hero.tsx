@@ -291,10 +291,12 @@ export default function Hero() {
                   viewBox, which otherwise stacks on the word space and leaves
                   the lettering floating away from "in a". */}
               <span className="relative -ml-[0.22em] inline-block h-[0.8em] w-[3.4em] align-baseline">
+                {/* Each hand carries its own stroke weight; Marker's holds
+                    against the display caps where the lighter hands read thin. */}
                 <ZnapSignature
+                  hand="marker"
                   play={signing}
-                  weight={15}
-                  className="absolute bottom-[-0.38em] left-0 w-full"
+                  className="absolute bottom-[-0.51em] left-0 w-full"
                 />
               </span>
             </span>
