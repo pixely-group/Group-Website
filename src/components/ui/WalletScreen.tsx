@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { mulberry32 } from "@/lib/rng";
 import { useMediaQuery } from "@/lib/hooks";
 
 /**
@@ -206,6 +207,107 @@ function ThemeSelect({ value, onChange, c }: { value: ThemeId; onChange: (v: The
 }
 
 /** Anything pushed over the home screen: a title, a way back, and a body. */
+/**
+ * A QR code drawn from the real anatomy: three finder eyes, the timing rows
+ * that run between them, an alignment block, a quiet zone, and a data field.
+ *
+ * The structure is genuine; the payload is not. A working code needs
+ * Reed-Solomon over GF(256), the zigzag placement and mask scoring, which is
+ * a few hundred lines to get subtly wrong — and a subtly wrong one does not
+ * scan either. This reads as a QR at a glance, which is what a screenshot of
+ * a product needs to do. Say the word and I will make it encode for real.
+ */
+const QR_N = 25;
+
+function buildQr(): { on: boolean; kind: "finder" | "data" }[][] {
+  const rand = mulberry32(0x9c0de);
+  const g: { on: boolean; kind: "finder" | "data" }[][] = Array.from(
+    { length: QR_N },
+    () => Array.from({ length: QR_N }, () => ({ on: false, kind: "data" as const })),
+  );
+  const set = (r: number, cc: number, on: boolean, kind: "finder" | "data" = "data") => {
+    if (r >= 0 && r < QR_N && cc >= 0 && cc < QR_N) g[r][cc] = { on, kind };
+  };
+  const reserved = new Set<string>();
+  const reserve = (r: number, cc: number) => reserved.add(`${r},${cc}`);
+
+  // Three finder eyes: a 7x7 ring, a gap, a 3x3 pupil — plus the separator.
+  const finder = (top: number, left: number) => {
+    for (let r = -1; r <= 7; r += 1) {
+      for (let cc = -1; cc <= 7; cc += 1) {
+        const rr = top + r, ccc = left + cc;
+        reserve(rr, ccc);
+        const edge = r === 0 || r === 6 || cc === 0 || cc === 6;
+        const pupil = r >= 2 && r <= 4 && cc >= 2 && cc <= 4;
+        const inside = r >= 0 && r <= 6 && cc >= 0 && cc <= 6;
+        set(rr, ccc, inside && (edge || pupil), "finder");
+      }
+    }
+  };
+  finder(0, 0);
+  finder(0, QR_N - 7);
+  finder(QR_N - 7, 0);
+
+  // Timing: the alternating run that lets a scanner find the grid pitch.
+  for (let i = 8; i < QR_N - 8; i += 1) {
+    set(6, i, i % 2 === 0, "finder");
+    set(i, 6, i % 2 === 0, "finder");
+    reserve(6, i);
+    reserve(i, 6);
+  }
+
+  // Alignment block, bottom-right.
+  const a = QR_N - 7;
+  for (let r = -2; r <= 2; r += 1) {
+    for (let cc = -2; cc <= 2; cc += 1) {
+      reserve(a + r, a + cc);
+      set(a + r, a + cc, Math.max(Math.abs(r), Math.abs(cc)) !== 1, "finder");
+    }
+  }
+
+  // The field, and a clearing in the middle for the mark to sit in.
+  const mid = Math.floor(QR_N / 2);
+  for (let r = 0; r < QR_N; r += 1) {
+    for (let cc = 0; cc < QR_N; cc += 1) {
+      if (reserved.has(`${r},${cc}`)) continue;
+      if (Math.abs(r - mid) <= 2 && Math.abs(cc - mid) <= 2) continue;
+      set(r, cc, rand() < 0.46);
+    }
+  }
+  return g;
+}
+
+function QrCode({ c, size = 204 }: { c: C; size?: number }) {
+  const grid = useMemo(() => buildQr(), []);
+  const q = 2; // quiet zone, in modules
+  const span = QR_N + q * 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${span} ${span}`} role="img"
+         aria-label="Code to scan for these account details">
+      <rect width={span} height={span} rx="3" fill={c.SURFACE} />
+      {grid.map((row, r) =>
+        row.map((m, cc) =>
+          m.on ? (
+            <rect
+              key={`${r}-${cc}`}
+              x={cc + q + 0.08} y={r + q + 0.08}
+              width={0.84} height={0.84}
+              rx={m.kind === "finder" ? 0.18 : 0.34}
+              fill={c.FG}
+            />
+          ) : null,
+        ),
+      )}
+      {/* The mark, in the clearing left for it. */}
+      <g transform={`translate(${span / 2 - 2.4} ${span / 2 - 2.4})`}>
+        <rect width="4.8" height="4.8" rx="1.5" fill={c.ACCENT} />
+        <circle cx="2.4" cy="2.4" r="1.55" fill="none" stroke={c.ON_ACCENT} strokeWidth="0.42" />
+        <line x1="2.4" y1="0.85" x2="2.4" y2="3.95" stroke={c.ON_ACCENT} strokeWidth="0.42" />
+      </g>
+    </svg>
+  );
+}
+
 function Pushed({
   title, onBack, c, children, footer,
 }: {
@@ -231,7 +333,7 @@ function Pushed({
         <span style={{ fontSize: 17, fontWeight: 700, color: c.FG }}>{title}</span>
       </div>
       <div className="mt-[22px] px-[20px]">{children}</div>
-      {footer ? <div className="absolute inset-x-0 bottom-[104px] px-[20px]">{footer}</div> : null}
+      {footer ? <div className="absolute inset-x-0 bottom-[34px] px-[20px]">{footer}</div> : null}
     </div>
   );
 }
@@ -336,16 +438,13 @@ function ReceiveScreen({ onBack, c }: { onBack: () => void; c: C }) {
       <p style={{ fontSize: 15, color: c.MUTED }}>
         Share these details to be paid into your main account.
       </p>
-      {/* A code, drawn rather than generated — it is a still of a product. */}
-      <div className="mt-[20px] flex justify-center">
-        <div className="grid size-[150px] grid-cols-9 gap-[3px] rounded-[18px] p-[14px]"
-             style={{ background: c.SURFACE }} aria-hidden>
-          {Array.from({ length: 81 }, (_, i) => {
-            const corner = (i % 9 < 3 && i < 27) || (i % 9 > 5 && i < 27) || (i % 9 < 3 && i > 53);
-            const on = corner ? (i % 9) % 2 === 0 || i % 7 === 0 : (i * 7 + Math.floor(i / 9) * 3) % 5 < 2;
-            return <span key={i} style={{ background: on ? c.FG : "transparent", borderRadius: 1 }} />;
-          })}
-        </div>
+      <div className="mt-[18px] flex flex-col items-center">
+        <span className="rounded-[26px] p-[12px]" style={{ background: c.SURFACE }}>
+          <QrCode c={c} />
+        </span>
+        <span className="mt-[12px]" style={{ fontSize: 13, color: c.MUTED }}>
+          Scan to pay Amine
+        </span>
       </div>
       <div className="mt-[18px]">
         <Field label="Account name" value="Amine Laissoub" c={c} />
@@ -560,6 +659,9 @@ export default function WalletScreen() {
       {view.name === "topup" && <TopUpScreen onBack={home} c={c} />}
       {view.name === "tx" && <TxScreen tx={view.tx} onBack={home} c={c} />}
 
+      {/* Hidden while a flow is open: these screens are pushed over the tab,
+          not a fourth tab, so the bar has nothing to say there. */}
+      {view.name === "none" && (
       <div className="absolute inset-x-0 bottom-[16px] flex justify-center">
         <div className="flex items-center gap-[4px] rounded-full p-[6px]"
              style={{ background: c.SURFACE, boxShadow: `0 12px 26px -10px ${c.SHADOW}` }}>
@@ -581,6 +683,7 @@ export default function WalletScreen() {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
