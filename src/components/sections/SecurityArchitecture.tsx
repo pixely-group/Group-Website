@@ -529,7 +529,7 @@ export default function SecurityArchitecture() {
         <div className="flex flex-wrap items-end justify-between gap-8">
           <div>
             <p className="type-label section-index mb-6 text-(--muted)">
-              05 — Security
+              04 — Security
             </p>
             <h2 className="type-headline text-big max-w-[15ch] text-balance">
               Five layers stand between intent and settlement.

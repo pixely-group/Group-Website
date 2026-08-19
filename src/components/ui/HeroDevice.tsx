@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import WalletScreen from "@/components/ui/WalletScreen";
 import { gsap } from "@/lib/gsap";
 import { useFinePointer, useReducedMotion } from "@/lib/hooks";
 
@@ -26,13 +27,7 @@ const REST_X = 2;
 const SWING_Y = 8;
 const SWING_X = 5;
 
-export default function PhoneShell({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export default function HeroDevice({ className = "" }: { className?: string }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
   const sheenRef = useRef<HTMLDivElement>(null);
@@ -166,7 +161,7 @@ export default function PhoneShell({
               className="relative size-full overflow-hidden bg-black"
               style={{ borderRadius: SCREEN_R }}
             >
-              {children}
+              <WalletScreen />
 
               <div
                 aria-hidden

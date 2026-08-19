@@ -66,7 +66,7 @@ export default function Metrics() {
       <div className="mx-auto max-w-7xl">
         <h2 className="sr-only">Pixely by the numbers</h2>
         <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
-          07 — By the numbers
+          06 — By the numbers
         </p>
         <dl className="grid gap-x-12 gap-y-16 sm:grid-cols-2">
           {METRICS.map((m) => (

@@ -8,6 +8,10 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 
+const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
+  ssr: false,
+});
+
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
   loading: () => <HeroPoster />,
@@ -67,6 +71,9 @@ export default function Hero() {
   const [active, setActive] = useState(true);
   const reduced = useReducedMotion();
   const small = useMediaQuery("(max-width: 767px)");
+  /** The device only has a column to stand in from lg up. Gating the mount
+   *  rather than hiding it keeps its markup and its ticker off phones. */
+  const hasDeviceColumn = useMediaQuery("(min-width: 1024px)");
   const lenis = useLenis();
 
   // Pointer → NDC for the scene + subtle content parallax.
@@ -115,6 +122,19 @@ export default function Hero() {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.to(content, {
           yPercent: -12,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "78% top",
+            scrub: true,
+          },
+        });
+        // The device is nearer the reader than the type, so it leaves by
+        // more. Same trigger, so the two stay in step.
+        gsap.to(section.querySelector("[data-hero-device]"), {
+          yPercent: -20,
           opacity: 0,
           ease: "none",
           scrollTrigger: {
@@ -196,9 +216,18 @@ export default function Hero() {
         )}
       </div>
 
+      {hasDeviceColumn && (
+        <div
+          data-hero-device
+          className="absolute inset-y-0 right-[4%] z-(--z-content) flex items-center xl:right-[5.5%]"
+        >
+          <HeroDevice className="h-[min(76svh,640px)]" />
+        </div>
+      )}
+
       <div
         ref={contentRef}
-        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14"
+        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14 lg:pr-[32%]"
       >
         <p
           data-hero-fade
@@ -209,7 +238,7 @@ export default function Hero() {
           </span>
         </p>
 
-        <h1 className="type-display text-hero -ml-[0.06em] opacity-0">
+        <h1 className="type-display text-hero -ml-[0.06em] opacity-0 lg:text-hero-aside">
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
               Money

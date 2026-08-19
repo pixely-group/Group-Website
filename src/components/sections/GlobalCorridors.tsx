@@ -249,7 +249,7 @@ export default function GlobalCorridors() {
         <div className="flex flex-wrap items-end justify-between gap-8">
           <div>
             <p className="type-label section-index mb-6 text-(--muted)">
-              06 — Global
+              05 — Global
             </p>
             <h2 className="type-headline text-big max-w-[14ch] text-balance">
               Settlement follows the sun.
