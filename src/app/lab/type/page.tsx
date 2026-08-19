@@ -2,11 +2,13 @@
 
 import dynamic from "next/dynamic";
 import {
-  Chakra_Petch,
-  Orbitron,
-  Sora,
-  Space_Grotesk,
-  Unbounded,
+  Anybody,
+  Bricolage_Grotesque,
+  Gabarito,
+  Michroma,
+  Syncopate,
+  Syne,
+  Tomorrow,
 } from "next/font/google";
 import { useState } from "react";
 
@@ -16,96 +18,188 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 /* Declared here rather than in the root layout, so the candidates ship with
    this route and never reach the site's bundle. */
-const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--f-grotesk" });
-const chakra = Chakra_Petch({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--f-chakra" });
-const sora = Sora({ subsets: ["latin"], variable: "--f-sora" });
-const unbounded = Unbounded({ subsets: ["latin"], variable: "--f-unbounded" });
-const orbitron = Orbitron({ subsets: ["latin"], variable: "--f-orbitron" });
+const anybody = Anybody({ subsets: ["latin"], axes: ["wdth"], style: ["normal", "italic"], variable: "--f-anybody" });
+const syne = Syne({ subsets: ["latin"], variable: "--f-syne" });
+const michroma = Michroma({ subsets: ["latin"], weight: "400", variable: "--f-michroma" });
+const tomorrow = Tomorrow({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], style: ["normal", "italic"], variable: "--f-tomorrow" });
+const syncopate = Syncopate({ subsets: ["latin"], weight: ["400", "700"], variable: "--f-syncopate" });
+const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--f-bricolage" });
+const gabarito = Gabarito({ subsets: ["latin"], variable: "--f-gabarito" });
+
+type Range = { min: number; max: number; step: number };
 
 type Candidate = {
   id: string;
   name: string;
   family: string;
   note: string;
+  wght: Range;
+  /** Only the variable faces carry a width axis. */
+  wdth?: Range;
+  italic?: boolean;
+  size: number;
+  track: number;
   weight: number;
-  /** x-heights differ enough that 1em would compare metrics, not shapes. */
-  scale: number;
-  tracking: string;
+  width: number;
 };
 
 const CANDIDATES: Candidate[] = [
   {
-    id: "mono",
-    name: "Plex Mono",
-    family: "var(--font-plex-mono)",
-    weight: 500,
-    scale: 0.92,
-    tracking: "-0.02em",
-    note: "Already in the system as the machine voice — every micro-label on the site is set in it, and it costs nothing to add. The one word the sentence is about, set in the typeface the machine speaks in.",
+    id: "anybody",
+    name: "Anybody",
+    family: "var(--f-anybody)",
+    wght: { min: 300, max: 900, step: 25 },
+    wdth: { min: 50, max: 150, step: 2 },
+    italic: true,
+    weight: 700,
+    width: 125,
+    size: 1.0,
+    track: -0.02,
+    note: "A real width axis, from 50 to 150 — the only face here you can stretch. Retro-futurist bones, but continuously adjustable rather than one fixed opinion. Start wide.",
   },
   {
-    id: "grotesk",
-    name: "Space Grotesk",
-    family: "var(--f-grotesk)",
-    weight: 700,
-    scale: 1.0,
-    tracking: "-0.03em",
-    note: "The current default for technology brands, and deservedly so: geometric underneath with just enough irregularity in the g and the a to not read as generic. Modern without costume.",
+    id: "syne",
+    name: "Syne",
+    family: "var(--f-syne)",
+    wght: { min: 400, max: 800, step: 25 },
+    weight: 800,
+    width: 100,
+    size: 1.0,
+    track: -0.03,
+    note: "The contemporary art-and-technology face. At ExtraBold the proportions go deliberately strange — narrow round shapes against wide flat ones. Unlike anything else on the page.",
   },
   {
-    id: "chakra",
-    name: "Chakra Petch",
-    family: "var(--f-chakra)",
-    weight: 700,
-    scale: 1.0,
-    tracking: "-0.01em",
-    note: "Squared terminals and clipped corners — an instrument-panel feel without going full science fiction. The most overtly technical of the five that still behaves as text.",
+    id: "michroma",
+    name: "Michroma",
+    family: "var(--f-michroma)",
+    wght: { min: 400, max: 400, step: 1 },
+    weight: 400,
+    width: 100,
+    size: 0.82,
+    track: -0.03,
+    note: "Wide, square and even — futurist without Orbitron's costume. One weight only, so it stands or falls on the size and tracking.",
   },
   {
-    id: "sora",
-    name: "Sora",
-    family: "var(--f-sora)",
+    id: "tomorrow",
+    name: "Tomorrow",
+    family: "var(--f-tomorrow)",
+    wght: { min: 400, max: 900, step: 100 },
+    italic: true,
     weight: 700,
-    scale: 0.98,
-    tracking: "-0.03em",
-    note: "Drawn for technology products specifically. Cleaner and more even than Space Grotesk, with a wider aperture — confident rather than characterful.",
+    width: 100,
+    size: 1.0,
+    track: -0.02,
+    note: "Technical, slightly condensed, with a true italic rather than a slanted upright. Turn the italic on — a word meaning speed is allowed to lean.",
   },
   {
-    id: "unbounded",
-    name: "Unbounded",
-    family: "var(--f-unbounded)",
+    id: "syncopate",
+    name: "Syncopate",
+    family: "var(--f-syncopate)",
+    wght: { min: 400, max: 700, step: 300 },
     weight: 700,
-    scale: 0.9,
-    tracking: "-0.04em",
-    note: "Contemporary display, very wide and very present. Reads as a brand mark rather than a word, which may be exactly right for the one word carrying the name.",
+    width: 100,
+    size: 0.82,
+    track: 0.0,
+    note: "Wide and architectural, drawn to be set with air around the letters. Push the tracking positive and it stops being a word and becomes signage.",
   },
   {
-    id: "orbitron",
-    name: "Orbitron",
-    family: "var(--f-orbitron)",
+    id: "bricolage",
+    name: "Bricolage",
+    family: "var(--f-bricolage)",
+    wght: { min: 300, max: 800, step: 25 },
     weight: 700,
-    scale: 0.88,
-    tracking: "-0.02em",
-    note: "The far end, included for calibration. Unmistakably futuristic and unmistakably a costume — worth seeing so you know where the line is, even if it sits past it.",
+    width: 100,
+    size: 1.0,
+    track: -0.03,
+    note: "A contemporary grotesque with deliberate irregularities — the terminals do not all agree with each other. Modern in a 2026 way rather than a 1970s way.",
+  },
+  {
+    id: "gabarito",
+    name: "Gabarito",
+    family: "var(--f-gabarito)",
+    wght: { min: 400, max: 900, step: 25 },
+    weight: 800,
+    width: 100,
+    size: 1.0,
+    track: -0.03,
+    note: "Geometric and warm, with flared joins that keep it from reading as another neutral sans. The friendliest of the seven, which suits an onomatopoeia.",
   },
 ];
 
+type Tweak = { weight: number; width: number; size: number; track: number; italic: boolean; caps: boolean };
+
+const defaults = (c: Candidate): Tweak => ({
+  weight: c.weight,
+  width: c.width,
+  size: c.size,
+  track: c.track,
+  italic: false,
+  caps: false,
+});
+
+function Slider({
+  label, value, range, format, onChange,
+}: {
+  label: string;
+  value: number;
+  range: Range;
+  format: (v: number) => string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-3">
+      <span className="type-label w-16 shrink-0 text-(--faint)">{label}</span>
+      <input
+        type="range"
+        min={range.min}
+        max={range.max}
+        step={range.step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        data-cursor="link"
+        className="h-1 w-36 cursor-pointer appearance-none rounded-full bg-(--line-strong) accent-(--accent)"
+      />
+      <span className="type-label w-12 shrink-0 text-right text-(--muted)">
+        {format(value)}
+      </span>
+    </label>
+  );
+}
+
 export default function TypeLab() {
-  const [id, setId] = useState("grotesk");
+  const [id, setId] = useState("anybody");
+  const [tweaks, setTweaks] = useState<Record<string, Tweak>>({});
+
   const c = CANDIDATES.find((x) => x.id === id)!;
+  const t = tweaks[id] ?? defaults(c);
+  const set = (patch: Partial<Tweak>) =>
+    setTweaks((prev) => ({ ...prev, [id]: { ...t, ...patch } }));
 
   const face = {
     fontFamily: c.family,
-    fontWeight: c.weight,
-    fontStyle: "normal" as const,
-    letterSpacing: c.tracking,
-    textTransform: "none" as const,
+    fontWeight: t.weight,
+    fontStyle: t.italic ? ("italic" as const) : ("normal" as const),
+    fontSize: `${t.size}em`,
+    letterSpacing: `${t.track}em`,
+    textTransform: t.caps ? ("uppercase" as const) : ("none" as const),
+    ...(c.wdth ? { fontVariationSettings: `"wdth" ${t.width}` } : {}),
   };
+
+  /* So a choice can be applied to the site verbatim rather than re-guessed. */
+  const declaration = [
+    `font-family: ${c.name}`,
+    `font-weight: ${t.weight}`,
+    ...(c.wdth ? [`font-variation-settings: "wdth" ${t.width}`] : []),
+    ...(t.italic ? ["font-style: italic"] : []),
+    `font-size: ${t.size}em`,
+    `letter-spacing: ${t.track}em`,
+    ...(t.caps ? ["text-transform: uppercase"] : []),
+  ].join("; ");
 
   return (
     <main
       data-theme="ink"
-      className={`${grotesk.variable} ${chakra.variable} ${sora.variable} ${unbounded.variable} ${orbitron.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
+      className={`${anybody.variable} ${syne.variable} ${michroma.variable} ${tomorrow.variable} ${syncopate.variable} ${bricolage.variable} ${gabarito.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
     >
       <div
         aria-hidden
@@ -120,14 +214,16 @@ export default function TypeLab() {
         <p className="type-label section-index mb-7 text-(--muted)">
           Znapy — Financial infrastructure
         </p>
+        {/* Archivo keeps the headline; the candidate carries the last word only. */}
         <h1 className="type-display text-hero -ml-[0.06em] lg:pr-[30%] lg:text-hero-aside">
           <span className="block">Money</span>
           <span className="block">should</span>
           <span className="block">move</span>
           <span className="block">
             in a{" "}
-            <span style={{ ...face, fontSize: `${c.scale}em` }}>Znap</span>
-            <span className="text-accent">!</span>
+            <span style={face}>
+              Znap<span className="text-accent">!</span>
+            </span>
           </span>
         </h1>
 
@@ -147,7 +243,7 @@ export default function TypeLab() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 top-5 z-50 flex justify-center px-4">
+      <div className="fixed inset-x-0 top-5 z-50 flex flex-col items-center gap-2 px-4">
         <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-(--radius-panel) border border-(--line-strong) bg-ink/85 p-1.5 backdrop-blur-xl">
           {CANDIDATES.map((x) => {
             const on = x.id === id;
@@ -167,11 +263,81 @@ export default function TypeLab() {
           })}
         </div>
 
+        {/* Two fixed rounds were rejected, so this one is dialled, not picked. */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-(--radius-panel) border border-(--line-strong) bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
+          {c.wght.min !== c.wght.max && (
+            <Slider
+              label="Weight"
+              value={t.weight}
+              range={c.wght}
+              format={String}
+              onChange={(v) => set({ weight: v })}
+            />
+          )}
+          {c.wdth && (
+            <Slider
+              label="Width"
+              value={t.width}
+              range={c.wdth}
+              format={(v) => `${v}`}
+              onChange={(v) => set({ width: v })}
+            />
+          )}
+          <Slider
+            label="Size"
+            value={t.size}
+            range={{ min: 0.7, max: 1.25, step: 0.01 }}
+            format={(v) => v.toFixed(2)}
+            onChange={(v) => set({ size: v })}
+          />
+          <Slider
+            label="Track"
+            value={t.track}
+            range={{ min: -0.08, max: 0.14, step: 0.005 }}
+            format={(v) => v.toFixed(3)}
+            onChange={(v) => set({ track: v })}
+          />
+          <div className="flex items-center gap-1">
+            {c.italic && (
+              <button
+                type="button"
+                onClick={() => set({ italic: !t.italic })}
+                data-cursor="link"
+                className={`type-label rounded-(--radius-chip) px-3.5 py-2 transition-colors duration-300 ${
+                  t.italic ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
+                }`}
+              >
+                Italic
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => set({ caps: !t.caps })}
+              data-cursor="link"
+              className={`type-label rounded-(--radius-chip) px-3.5 py-2 transition-colors duration-300 ${
+                t.caps ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
+              }`}
+            >
+              Caps
+            </button>
+            <button
+              type="button"
+              onClick={() => set(defaults(c))}
+              data-cursor="link"
+              className="type-label rounded-(--radius-chip) px-3.5 py-2 text-(--faint) transition-colors duration-300 hover:text-(--fg)"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
       </div>
 
-      <p className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-2xl px-6 text-center text-[0.8rem] leading-relaxed text-(--muted)">
-        <span className="text-(--fg)">{c.name}</span> — {c.note}
-      </p>
+      <div className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-3xl px-6 text-center">
+        <p className="text-[0.8rem] leading-relaxed text-(--muted)">
+          <span className="text-(--fg)">{c.name}</span> — {c.note}
+        </p>
+        <p className="type-label mt-2 text-(--faint)">{declaration}</p>
+      </div>
     </main>
   );
 }

@@ -273,8 +273,10 @@ export default function Hero() {
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
               in a{" "}
-              <em className="type-serif text-[1.02em] font-normal">Znap</em>
-              <span className="text-accent">!</span>
+              {/* The mark belongs to the word, so it carries the word's face. */}
+              <em className="type-serif text-[1.02em] font-normal">
+                Znap<span className="text-accent">!</span>
+              </em>
             </span>
           </span>
         </h1>
