@@ -74,6 +74,11 @@ export default function HeroDevice({
   const sheenRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
 
+  /** Held still while the pointer is over it. The device answers the pointer
+   *  by sliding and turning, which is fine until you reach for something
+   *  inside the app: moving toward a control moves the control. Everything
+   *  in there was reachable and none of it was hittable. */
+  const hovering = useRef(false);
   const fine = useFinePointer();
   const reduced = useReducedMotion();
   const live = fine && !reduced;
@@ -103,6 +108,12 @@ export default function HeroDevice({
     const target = { x: 0, y: 0 };
     const eased = { x: 0, y: 0 };
     const onMove = (e: PointerEvent) => {
+      const box = stageRef.current?.getBoundingClientRect();
+      hovering.current = !!box
+        && e.clientX >= box.left && e.clientX <= box.right
+        && e.clientY >= box.top && e.clientY <= box.bottom;
+      // Kept current even while frozen, so leaving eases from where the
+      // pointer is rather than snapping back to where it was.
       target.x = (e.clientX / window.innerWidth) * 2 - 1;
       target.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
@@ -110,6 +121,9 @@ export default function HeroDevice({
 
     let elapsed = 0;
     const draw = (_t: number, dt: number) => {
+      // Frozen: neither the pointer nor the idle drift advances, so whatever
+      // you are aiming at stays where it is.
+      if (hovering.current) return;
       elapsed += dt / 1000;
       // Frame-rate independent: a fixed per-frame fraction would chase
       // faster on a 120Hz display than on a 60Hz one.

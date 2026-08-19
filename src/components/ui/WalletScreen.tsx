@@ -101,11 +101,11 @@ function StateMark({ state, c }: { state: Tx["state"]; c: C }) {
   );
 }
 
-function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
+function QuickAction({ label, d, c, onPress }: { label: string; d: string; c: C; onPress: () => void }) {
   return (
-    <div
-      role="button" tabIndex={0} data-cursor="link"
-      className="flex h-[104px] w-full flex-col justify-between rounded-[24px] p-[14px] transition-transform duration-200 active:scale-[0.97]"
+    <button
+      type="button" onClick={onPress} data-cursor="link" aria-label={label}
+      className="flex h-[104px] w-full flex-col justify-between rounded-[24px] p-[14px] text-left transition-transform duration-200 active:scale-[0.97]"
       style={{ background: c.SURFACE }}
     >
       <span className="flex size-[32px] items-center justify-center rounded-full" style={{ background: c.CHIP }}>
@@ -114,14 +114,17 @@ function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
         </svg>
       </span>
       <span style={{ fontSize: 14, fontWeight: 500, color: c.FG }}>{label}</span>
-    </div>
+    </button>
   );
 }
 
-function TxRow({ t, c }: { t: Tx; c: C }) {
+function TxRow({ t, c, onOpen }: { t: Tx; c: C; onOpen: (t: Tx) => void }) {
   return (
-    <li role="button" tabIndex={0} data-cursor="link"
-        className="flex items-center gap-[13px] py-[11px] transition-transform duration-200 active:scale-[0.99]">
+    <li
+      role="button" tabIndex={0} data-cursor="link"
+      onClick={() => onOpen(t)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(t); } }}
+      className="flex cursor-pointer items-center gap-[13px] py-[11px] transition-transform duration-200 active:scale-[0.99]">
       <span className="flex size-[40px] shrink-0 items-center justify-center rounded-full"
             style={{ background: c.CHIP, color: c.FG, fontSize: 14, fontWeight: 700 }}>
         {t.initials}
@@ -202,7 +205,60 @@ function ThemeSelect({ value, onChange, c }: { value: ThemeId; onChange: (v: The
   );
 }
 
-function SearchScreen({ c }: { c: C }) {
+/** Anything pushed over the home screen: a title, a way back, and a body. */
+function Pushed({
+  title, onBack, c, children, footer,
+}: {
+  title: string;
+  onBack: () => void;
+  c: C;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div className="absolute inset-0" style={{ background: c.PANEL }}>
+      <div className="h-[54px]" />
+      <div className="flex items-center gap-[12px] px-[20px]">
+        <button
+          type="button" onClick={onBack} aria-label="Back" data-cursor="link"
+          className="flex size-[36px] shrink-0 items-center justify-center rounded-full transition-transform duration-200 active:scale-[0.94]"
+          style={{ background: c.CHIP }}
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={c.FG} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12.5 4.5 7 10l5.5 5.5" />
+          </svg>
+        </button>
+        <span style={{ fontSize: 17, fontWeight: 700, color: c.FG }}>{title}</span>
+      </div>
+      <div className="mt-[22px] px-[20px]">{children}</div>
+      {footer ? <div className="absolute inset-x-0 bottom-[104px] px-[20px]">{footer}</div> : null}
+    </div>
+  );
+}
+
+/** The filled control every pushed screen finishes with. */
+function Primary({ label, onPress, c }: { label: string; onPress: () => void; c: C }) {
+  return (
+    <button
+      type="button" onClick={onPress} data-cursor="link"
+      className="flex h-[54px] w-full items-center justify-center rounded-[20px] transition-transform duration-200 active:scale-[0.98]"
+      style={{ background: c.ACCENT, color: c.ON_ACCENT, fontSize: 16, fontWeight: 700 }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function Field({ label, value, c }: { label: string; value: string; c: C }) {
+  return (
+    <div className="flex items-center justify-between py-[14px]" style={{ borderTop: `1px solid ${c.SEP}` }}>
+      <span style={{ fontSize: 15, color: c.MUTED }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: c.FG }}>{value}</span>
+    </div>
+  );
+}
+
+function SearchScreen({ c, onOpen }: { c: C; onOpen: (t: Tx) => void }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const hits = TRANSACTIONS.filter(
@@ -224,21 +280,138 @@ function SearchScreen({ c }: { c: C }) {
       <p className="mt-[20px]" style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>
         {q ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : "Recent"}
       </p>
-      <ul className="mt-[2px]">{hits.map((t) => <TxRow key={t.name} t={t} c={c} />)}</ul>
+      <ul className="mt-[2px]">{hits.map((t) => <TxRow key={t.name} t={t} c={c} onOpen={onOpen} />)}</ul>
     </div>
   );
 }
 
-function ActivityScreen({ c }: { c: C }) {
+function ActivityScreen({ c, onOpen }: { c: C; onOpen: (t: Tx) => void }) {
   return (
     <div className="absolute inset-x-0 top-[54px] bottom-[92px] overflow-hidden px-[20px]">
       <p style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>All activity</p>
-      <ul className="mt-[2px]">{TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} />)}</ul>
+      <ul className="mt-[2px]">{TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} onOpen={onOpen} />)}</ul>
     </div>
   );
 }
 
 type Tab = "home" | "search" | "activity";
+/** What is pushed over the tab, if anything. */
+type View =
+  | { name: "none" }
+  | { name: "send" }
+  | { name: "receive" }
+  | { name: "topup" }
+  | { name: "tx"; tx: Tx };
+
+function SendScreen({ onBack, c }: { onBack: () => void; c: C }) {
+  const [done, setDone] = useState(false);
+  return (
+    <Pushed title="Send" onBack={onBack} c={c}
+      footer={<Primary label={done ? "Sent" : "Confirm transfer"} onPress={() => { setDone(true); window.setTimeout(onBack, 900); }} c={c} />}>
+      <p style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>To</p>
+      <div className="mt-[10px] flex items-center gap-[13px] pb-[16px]" style={{ borderBottom: `1px solid ${c.SEP}` }}>
+        <span className="flex size-[42px] items-center justify-center rounded-full"
+              style={{ background: c.CHIP, color: c.FG, fontSize: 14, fontWeight: 700 }}>EH</span>
+        <span>
+          <span className="block" style={{ fontSize: 16, fontWeight: 600, color: c.FG }}>Evelyn Harper</span>
+          <span className="block" style={{ fontSize: 13, color: c.MUTED }}>IBAN ···· 4417</span>
+        </span>
+      </div>
+      <p className="mt-[22px]" style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>Amount</p>
+      <p className="mt-[6px]" style={{ fontSize: 42, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>500.00</p>
+      <div className="mt-[18px]">
+        <Field label="They receive" value="500.00 EUR" c={c} />
+        <Field label="Fee" value="0.00" c={c} />
+        <Field label="Arrives" value="~4 seconds" c={c} />
+      </div>
+    </Pushed>
+  );
+}
+
+function ReceiveScreen({ onBack, c }: { onBack: () => void; c: C }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Pushed title="Receive" onBack={onBack} c={c}
+      footer={<Primary label={copied ? "Copied" : "Copy details"} onPress={() => setCopied(true)} c={c} />}>
+      <p style={{ fontSize: 15, color: c.MUTED }}>
+        Share these details to be paid into your main account.
+      </p>
+      {/* A code, drawn rather than generated — it is a still of a product. */}
+      <div className="mt-[20px] flex justify-center">
+        <div className="grid size-[150px] grid-cols-9 gap-[3px] rounded-[18px] p-[14px]"
+             style={{ background: c.SURFACE }} aria-hidden>
+          {Array.from({ length: 81 }, (_, i) => {
+            const corner = (i % 9 < 3 && i < 27) || (i % 9 > 5 && i < 27) || (i % 9 < 3 && i > 53);
+            const on = corner ? (i % 9) % 2 === 0 || i % 7 === 0 : (i * 7 + Math.floor(i / 9) * 3) % 5 < 2;
+            return <span key={i} style={{ background: on ? c.FG : "transparent", borderRadius: 1 }} />;
+          })}
+        </div>
+      </div>
+      <div className="mt-[18px]">
+        <Field label="Account name" value="Amine Laissoub" c={c} />
+        <Field label="IBAN" value="···· 4417" c={c} />
+        <Field label="BIC" value="PXLYGB21" c={c} />
+      </div>
+    </Pushed>
+  );
+}
+
+function TopUpScreen({ onBack, c }: { onBack: () => void; c: C }) {
+  const [amount, setAmount] = useState("250.00");
+  const [done, setDone] = useState(false);
+  return (
+    <Pushed title="Top Up" onBack={onBack} c={c}
+      footer={<Primary label={done ? "Added" : `Add ${amount}`} onPress={() => { setDone(true); window.setTimeout(onBack, 900); }} c={c} />}>
+      <p style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>Amount</p>
+      <p className="mt-[6px]" style={{ fontSize: 42, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>{amount}</p>
+      <div className="mt-[16px] flex gap-[8px]">
+        {["50.00", "250.00", "1,000.00"].map((v) => {
+          const on = v === amount;
+          return (
+            <button key={v} type="button" onClick={() => setAmount(v)} data-cursor="link"
+              className="flex-1 rounded-[16px] py-[12px] transition-colors duration-200"
+              style={{ background: on ? c.ACCENT : c.SURFACE, color: on ? c.ON_ACCENT : c.FG, fontSize: 14, fontWeight: 600 }}>
+              {v}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-[20px]">
+        <Field label="From" value="Card ···· 4021" c={c} />
+        <Field label="Fee" value="0.00" c={c} />
+        <Field label="Available instantly" value="Yes" c={c} />
+      </div>
+    </Pushed>
+  );
+}
+
+function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
+  return (
+    <Pushed title="Transaction" onBack={onBack} c={c}>
+      <div className="flex flex-col items-center pt-[6px]">
+        <span className="flex size-[62px] items-center justify-center rounded-full"
+              style={{ background: c.CHIP, color: c.FG, fontSize: 20, fontWeight: 700 }}>
+          {tx.initials}
+        </span>
+        <span className="mt-[14px]" style={{ fontSize: 17, fontWeight: 600, color: c.FG }}>{tx.name}</span>
+        <span className="mt-[6px]" style={{ fontSize: 34, fontWeight: 700, color: tx.credit ? c.UP : c.FG, letterSpacing: "-0.02em" }}>
+          {tx.credit ? "+" : "−"} {tx.amount}
+        </span>
+        <span className="mt-[8px] flex items-center gap-[7px]"
+              style={{ fontSize: 14, color: tx.state === "Failed" ? c.DOWN : c.MUTED }}>
+          <StateMark state={tx.state} c={c} />
+          {tx.state}
+        </span>
+      </div>
+      <div className="mt-[24px]">
+        <Field label="Type" value={tx.detail} c={c} />
+        <Field label="When" value={tx.time} c={c} />
+        <Field label="Account" value="Main · EUR" c={c} />
+        <Field label="Reference" value={`PXL-${tx.initials}-8841`} c={c} />
+      </div>
+    </Pushed>
+  );
+}
 
 export default function WalletScreen() {
   const [tab, setTab] = useState<Tab>("home");
@@ -247,6 +420,9 @@ export default function WalletScreen() {
   const mode: Mode = themeId === "system" ? (systemDark ? "dark" : "light") : themeId;
   const c = PALETTE[mode];
 
+  const [view, setView] = useState<View>({ name: "none" });
+  const home = () => setView({ name: "none" });
+  const openTx = (tx: Tx) => setView({ name: "tx", tx });
   const [snap, setSnap] = useState(1);
   const [dragTop, setDragTop] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -340,9 +516,9 @@ export default function WalletScreen() {
             {/* Three, and they now share the width instead of the fourth
                 hanging off the edge. */}
             <div className="mt-[16px] grid grid-cols-3 gap-[9px] px-[20px]">
-              <QuickAction label="Send" d="M6.5 13.5 13.5 6.5M7.5 6.5h6v6" c={c} />
-              <QuickAction label="Receive" d="M13.5 6.5 6.5 13.5M12.5 13.5h-6v-6" c={c} />
-              <QuickAction label="Top Up" d="M10 4.5v11M4.5 10h11" c={c} />
+              <QuickAction label="Send" d="M6.5 13.5 13.5 6.5M7.5 6.5h6v6" c={c} onPress={() => setView({ name: "send" })} />
+              <QuickAction label="Receive" d="M13.5 6.5 6.5 13.5M12.5 13.5h-6v-6" c={c} onPress={() => setView({ name: "receive" })} />
+              <QuickAction label="Top Up" d="M10 4.5v11M4.5 10h11" c={c} onPress={() => setView({ name: "topup" })} />
             </div>
           </div>
 
@@ -369,14 +545,20 @@ export default function WalletScreen() {
             </div>
 
             <ul className="px-[20px]">
-              {TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} />)}
+              {TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} onOpen={openTx} />)}
             </ul>
           </div>
         </>
       )}
 
-      {tab === "search" && <SearchScreen c={c} />}
-      {tab === "activity" && <ActivityScreen c={c} />}
+      {tab === "search" && <SearchScreen c={c} onOpen={openTx} />}
+      {tab === "activity" && <ActivityScreen c={c} onOpen={openTx} />}
+
+      {/* Pushed over whichever tab is showing, under the tab bar. */}
+      {view.name === "send" && <SendScreen onBack={home} c={c} />}
+      {view.name === "receive" && <ReceiveScreen onBack={home} c={c} />}
+      {view.name === "topup" && <TopUpScreen onBack={home} c={c} />}
+      {view.name === "tx" && <TxScreen tx={view.tx} onBack={home} c={c} />}
 
       <div className="absolute inset-x-0 bottom-[16px] flex justify-center">
         <div className="flex items-center gap-[4px] rounded-full p-[6px]"
@@ -385,7 +567,7 @@ export default function WalletScreen() {
             const on = t.id === tab;
             return (
               <button
-                key={t.id} type="button" onClick={() => setTab(t.id)}
+                key={t.id} type="button" onClick={() => { setTab(t.id); home(); }}
                 aria-label={t.label} aria-current={on ? "page" : undefined} data-cursor="link"
                 className="flex h-[44px] w-[56px] items-center justify-center rounded-full transition-colors duration-300"
                 style={{ background: on ? c.ACCENT : "transparent" }}
