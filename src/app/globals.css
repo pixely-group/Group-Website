@@ -24,7 +24,7 @@
 
   /* — Families (loaded via next/font in layout) */
   --font-display: var(--font-archivo);
-  --font-serif: var(--font-instrument);
+  --font-serif: var(--font-fraunces);
   --font-mono: var(--font-plex-mono);
 
   /* — Motion */
@@ -135,7 +135,14 @@
   font-style: italic;
   font-weight: 400;
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
+  /* Display optical size for sharp, high-contrast terminals; SOFT at 0 to
+     keep the corners crisp beside Archivo; WONK on for the characterful
+     single-storey forms that make the counter-voice feel drawn, not set. */
+  font-variation-settings:
+    "opsz" 144,
+    "SOFT" 0,
+    "WONK" 1;
 }
 
 /* Machine voice: mono micro-labels. */

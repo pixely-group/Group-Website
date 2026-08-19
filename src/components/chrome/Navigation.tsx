@@ -71,6 +71,10 @@ export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
+  // Opening the menu stops Lenis, which can reset scroll and flip `scrolled`
+  // underneath us. The menu mirrors the header's geometry, so it has to keep
+  // the value the bar actually had when the toggle was pressed.
+  const [menuScrolled, setMenuScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -153,72 +157,85 @@ export default function Navigation() {
         data-theme={scheme}
         className="fixed inset-x-0 top-0 z-(--z-nav)"
       >
+        {/* Once condensed, the bar sits in the same column the footer uses —
+            the page's chrome then shares one measure top and bottom. At the
+            top of the page it stays full-bleed so the wordmark lines up with
+            the hero headline instead. */}
         <div
-          className={`flex min-h-10 items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) ${
-            scrolled
-              ? `mx-3 mt-3 rounded-(--radius-panel) border border-(--line) ${glass} py-2 pr-2 pl-5 backdrop-blur-xl sm:mx-5 lg:mx-8`
-              : "mx-0 mt-0 border border-transparent bg-transparent py-6 pr-6 pl-6 sm:pl-10 lg:pl-14"
+          className={`transition-all duration-700 ease-(--ease-out-expo) ${
+            scrolled ? "px-6 pt-3 sm:px-10 lg:px-14" : ""
           }`}
         >
-          <a
-            href="#top"
-            onClick={scrollTo("#top")}
-            aria-label="Pixely — back to top"
-            data-cursor="link"
-            className="text-(--fg)"
+          <div
+            className={`mx-auto flex min-h-10 items-center justify-between text-(--fg) transition-all duration-700 ease-(--ease-out-expo) ${
+              scrolled
+                ? `max-w-7xl rounded-(--radius-panel) border border-(--line) ${glass} py-2 pr-2 pl-5 backdrop-blur-xl`
+                : "border border-transparent bg-transparent py-6 pr-6 pl-6 sm:pl-10 lg:pl-14"
+            }`}
           >
-            <Wordmark />
-          </a>
-
-          <nav aria-label="Primary" className="hidden lg:block">
-            <ul className="flex items-center gap-9">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    onClick={scrollTo(link.href)}
-                    data-cursor="link"
-                    className="type-label relative block py-2 text-(--muted) transition-colors duration-300 hover:text-(--fg)"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            {/* Wrapped rather than given `hidden` directly: the button's own
-                `inline-flex` is the same specificity and wins by CSS order. */}
-            <span className="hidden sm:block">
-              <MagneticButton
-                href="#start"
-                onClick={scrollTo("#start")}
-                size="sm"
-              >
-                Get started
-              </MagneticButton>
-            </span>
-            <button
-              type="button"
-              aria-expanded={menuOpen}
-              aria-controls="mobile-menu"
-              onClick={() => setMenuOpen((v) => !v)}
+            <a
+              href="#top"
+              onClick={scrollTo("#top")}
+              aria-label="Pixely — back to top"
               data-cursor="link"
-              className="relative flex size-10 flex-col items-center justify-center gap-[7px] lg:hidden"
+              className="text-(--fg)"
             >
-              <span className="sr-only">
-                {menuOpen ? "Close menu" : "Open menu"}
+              <Wordmark />
+            </a>
+
+            <nav aria-label="Primary" className="hidden lg:block">
+              <ul className="flex items-center gap-9">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      onClick={scrollTo(link.href)}
+                      data-cursor="link"
+                      className="type-label relative block py-2 text-(--muted) transition-colors duration-300 hover:text-(--fg)"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <div className="flex items-center gap-3">
+              {/* Wrapped rather than given `hidden` directly: the button's own
+                `inline-flex` is the same specificity and wins by CSS order. */}
+              <span className="hidden sm:block">
+                <MagneticButton
+                  href="#start"
+                  onClick={scrollTo("#start")}
+                  size="sm"
+                >
+                  Get started
+                </MagneticButton>
               </span>
-              <span
-                aria-hidden
-                className={`block h-px w-6 bg-current transition-transform duration-500 ease-(--ease-out-expo) ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
-              />
-              <span
-                aria-hidden
-                className={`block h-px w-6 bg-current transition-transform duration-500 ease-(--ease-out-expo) ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
-              />
-            </button>
+              <button
+                type="button"
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
+                onClick={() => {
+                setMenuScrolled(scrolled);
+                setMenuOpen((v) => !v);
+              }}
+                data-cursor="link"
+                className="relative flex size-10 flex-col items-center justify-center gap-[7px] lg:hidden"
+              >
+                <span className="sr-only">
+                  {menuOpen ? "Close menu" : "Open menu"}
+                </span>
+                <span
+                  aria-hidden
+                  className={`block h-px w-6 bg-current transition-transform duration-500 ease-(--ease-out-expo) ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
+                />
+                <span
+                  aria-hidden
+                  className={`block h-px w-6 bg-current transition-transform duration-500 ease-(--ease-out-expo) ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -226,7 +243,7 @@ export default function Navigation() {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         onNavigate={scrollTo}
-        scrolled={scrolled}
+        scrolled={menuOpen ? menuScrolled : scrolled}
       />
     </>
   );

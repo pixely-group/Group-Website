@@ -129,42 +129,49 @@ export default function MobileMenu({
       className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink pb-10 text-bone opacity-0 lg:hidden"
       style={{ pointerEvents: "none" }}
     >
-      <div
-        data-menu-meta
-        className={`flex min-h-10 items-center justify-between border border-transparent ${
-          scrolled
-            ? "mx-3 mt-3 py-2 pr-2 pl-5 sm:mx-5"
-            : "mx-0 mt-0 py-6 pr-6 pl-6 sm:pl-10"
-        }`}
-      >
-        <Wordmark />
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close menu"
-          data-cursor="link"
-          tabIndex={open ? 0 : -1}
-          className="flex size-10 items-center justify-center"
+      {/* Mirrors the header's structure, not just its numbers, so the close
+          button lands on the toggle it replaces in either state. */}
+      <div data-menu-meta className={scrolled ? "px-6 pt-3 sm:px-10" : ""}>
+        <div
+          className={`mx-auto flex min-h-10 items-center justify-between border border-transparent ${
+            scrolled ? "max-w-7xl py-2 pr-2 pl-5" : "py-6 pr-6 pl-6 sm:pl-10"
+          }`}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden fill="none">
-            <line
-              x1="3"
-              y1="3"
-              x2="17"
-              y2="17"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <line
-              x1="17"
-              y1="3"
-              x2="3"
-              y2="17"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-          </svg>
-        </button>
+          <Wordmark />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            data-cursor="link"
+            tabIndex={open ? 0 : -1}
+            className="flex size-10 items-center justify-center"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              aria-hidden
+              fill="none"
+            >
+              <line
+                x1="3"
+                y1="3"
+                x2="17"
+                y2="17"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <line
+                x1="17"
+                y1="3"
+                x2="3"
+                y2="17"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <nav aria-label="Menu" className="px-6 py-10 sm:px-10">

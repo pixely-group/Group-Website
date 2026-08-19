@@ -181,7 +181,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       data-theme="ink"
-      aria-label="Pixely — money should move like a snap"
+      aria-label="Pixely — money should move in a snap"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
       <div className="absolute inset-0" aria-hidden>
@@ -222,7 +222,7 @@ export default function Hero() {
           </span>
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
-              like a{" "}
+              in a{" "}
               <em className="type-serif text-[1.02em] font-normal">snap</em>
               <span className="text-accent">.</span>
             </span>
