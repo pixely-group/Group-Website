@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, Fraunces, IBM_Plex_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -21,6 +21,18 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-fraunces",
   display: "swap",
+});
+
+/**
+ * The wallet's own typeface. The HeroUI template loads Nunito and styles
+ * every weight through it, and the rounded terminals are most of why that
+ * app looks the way it does — setting it in Archivo would be a different
+ * product wearing its layout.
+ */
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+  weight: ["400", "500", "600", "700"],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -53,7 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} h-full`}
+      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} ${nunito.variable} h-full`}
     >
       {/* Extensions commonly stamp attributes onto <body> before React
           hydrates — the reported mismatch was a testing extension adding
