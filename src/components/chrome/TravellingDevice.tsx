@@ -25,10 +25,12 @@ const ZOOM = 180;
 /** How faint the bottom of the device gets, so the copy in front of it stays
  *  the thing you read. */
 const FAINT = 0.07;
-/** How much of the screen the fade leaves alone. The wallet's cards occupy
- *  the upper half of the display and the copy crosses at about 53%, so the
- *  fade starts below both — set higher, it dims the cards themselves. */
-const KEEP = 0.54;
+/** How far above the copy the fade begins, as a fraction of the device. A
+ *  little lead-in, so the first line does not land on a hard edge. */
+const LEAD = 0.06;
+/** The fade never eats more than this much of the device, whatever the
+ *  measurements say. */
+const KEEP_MIN = 0.28;
 /** How much of the scroll the device gives back while it is growing. At a
  *  full 1:1 it rises the whole ZOOM as it zooms, and reaches full size with
  *  its top already off the screen. It is still page-anchored afterwards. */
@@ -76,6 +78,14 @@ export default function TravellingDevice() {
     let stop = 0;
     let dx = 0;
     let dy = 0;
+    /** Unscaled height of the device, and the page positions of its parked
+     *  centre and of the copy it has to make way for. Held in page
+     *  coordinates so the contact point can be solved arithmetically each
+     *  frame rather than measured — reading a rect after writing a transform
+     *  forces a synchronous layout, every frame, for the whole section. */
+    let baseH = 1;
+    let restCentreY = 0;
+    let copyTopPage = 0;
 
     const measure = () => {
       /* Read with the tween's own transform removed, or each measurement
@@ -97,6 +107,14 @@ export default function TravellingDevice() {
       stop = seam - window.innerHeight / 2 + DROP;
       dx = window.innerWidth / 2 - (box.left + box.width / 2);
       dy = window.innerHeight / 2 - (box.top + box.height / 2);
+
+      baseH = box.height || 1;
+      /* The holder is fixed, so its untransformed centre never moves in
+         viewport space — which makes it the one stable thing to solve the
+         device's real position against. */
+      restCentreY = box.top + box.height / 2;
+      const copy = manifesto.querySelector<HTMLElement>(".section-index");
+      copyTopPage = copy ? copy.getBoundingClientRect().top + y : seam;
     };
 
     /* The device is imported dynamically and sizes itself after mount, so the
@@ -135,24 +153,39 @@ export default function TravellingDevice() {
       holder.style.transform =
         `translate3d(${dx * p}px, ${dy * p - rise}px, 0) scale(${scale})`;
 
-      /* The lower half fades out as the device settles over the section copy,
-         so the text in front of it reads against the background rather than
-         against a phone. Quantised: the gradient is cheap to paint but not
-         cheap to re-parse, and at 24 steps the change is already invisible. */
-      const step = Math.round(near * 24);
+      /* The device gives way exactly where the copy begins, rather than at a
+         fixed fraction of itself. Solved from page coordinates: the device's
+         height is its own, its parked centre is known, and the copy does not
+         move — so the contact point falls out of arithmetic instead of a rect
+         read after a transform write, which would force a synchronous layout
+         every frame.
+
+         Only masked while the device is square, which is the whole time it is
+         in contact. It leans out of its own box under the pointer, and a mask
+         paints only inside that box, so masking a leaning device cuts about
+         21px off its chassis. */
+      /* Derived from the same numbers the transform is built from, not from
+         an assumed parked centre: LINGER means the device is not anchored to
+         the page while it is still growing, so a constant centre is off by
+         ZOOM * (1 - LINGER) and the fade starts below the copy instead of
+         above it. */
+      const h = baseH * scale;
+      const deviceTop = restCentreY + dy * p - rise - h / 2;
+      const contact = (copyTopPage - y - deviceTop) / h;
+      const overlapping = p >= 1 && contact < 1;
+      /* Quantised: the gradient is cheap to paint but not cheap to re-parse,
+         and at this granularity the change is already invisible. */
+      const step = overlapping ? Math.round(Math.max(0, contact) * 60) : -1;
       if (step !== fadeStep.current) {
         fadeStep.current = step;
-        const t = step / 24;
-        /* No mask at all until there is something to fade. A mask paints only
-           within its own box, and the device does not stay inside that box:
-           tilted by the pointer it spills about 21px past the left edge, and
-           every one of those pixels was being cut. In the hero, and for the
-           whole travel, the chassis has to be able to lean out of its box. */
         let mask = "none";
-        if (t > 0) {
-          const mid = 1 - 0.7 * t;
-          const end = 1 - (1 - FAINT) * t;
-          mask = `linear-gradient(to bottom, #000 0 ${KEEP * 100}%, rgb(0 0 0 / ${mid}) 70%, rgb(0 0 0 / ${end}) 86%)`;
+        if (overlapping) {
+          const startsAt = Math.max(KEEP_MIN, step / 60 - LEAD);
+          const midAt = Math.min(0.97, startsAt + 0.16);
+          mask =
+            `linear-gradient(to bottom, #000 0 ${(startsAt * 100).toFixed(1)}%,` +
+            ` rgb(0 0 0 / 0.28) ${(midAt * 100).toFixed(1)}%,` +
+            ` rgb(0 0 0 / ${FAINT}) 100%)`;
         }
         holder.style.maskImage = mask;
         holder.style.webkitMaskImage = mask;
