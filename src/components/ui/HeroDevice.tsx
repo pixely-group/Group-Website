@@ -64,16 +64,18 @@ export default function HeroDevice({
   className = "",
   shift = 0,
   showcase = null,
-  flat = false,
+  flatten,
 }: {
   /** How far the device may slide either side of rest, in px. Passed in
    *  because only the caller knows what room its column has. */
   shift?: number;
   /** Forces the app to a particular screen, for the scroll sequence. */
   showcase?: "cards" | null;
-  /** Square to the reader: no yaw, no pitch, no pointer follow. A CSS 3D
-   *  turn cannot be made convincing, so the device does not attempt one. */
-  flat?: boolean;
+  /** 0 is the resting three-quarter view with the pointer live; 1 is square
+   *  to the reader and still. Read from a ref every frame rather than passed
+   *  as a value, so the scroll can drive it without re-rendering the app
+   *  inside the screen sixty times a second. */
+  flatten?: { current: number };
   className?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -107,14 +109,6 @@ export default function HeroDevice({
     if (!tilt || !sheen) return;
     const travel = shift;
 
-    if (flat) {
-      /* Dead straight, and still: the sheen is a lighting cue for a turning
-         surface, so on a flat one it only reads as a smear drifting about. */
-      tilt.style.transform = "none";
-      sheen.style.transform = "translate3d(0,0,0) rotate(-14deg)";
-      return;
-    }
-
     if (!live) {
       tilt.style.transform = `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`;
       return;
@@ -146,14 +140,21 @@ export default function HeroDevice({
       eased.x += (target.x - eased.x) * k;
       eased.y += (target.y - eased.y) * k;
 
-      const ry = REST_Y + eased.x * SWING_Y + Math.sin(elapsed * 0.4) * 0.7;
-      const rx = REST_X - eased.y * SWING_X + Math.cos(elapsed * 0.31) * 0.5;
+      // Everything the device does at rest is scaled out together as the
+      // scroll squares it up, so at 1 the transform is exactly identity
+      // rather than a very small angle that still catches the light.
+      const hold = 1 - (flatten ? Math.min(1, Math.max(0, flatten.current)) : 0);
+
+      const ry = (REST_Y + eased.x * SWING_Y + Math.sin(elapsed * 0.4) * 0.7) * hold;
+      const rx = (REST_X - eased.y * SWING_X + Math.cos(elapsed * 0.31) * 0.5) * hold;
       // Lateral first: the device goes to the side the cursor is on.
-      const tx = eased.x * travel;
-      const ty = Math.sin(elapsed * 0.5) * 5;
+      const tx = eased.x * travel * hold;
+      const ty = Math.sin(elapsed * 0.5) * 5 * hold;
       tilt.style.transform = `translate3d(${tx}px,${ty}px,0) rotateX(${rx}deg) rotateY(${ry}deg)`;
 
       // One hairline of light travelling across the glass, opposite the turn.
+      // It fades with the angle: on a flat face it is a smear with no cause.
+      sheen.style.opacity = `${hold}`;
       sheen.style.transform = `translate3d(${-eased.x * 34 - ry * 2.6}px,0,0) rotate(${-14 + ry * 0.4}deg)`;
     };
     gsap.ticker.add(draw);
@@ -162,7 +163,7 @@ export default function HeroDevice({
       window.removeEventListener("pointermove", onMove);
       gsap.ticker.remove(draw);
     };
-  }, [live, shift, flat]);
+  }, [live, shift, flatten]);
 
   return (
     <div
@@ -188,9 +189,7 @@ export default function HeroDevice({
         style={{
           transformStyle: "preserve-3d",
           willChange: "transform",
-          transform: flat
-            ? "none"
-            : `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`,
+          transform: `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`,
         }}
       >
         {/* Out of flow: left in it, the drawing's unscaled width becomes the
