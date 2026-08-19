@@ -62,137 +62,42 @@ const SCREEN_H = 874;
  *  actions, and as low as the tab bar allows. It opens at the middle. */
 const SNAPS = [150, 336, 630] as const;
 
-/* — The template's series generator, ported as written: an FNV-1a mixer, a
-     slow sine, a faster harmonic and a linear drift toward the change. */
-function hashString(input: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = Math.imul(hash ^ input.charCodeAt(i), 16777619);
-  }
-  return hash >>> 0;
-}
-
-function spark(key: string, change: number, w = 72, h = 32, n = 40) {
-  const seed = hashString(key);
-  const phase = (seed % 360) * (Math.PI / 180);
-  const harmonicPhase = ((seed >>> 8) % 360) * (Math.PI / 180);
-  const values: number[] = [];
-  for (let i = 0; i < n; i += 1) {
-    const t = i / (n - 1);
-    const sine = Math.sin(phase + t * Math.PI * 2);
-    const harmonic = Math.sin(harmonicPhase + t * Math.PI * 6) * 0.35;
-    values.push((sine + harmonic) * 0.5 * 0.6 + change * 26 * t);
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const pts = values.map((v, i) => [
-    (i / (n - 1)) * w,
-    h - 2 - ((v - min) / span) * (h - 4),
-  ]);
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  return { line, area: `${line} L${w},${h} L0,${h} Z` };
-}
-
-type Token = {
+type Tx = {
   name: string;
-  ticker: string;
-  price: string;
-  change: number;
-  mark: (size: number) => React.ReactNode;
+  detail: string;
+  state: "Sent" | "Received" | "Pending" | "Failed";
+  amount: string;
+  credit: boolean;
+  time: string;
+  /** Two-letter monogram, in place of the brand marks tokens carried. */
+  initials: string;
 };
 
-/* Brand marks, drawn from the template's own icon set. */
-const disc = (fill: string, s: number, inner: React.ReactNode) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" aria-hidden>
-    <circle cx="12" cy="12" r="12" fill={fill} />
-    {inner}
-  </svg>
-);
-
-const TOKENS: Token[] = [
-  {
-    name: "Bitcoin", ticker: "BTC", price: "$67,234.18", change: 0.0214,
-    mark: (s) => disc("#F7931A", s, <text x="12" y="17" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700" fontFamily="var(--font-nunito)">₿</text>),
-  },
-  {
-    name: "Ethereum", ticker: "ETH", price: "$3,512.42", change: 0.0381,
-    mark: (s) => disc("#FFFFFF", s, <>
-      <path d="M12 4.2 7.9 12l4.1 2.4V4.2Z" fill="#8C8C8C" />
-      <path d="M12 4.2V14.4l4.1-2.4L12 4.2Z" fill="#343434" />
-      <path d="M12 15.4 7.9 13l4.1 6.8v-4.4Z" fill="#8C8C8C" />
-      <path d="M12 19.8 16.1 13 12 15.4v4.4Z" fill="#3C3C3B" />
-    </>),
-  },
-  {
-    name: "Solana", ticker: "SOL", price: "$168.91", change: 0.0517,
-    mark: (s) => (
-      <svg width={s} height={s} viewBox="0 0 24 24" aria-hidden>
-        <defs>
-          <linearGradient id="sol-g" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#00FFA3" />
-            <stop offset="1" stopColor="#DC1FFF" />
-          </linearGradient>
-        </defs>
-        <circle cx="12" cy="12" r="12" fill="#000000" />
-        {[8.2, 11.4, 14.6].map((y, i) => (
-          <path key={y}
-            d={i === 1
-              ? `M7.4 ${y} h9.2 l-2 2 H5.4 Z`
-              : `M${i ? 5.4 : 7.4} ${y} h9.2 l${i ? -2 : 2} 2 H${i ? 5.4 : 5.4} Z`}
-            fill="url(#sol-g)" />
-        ))}
-      </svg>
-    ),
-  },
-  {
-    name: "USD Coin", ticker: "USDC", price: "$1.00", change: 0.0002,
-    mark: (s) => disc("#2775CA", s, <>
-      <circle cx="12" cy="12" r="6.4" fill="none" stroke="#FFFFFF" strokeWidth="1.4" />
-      <path d="M12 7.6v8.8M13.9 10.2c-.4-.7-1.1-1-1.9-1-1 0-1.8.5-1.8 1.4 0 .8.6 1.2 1.9 1.5 1.4.3 2 .8 2 1.6 0 1-.9 1.5-2 1.5-.9 0-1.6-.4-2-1.1"
-        stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-    </>),
-  },
-  {
-    name: "Cardano", ticker: "ADA", price: "$0.45", change: -0.0186,
-    mark: (s) => disc("#FFFFFF", s, <>
-      <circle cx="12" cy="12" r="2" fill="#0033AD" />
-      {[[12, 6], [12, 18], [6.8, 9], [6.8, 15], [17.2, 9], [17.2, 15]].map(([x, y]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r="1.35" fill="#0033AD" />
-      ))}
-    </>),
-  },
-  {
-    name: "Dogecoin", ticker: "DOGE", price: "$0.15", change: 0.0124,
-    mark: (s) => disc("#C2A633", s, <text x="12" y="17" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="var(--font-nunito)">Ð</text>),
-  },
-  {
-    name: "Chainlink", ticker: "LINK", price: "$18.54", change: -0.0072,
-    mark: (s) => disc("#2A5ADA", s, <path d="M12 5.6 17.4 8.8v6.4L12 18.4 6.6 15.2V8.8L12 5.6Z" fill="#FFFFFF" />),
-  },
+/* The people and states from the original design, on the transactions a bank
+   actually shows: a card tap, a transfer out, one still clearing, one that
+   did not go through. */
+const TRANSACTIONS: Tx[] = [
+  { name: "Contactless", detail: "Lisbon, PT", state: "Sent", amount: "48.20", credit: false, time: "09:41", initials: "LX" },
+  { name: "Marcus Lee", detail: "Transfer", state: "Sent", amount: "3,200.00", credit: false, time: "07:30", initials: "ML" },
+  { name: "Evelyn Harper", detail: "Incoming", state: "Pending", amount: "1,500.00", credit: true, time: "19:12", initials: "EH" },
+  { name: "Liam Patel", detail: "Transfer", state: "Received", amount: "4,000.00", credit: true, time: "20:05", initials: "LP" },
+  { name: "Sophia Chen", detail: "Card payment", state: "Failed", amount: "500.00", credit: false, time: "19:45", initials: "SC" },
+  { name: "Acme Corp", detail: "Invoice 8841", state: "Received", amount: "24,000.00", credit: true, time: "Yesterday", initials: "AC" },
+  { name: "Northwind Labs", detail: "Direct debit", state: "Sent", amount: "890.00", credit: false, time: "Yesterday", initials: "NL" },
+  { name: "Payroll", detail: "84 people", state: "Sent", amount: "128,400.00", credit: false, time: "Mon", initials: "PR" },
 ];
 
-const ACTIVITY = [
-  ["Received ETH", "+0.42 ETH", "09:41", true],
-  ["Swapped USDC to SOL", "12.4 SOL", "08:02", true],
-  ["Sent BTC", "−0.0031 BTC", "Yesterday", false],
-  ["Bought SOL", "+4.0 SOL", "Yesterday", true],
-  ["Network fee", "−$1.24", "Tue", false],
-  ["Received USDC", "+250.59 USDC", "Tue", true],
-  ["Sent DOGE", "−120 DOGE", "Mon", false],
-] as const;
-
-const pct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(2)}%`;
-
-function Trend({ change, c, size = 12 }: { change: number; c: C; size?: number }) {
-  const up = change >= 0;
+function StateMark({ state, c }: { state: Tx["state"]; c: C }) {
+  const tint =
+    state === "Failed" ? c.DOWN : state === "Pending" ? c.MUTED : c.MUTED;
   return (
-    <span className="inline-flex items-center gap-[3px]" style={{ color: up ? c.UP : c.DOWN, fontSize: size, fontWeight: 600 }}>
-      <svg width="8" height="6" viewBox="0 0 8 6" aria-hidden>
-        <path d={up ? "M4 0 8 6H0Z" : "M4 6 0 0h8Z"} fill="currentColor" />
-      </svg>
-      {pct(change)}
-    </span>
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke={tint} strokeWidth="1.6" aria-hidden>
+      <circle cx="10" cy="10" r="8" />
+      {state === "Sent" && <path d="M7.4 12.6 12.6 7.4M8.6 7.4h4v4" strokeLinecap="round" />}
+      {state === "Received" && <path d="M12.6 7.4 7.4 12.6M11.4 12.6h-4v-4" strokeLinecap="round" />}
+      {state === "Pending" && <path d="M10 6.2V10l2.4 1.6" strokeLinecap="round" />}
+      {state === "Failed" && <path d="m7.6 7.6 4.8 4.8m0-4.8-4.8 4.8" strokeLinecap="round" />}
+    </svg>
   );
 }
 
@@ -200,7 +105,7 @@ function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
   return (
     <div
       role="button" tabIndex={0} data-cursor="link"
-      className="flex size-[112px] shrink-0 flex-col justify-between rounded-[24px] p-[14px] transition-transform duration-200 active:scale-[0.97]"
+      className="flex h-[104px] w-full flex-col justify-between rounded-[24px] p-[14px] transition-transform duration-200 active:scale-[0.97]"
       style={{ background: c.SURFACE }}
     >
       <span className="flex size-[32px] items-center justify-center rounded-full" style={{ background: c.CHIP }}>
@@ -213,31 +118,26 @@ function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
   );
 }
 
-function TokenRow({ t, c }: { t: Token; c: C }) {
-  const s = spark(t.ticker, t.change);
-  const up = t.change >= 0;
-  const id = `fill-${t.ticker}`;
+function TxRow({ t, c }: { t: Tx; c: C }) {
   return (
     <li role="button" tabIndex={0} data-cursor="link"
-        className="flex items-center gap-[12px] py-[10px] transition-transform duration-200 active:scale-[0.99]">
-      <span className="shrink-0">{t.mark(40)}</span>
+        className="flex items-center gap-[13px] py-[11px] transition-transform duration-200 active:scale-[0.99]">
+      <span className="flex size-[40px] shrink-0 items-center justify-center rounded-full"
+            style={{ background: c.CHIP, color: c.FG, fontSize: 14, fontWeight: 700 }}>
+        {t.initials}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate" style={{ fontSize: 15, fontWeight: 600, color: c.FG }}>{t.name}</span>
-        <span className="block" style={{ fontSize: 13, color: c.MUTED }}>{t.ticker}</span>
+        <span className="mt-[1px] flex items-center gap-[6px]" style={{ fontSize: 13, color: t.state === "Failed" ? c.DOWN : c.MUTED }}>
+          <StateMark state={t.state} c={c} />
+          {t.state === "Sent" || t.state === "Received" ? t.detail : t.state}
+        </span>
       </span>
-      <svg width="72" height="32" viewBox="0 0 72 32" fill="none" className="shrink-0" aria-hidden>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={up ? c.UP : c.DOWN} stopOpacity="0.45" />
-            <stop offset="1" stopColor={up ? c.UP : c.DOWN} stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-        <path d={s.area} fill={`url(#${id})`} />
-        <path d={s.line} stroke={up ? c.UP : c.DOWN} strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-      <span className="shrink-0 text-right" style={{ minWidth: 76 }}>
-        <span className="block" style={{ fontSize: 14, fontWeight: 600, color: c.FG }}>{t.price}</span>
-        <Trend change={t.change} c={c} />
+      <span className="shrink-0 text-right">
+        <span className="block" style={{ fontSize: 15, fontWeight: 700, color: t.credit ? c.UP : c.FG }}>
+          {t.credit ? "+" : "−"} {t.amount}
+        </span>
+        <span className="block" style={{ fontSize: 12, color: c.MUTED }}>{t.time}</span>
       </span>
     </li>
   );
@@ -305,7 +205,9 @@ function ThemeSelect({ value, onChange, c }: { value: ThemeId; onChange: (v: The
 function SearchScreen({ c }: { c: C }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
-  const hits = TOKENS.filter((t) => !q || t.name.toLowerCase().includes(q) || t.ticker.toLowerCase().includes(q));
+  const hits = TRANSACTIONS.filter(
+    (t) => !q || t.name.toLowerCase().includes(q) || t.detail.toLowerCase().includes(q),
+  );
   return (
     <div className="absolute inset-x-0 top-[54px] bottom-[92px] overflow-hidden px-[20px]">
       <label className="flex items-center gap-[10px] rounded-[18px] px-[14px] py-[12px]" style={{ background: c.SURFACE }}>
@@ -314,25 +216,15 @@ function SearchScreen({ c }: { c: C }) {
         </svg>
         <input
           value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search tokens, addresses, NFTs" data-cursor="text"
+          placeholder="Search people, merchants, amounts" data-cursor="text"
           className="w-full bg-transparent outline-none"
           style={{ fontSize: 15, color: c.FG }}
         />
       </label>
-      <p className="mt-[20px]" style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>Favorites</p>
-      <div className="mt-[10px] flex gap-[8px] overflow-hidden">
-        {TOKENS.slice(0, 3).map((t) => (
-          <div key={t.ticker} className="w-[104px] shrink-0 rounded-[20px] p-[12px]" style={{ background: c.SURFACE }}>
-            {t.mark(28)}
-            <span className="mt-[8px] block" style={{ fontSize: 13, fontWeight: 600, color: c.FG }}>{t.price}</span>
-            <span className="mt-[2px] block"><Trend change={t.change} c={c} size={11} /></span>
-          </div>
-        ))}
-      </div>
       <p className="mt-[20px]" style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>
-        {q ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : "Top tokens"}
+        {q ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : "Recent"}
       </p>
-      <ul className="mt-[2px]">{hits.map((t) => <TokenRow key={t.ticker} t={t} c={c} />)}</ul>
+      <ul className="mt-[2px]">{hits.map((t) => <TxRow key={t.name} t={t} c={c} />)}</ul>
     </div>
   );
 }
@@ -341,18 +233,7 @@ function ActivityScreen({ c }: { c: C }) {
   return (
     <div className="absolute inset-x-0 top-[54px] bottom-[92px] overflow-hidden px-[20px]">
       <p style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>All activity</p>
-      <ul className="mt-[6px]">
-        {ACTIVITY.map(([what, amount, when, credit]) => (
-          <li key={what} className="flex items-center justify-between py-[13px] transition-transform duration-200 active:scale-[0.99]"
-              style={{ borderTop: `1px solid ${c.SEP}` }}>
-            <span className="min-w-0 pr-3">
-              <span className="block truncate" style={{ fontSize: 15, fontWeight: 600, color: c.FG }}>{what}</span>
-              <span className="block" style={{ fontSize: 13, color: c.MUTED }}>{when}</span>
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: credit ? c.UP : c.FG }}>{amount}</span>
-          </li>
-        ))}
-      </ul>
+      <ul className="mt-[2px]">{TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} />)}</ul>
     </div>
   );
 }
@@ -429,33 +310,39 @@ export default function WalletScreen() {
             <div className="h-[54px]" />
 
             <div className="flex items-center gap-[12px] px-[20px]">
-              <span className="size-[44px] shrink-0 rounded-full"
-                    style={{ background: "radial-gradient(120% 120% at 30% 22%, #bfe9ff 0%, #7ea8f5 45%, #5b3fd6 100%)" }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate" style={{ fontSize: 17, fontWeight: 700, color: c.FG }}>Main Wallet</span>
-                <button type="button" onClick={() => setCopied(true)} data-cursor="link"
-                        className="flex items-center gap-[6px]" style={{ fontSize: 14, color: c.MUTED }}>
-                  {copied ? "Copied" : "0x7A3F…9F0A"}
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke={c.MUTED} strokeWidth="1.4" aria-hidden>
-                    <rect x="4.6" y="4.6" width="8" height="8" rx="1.8" /><path d="M9.4 1.4h-8v8" />
-                  </svg>
-                </button>
-              </span>
+              {/* The avatar and the greeting are one control — it is how you
+                  reach the profile, so it names who you are rather than the
+                  account. */}
+              <button
+                type="button" onClick={() => setCopied(true)} data-cursor="link"
+                aria-label="Open profile"
+                className="flex min-w-0 flex-1 items-center gap-[12px] text-left transition-transform duration-200 active:scale-[0.99]"
+              >
+                <span className="size-[44px] shrink-0 rounded-full"
+                      style={{ background: "radial-gradient(120% 120% at 30% 22%, #bfe9ff 0%, #7ea8f5 45%, #5b3fd6 100%)" }} />
+                <span className="min-w-0">
+                  <span className="block truncate" style={{ fontSize: 17, fontWeight: 700, color: c.FG }}>Hi, Amine</span>
+                  <span className="block truncate" style={{ fontSize: 14, color: c.MUTED }}>
+                    {copied ? "Profile" : "Main account · EUR"}
+                  </span>
+                </span>
+              </button>
               <ThemeSelect value={themeId} onChange={setThemeId} c={c} />
             </div>
 
             <div className="mt-[18px] px-[20px]">
-              <p style={{ fontSize: 38, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em" }}>$12,481.43</p>
+              <p style={{ fontSize: 40, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>12,481.43</p>
               <p className="mt-[2px]" style={{ fontSize: 15, color: c.MUTED }}>
-                <span style={{ color: c.UP, fontWeight: 600 }}>+$286.27</span> today
+                <span style={{ color: c.UP, fontWeight: 600 }}>+286.27</span> today
               </p>
             </div>
 
-            <div className="mt-[16px] flex gap-[8px] overflow-hidden pl-[20px]">
+            {/* Three, and they now share the width instead of the fourth
+                hanging off the edge. */}
+            <div className="mt-[16px] grid grid-cols-3 gap-[9px] px-[20px]">
               <QuickAction label="Send" d="M6.5 13.5 13.5 6.5M7.5 6.5h6v6" c={c} />
               <QuickAction label="Receive" d="M13.5 6.5 6.5 13.5M12.5 13.5h-6v-6" c={c} />
-              <QuickAction label="Swap" d="M3 7h11m0 0-3-3m3 3-3 3M17 13H6m0 0 3-3m-3 3 3 3" c={c} />
-              <QuickAction label="Buy/Sell" d="M2.5 5.5h15v9h-15v-9Zm0 3.5h15" c={c} />
+              <QuickAction label="Top Up" d="M10 4.5v11M4.5 10h11" c={c} />
             </div>
           </div>
 
@@ -468,21 +355,21 @@ export default function WalletScreen() {
               onPointerDown={onDragStart} onPointerMove={onDragMove}
               onPointerUp={onDragEnd} onPointerCancel={onDragEnd}
               onClick={() => setSnap((v) => (v + 1) % SNAPS.length)}
-              aria-label="Drag to resize the token list" data-cursor="link"
+              aria-label="Drag to resize the transaction list" data-cursor="link"
               className="flex h-[30px] w-full touch-none items-center justify-center"
             >
               <span className="h-[5px] w-[40px] rounded-full" style={{ background: c.HANDLE }} />
             </button>
 
             <div className="flex items-center justify-between pt-[2px] pr-[16px] pb-[4px] pl-[20px]">
-              <p style={{ fontSize: 17, fontWeight: 600, color: c.MUTED }}>Explore tokens</p>
+              <p style={{ fontSize: 17, fontWeight: 600, color: c.MUTED }}>Recent Transactions</p>
               <span className="rounded-full px-[16px] py-[8px]" style={{ fontSize: 14, fontWeight: 600, color: c.FG, background: c.SURFACE }}>
-                Manage
+                See all
               </span>
             </div>
 
             <ul className="px-[20px]">
-              {TOKENS.map((t) => <TokenRow key={t.ticker} t={t} c={c} />)}
+              {TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} />)}
             </ul>
           </div>
         </>
