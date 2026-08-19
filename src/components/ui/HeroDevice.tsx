@@ -20,6 +20,15 @@ const BEZEL = 5;
 const BODY_W = SCREEN_W + BEZEL * 2;
 const BODY_H = SCREEN_H + BEZEL * 2;
 const SCREEN_R = 52;
+/**
+ * Body depth. The hardware is 8.75mm thick against 71.9mm wide, and the
+ * body here is 412pt wide, so the honest number is 50pt. It matters now:
+ * the device used to be a single plane, which meant turning it only
+ * foreshortened the front — there was no side there to come into view.
+ */
+const THICK = 50;
+/** The rails run between the corners, so they do not cut across the radius. */
+const CORNER = 57;
 
 /**
  * Resting three-quarter view, and how far the pointer may push it.
@@ -31,7 +40,14 @@ const SCREEN_R = 52;
  * and invisible on the screen. At 820 the same turn is worth about 6%, and
  * at ten degrees it reads plainly.
  */
-const REST_Y = -5;
+/**
+ * Positive yaw swings the right edge away, which is what turns the right
+ * rail — the side carrying the lock button and Camera Control — toward the
+ * camera. Measured rather than reasoned: at +20 that rail projects 27px
+ * against the left's 14, and at -20 the two swap. At five degrees either
+ * way it was a hairline; at twenty it is a face.
+ */
+const REST_Y = 20;
 const REST_X = 2;
 const SWING_Y = 10;
 const SWING_X = 6;
@@ -154,33 +170,78 @@ export default function HeroDevice({
             transformStyle: "preserve-3d",
           }}
         >
-          {/* Side hardware — nubs only, at the heights the hardware puts them */}
-          <div aria-hidden>
-            {[
-              { top: 165, h: 30, side: "left" as const },
-              { top: 222, h: 58, side: "left" as const },
-              { top: 295, h: 58, side: "left" as const },
-              { top: 234, h: 96, side: "right" as const },
-              { top: 366, h: 38, side: "right" as const },
-            ].map((b, i) => (
-              <span
-                key={i}
-                className="absolute w-[2.5px] rounded-[1.5px]"
-                style={{
-                  top: b.top,
-                  height: b.h,
-                  [b.side]: -2.5,
-                  background:
-                    "linear-gradient(180deg,rgba(236,233,225,0.30),rgba(236,233,225,0.10))",
-                }}
-              />
-            ))}
-          </div>
+          {/* The two sides of the device, standing at right angles to the
+              front so a turn actually reveals one. Each hinges on its own
+              edge and runs back exactly the body's depth, which puts the
+              front face at z = THICK and the back at z = 0. */}
+          {(
+            [
+              {
+                side: "right" as const,
+                origin: "100% 50%",
+                rotate: 90,
+                buttons: [
+                  { top: 234, h: 96 },  // side button
+                  { top: 366, h: 38 },  // Camera Control
+                ],
+              },
+              {
+                side: "left" as const,
+                origin: "0% 50%",
+                rotate: -90,
+                buttons: [
+                  { top: 165, h: 30 },  // Action button
+                  { top: 222, h: 58 },  // volume up
+                  { top: 295, h: 58 },  // volume down
+                ],
+              },
+            ]
+          ).map((rail) => (
+            <div
+              key={rail.side}
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: CORNER,
+                bottom: CORNER,
+                [rail.side]: 0,
+                width: THICK,
+                transformOrigin: rail.origin,
+                transform: `rotateY(${rail.rotate}deg)`,
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                background:
+                  "linear-gradient(90deg,#0b0c10 0%,#23262e 22%,#3a3e48 48%,#1c1f26 78%,#090a0d 100%)",
+                boxShadow: "inset 0 1px 0 rgba(236,233,225,0.20)",
+              }}
+            >
+              {rail.buttons.map((b) => (
+                <span
+                  key={b.top}
+                  style={{
+                    position: "absolute",
+                    top: b.top - CORNER,
+                    height: b.h,
+                    left: THICK * 0.28,
+                    width: THICK * 0.44,
+                    borderRadius: 3,
+                    background:
+                      "linear-gradient(90deg,#2c303a 0%,#4a4f5c 45%,#20232b 100%)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(236,233,225,0.28), 0 1px 2px rgba(0,0,0,0.6)",
+                  }}
+                />
+              ))}
+            </div>
+          ))}
 
-          {/* Body: matte, with one hairline edge and a cast shadow */}
+          {/* Body: matte, with one hairline edge and a cast shadow. Pushed
+              forward by the body's own depth so it caps the rails. */}
           <div
             className="absolute inset-0 rounded-[57px] bg-[#06070a]"
             style={{
+              transform: `translateZ(${THICK}px)`,
+              transformStyle: "preserve-3d",
               padding: BEZEL,
               boxShadow:
                 "inset 0 0 0 1px rgba(236,233,225,0.22), inset 0 1px 0 rgba(236,233,225,0.4), 0 50px 90px -40px rgba(0,0,0,0.9), 0 0 90px -40px rgba(45,70,255,0.5)",

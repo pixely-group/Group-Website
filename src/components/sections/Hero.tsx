@@ -235,9 +235,9 @@ export default function Hero() {
           // h-full and comes later in the DOM, so at the same z-index it
           // covers the device and swallows every click meant for the app
           // inside it. Nothing of the content reaches into this column.
-          className="absolute top-[88px] right-[13.6%] bottom-[164px] z-20 flex items-center"
+          className="absolute top-[88px] right-[12.4%] bottom-[192px] z-20 flex items-center"
         >
-          <HeroDevice shift={roomy ? 28 : 5} className="h-full max-h-[470px] xl:max-h-[560px]" />
+          <HeroDevice shift={roomy ? 24 : 5} className="h-full max-h-[500px] xl:max-h-[620px]" />
         </div>
       )}
 
