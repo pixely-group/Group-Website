@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 /**
  * The HeroUI Pro crypto-wallet template, rebuilt for the web.
@@ -124,6 +124,9 @@ const ACTIVITY = [
   ["Payroll run · 84 people", "−€128,400.00", "08:02", false],
   ["Acme Corp · invoice", "+€24,000.00", "Yesterday", true],
   ["FX · EUR to USD", "+$54,185.00", "Yesterday", true],
+  ["Card top-up · Apple Pay", "+€250.00", "Tue", true],
+  ["Vantage Logistics · out", "−€9,340.11", "Tue", false],
+  ["Hello Systems · invoice", "+€8,120.00", "Mon", true],
 ] as const;
 
 const pct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(2)}%`;
@@ -148,7 +151,10 @@ function TrendChip({ change, size = 11, c }: { change: number; size?: number; c:
 function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
   return (
     <div
-      className="flex size-[112px] shrink-0 flex-col justify-between rounded-[24px] p-[14px]"
+      role="button"
+      tabIndex={0}
+      data-cursor="link"
+      className="flex size-[112px] shrink-0 flex-col justify-between rounded-[24px] p-[14px] transition-transform duration-200 active:scale-[0.97]"
       style={{ background: c.SURFACE, boxShadow: `inset 0 0 0 1px ${c.SEP}` }}
     >
       <span
@@ -167,7 +173,12 @@ function QuickAction({ label, d, c }: { label: string; d: string; c: C }) {
 function AssetRow({ asset, c }: { asset: Asset; c: C }) {
   const up = asset.change >= 0;
   return (
-    <li className="flex items-center gap-[12px] py-[10px]">
+    <li
+      role="button"
+      tabIndex={0}
+      data-cursor="link"
+      className="flex items-center gap-[12px] py-[10px] transition-transform duration-200 active:scale-[0.99]"
+    >
       <span
         className="flex size-[40px] shrink-0 items-center justify-center rounded-full"
         style={{ background: c.DISC, boxShadow: `inset 0 0 0 1px ${c.SEP}`, color: c.FG, fontSize: 16 }}
@@ -195,15 +206,99 @@ function AssetRow({ asset, c }: { asset: Asset; c: C }) {
 
 type Tab = "home" | "activity" | "search";
 
+/** The screen's own height in logical points — the drag needs it to turn a
+ *  pointer delta on a scaled device back into screen-space pixels. */
+const SCREEN_H = 874;
+
+/**
+ * The template's SplitView snaps the top section to three heights: just under
+ * the header, just under the quick actions, and as low as the tab bar allows.
+ * The sheet's top edge is that height, and it opens at the middle one.
+ */
+const SNAPS = [148, 336, 632] as const;
+
+/** The template's search route: a field, a favourites row, and a list that
+ *  narrows as you type. */
+function SearchScreen({ c }: { c: C }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const hits = ASSETS.filter(
+    (a) => !q || a.name.toLowerCase().includes(q) || a.ticker.toLowerCase().includes(q),
+  );
+  return (
+    <div className="absolute inset-x-0 top-[54px] bottom-[92px] overflow-hidden px-[20px]">
+      <label className="flex items-center gap-[10px] rounded-[14px] px-[14px] py-[11px]"
+             style={{ background: c.SURFACE, boxShadow: `inset 0 0 0 1px ${c.SEP}` }}>
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke={c.MUTED} strokeWidth="1.7" aria-hidden>
+          <circle cx="8.6" cy="8.6" r="5.6" />
+          <path d="m12.8 12.8 4 4" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search markets"
+          data-cursor="text"
+          className="w-full bg-transparent outline-none"
+          style={{ fontSize: 15, color: c.FG }}
+        />
+      </label>
+
+      <p className="mt-[20px]" style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
+        Favourites
+      </p>
+      <div className="mt-[10px] flex gap-[8px] overflow-hidden">
+        {ASSETS.slice(0, 3).map((a) => (
+          <div key={a.ticker} className="w-[104px] shrink-0 rounded-[16px] p-[12px]"
+               style={{ background: c.SURFACE, boxShadow: `inset 0 0 0 1px ${c.SEP}` }}>
+            <span className="block" style={{ fontSize: 20, color: c.FG }}>{a.symbol}</span>
+            <span className="mt-[6px] block" style={{ fontFamily: mono, fontSize: 12, color: c.FG, fontVariantNumeric: "tabular-nums" }}>{a.price}</span>
+            <span className="mt-[2px] block"><TrendChip change={a.change} c={c} size={10} /></span>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-[20px]" style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
+        {q ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : "Top markets"}
+      </p>
+      <ul className="mt-[2px]">
+        {hits.map((a) => <AssetRow key={a.ticker} asset={a} c={c} />)}
+      </ul>
+    </div>
+  );
+}
+
+/** The template's activity route. */
+function ActivityScreen({ c }: { c: C }) {
+  return (
+    <div className="absolute inset-x-0 top-[54px] bottom-[92px] overflow-hidden px-[20px]">
+      <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
+        All activity
+      </p>
+      <ul className="mt-[6px]">
+        {ACTIVITY.map(([what, amount, when, credit]) => (
+          <li key={what} className="flex items-center justify-between py-[13px] transition-transform duration-200 active:scale-[0.99]"
+              style={{ borderTop: `1px solid ${c.SEP}` }}>
+            <span className="min-w-0 pr-3">
+              <span className="block truncate" style={{ fontSize: 15, color: c.FG }}>{what}</span>
+              <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: c.FAINT }}>{when}</span>
+            </span>
+            <span style={{ fontFamily: mono, fontSize: 14, color: credit ? c.UP : c.FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function WalletScreen() {
   const [tab, setTab] = useState<Tab>("home");
   const [mode, setMode] = useState<Mode>("dark");
   const c = PALETTE[mode];
-  /** The template's SplitView snaps the top section between three stops and
-   *  opens at the middle one, just under the quick actions. Reproduced as
-   *  two: at rest the markets list fills the sheet, and the handle drops it
-   *  to the stop that uncovers recent activity. */
-  const [expanded, setExpanded] = useState(false);
+  const [snap, setSnap] = useState(1);
+  /** Live top edge while a drag is in flight; null when settled on a snap. */
+  const [dragTop, setDragTop] = useState<number | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ id: number; startY: number; startTop: number } | null>(null);
 
   const tabs: { id: Tab; label: string; d: string }[] = [
     { id: "home", label: "Home", d: "M3 9.5 11 3l8 6.5V19H3V9.5Z" },
@@ -211,15 +306,59 @@ export default function WalletScreen() {
     { id: "activity", label: "Activity", d: "M2.5 11h4l2.5-6 3.5 12 2.5-6h4" },
   ];
 
-  const sheetTop = expanded ? 636 : 336;
+  const sheetTop = dragTop ?? SNAPS[snap];
+
+  const onDragStart = (e: React.PointerEvent) => {
+    const root = rootRef.current;
+    if (!root) return;
+    // The device is drawn at 874pt and rendered at whatever the hero gives
+    // it, so a pointer delta has to be divided back by that scale or the
+    // sheet moves at the wrong rate.
+    const scale = root.getBoundingClientRect().height / SCREEN_H;
+    drag.current = { id: e.pointerId, startY: e.clientY / scale, startTop: sheetTop };
+    // Capture keeps the drag alive if the pointer leaves the handle. It
+    // throws for a pointer the element never saw, which must not take the
+    // drag down with it.
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* no capture available; the drag still tracks while over the handle */
+    }
+    setDragTop(sheetTop);
+  };
+
+  const onDragMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    const root = rootRef.current;
+    if (!d || d.id !== e.pointerId || !root) return;
+    const scale = root.getBoundingClientRect().height / SCREEN_H;
+    const next = d.startTop + (e.clientY / scale - d.startY);
+    setDragTop(Math.min(SNAPS[SNAPS.length - 1], Math.max(SNAPS[0], next)));
+  };
+
+  const onDragEnd = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    const landed = dragTop ?? sheetTop;
+    let best = 0;
+    SNAPS.forEach((v: number, i: number) => {
+      if (Math.abs(v - landed) < Math.abs(SNAPS[best] - landed)) best = i;
+    });
+    setSnap(best);
+    setDragTop(null);
+  };
 
   return (
     <div
+      ref={rootRef}
       data-wallet
       data-cursor-theme={mode === "light" ? "bone" : "ink"}
       className="relative size-full overflow-hidden"
       style={{ background: c.BG, fontFamily: "var(--font-archivo)" }}
     >
+      {tab === "home" && (
+        <>
       {/* — Top section */}
       <div className="absolute inset-x-0 top-0 rounded-b-[26px]" style={{ background: c.PANEL, bottom: 0 }}>
         <div className="h-[54px]" />
@@ -302,22 +441,29 @@ export default function WalletScreen() {
 
       {/* — Bottom section of the split view */}
       <div
-        className="absolute inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-500 ease-(--ease-out-expo)"
+        className={`absolute inset-x-0 bottom-0 rounded-t-[26px] ${dragTop === null ? "transition-[top] duration-500 ease-(--ease-out-expo)" : ""}`}
         style={{ top: sheetTop, background: c.PANEL, boxShadow: `0 -1px 0 ${c.SEP}, 0 -24px 40px -24px ${c.SHADOW}` }}
       >
+        {/* The template's drag area and handle. Dragging moves it freely and
+            it settles on the nearest stop; the keyboard and a plain click
+            step through the three, since a drag is not available to both. */}
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-label={expanded ? "Collapse asset list" : "Expand asset list"}
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragEnd}
+          onClick={() => setSnap((v) => (v + 1) % SNAPS.length)}
+          aria-label="Drag to resize the market list"
           data-cursor="link"
-          className="flex h-[26px] w-full items-center justify-center"
+          className="flex h-[30px] w-full touch-none items-center justify-center"
         >
           <span className="h-[4px] w-[38px] rounded-full" style={{ background: c.HANDLE }} />
         </button>
 
         <div className="flex items-center justify-between pt-[4px] pr-[16px] pb-[6px] pl-[20px]">
           <p style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: c.FAINT }}>
-            {tab === "activity" ? "All activity" : "Explore markets"}
+            Explore markets
           </p>
           <span
             className="rounded-full px-[12px] py-[6px]"
@@ -328,19 +474,16 @@ export default function WalletScreen() {
         </div>
 
         <ul className="px-[20px]">
-          {tab === "activity"
-            ? ACTIVITY.map(([what, amount, when, credit]) => (
-                <li key={what} className="flex items-center justify-between py-[13px]" style={{ borderTop: `1px solid ${c.SEP}` }}>
-                  <span className="min-w-0 pr-3">
-                    <span className="block truncate" style={{ fontSize: 15, color: c.FG }}>{what}</span>
-                    <span className="block" style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: c.FAINT }}>{when}</span>
-                  </span>
-                  <span style={{ fontFamily: mono, fontSize: 14, color: credit ? c.UP : c.FG, fontVariantNumeric: "tabular-nums" }}>{amount}</span>
-                </li>
-              ))
-            : ASSETS.map((a) => <AssetRow key={a.ticker} asset={a} c={c} />)}
+          {ASSETS.map((a) => (
+            <AssetRow key={a.ticker} asset={a} c={c} />
+          ))}
         </ul>
       </div>
+        </>
+      )}
+
+      {tab === "search" && <SearchScreen c={c} />}
+      {tab === "activity" && <ActivityScreen c={c} />}
 
       {/* — Floating pill tab bar */}
       <div className="absolute inset-x-0 bottom-[16px] flex justify-center">

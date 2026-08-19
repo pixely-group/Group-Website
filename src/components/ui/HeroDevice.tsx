@@ -22,15 +22,20 @@ const BODY_H = SCREEN_H + BEZEL * 2;
 const SCREEN_R = 52;
 
 /**
- * Resting three-quarter view, and how far the pointer may push it. The turn
- * is deliberately small — five degrees off its rest either way — because the
- * pointer's main answer is now lateral: the device slides toward whichever
- * side the cursor is on, and the tilt only seasons that.
+ * Resting three-quarter view, and how far the pointer may push it.
+ *
+ * Ten degrees either side of rest, and read against a much nearer camera
+ * than before. Degrees on their own do not make a turn visible: at the 1600px
+ * perspective this had, a 5-degree yaw moves the near and far edges of a
+ * 261px-wide device by under 3% of its width, which is real in the transform
+ * and invisible on the screen. At 820 the same turn is worth about 6%, and
+ * at ten degrees it reads plainly.
  */
 const REST_Y = -5;
 const REST_X = 2;
-const SWING_Y = 5;
-const SWING_X = 3;
+const SWING_Y = 10;
+const SWING_X = 6;
+const PERSPECTIVE = 820;
 
 export default function HeroDevice({
   className = "",
@@ -113,7 +118,7 @@ export default function HeroDevice({
       className={className}
       style={{
         aspectRatio: `${BODY_W} / ${BODY_H}`,
-        perspective: 1600,
+        perspective: PERSPECTIVE,
         perspectiveOrigin: "50% 42%",
         opacity: scale ? 1 : 0,
         transition: "opacity 600ms var(--ease-out-expo)",
