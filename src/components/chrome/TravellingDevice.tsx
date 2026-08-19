@@ -143,10 +143,17 @@ export default function TravellingDevice() {
       if (step !== fadeStep.current) {
         fadeStep.current = step;
         const t = step / 24;
-        const mid = 1 - 0.7 * t;
-        const end = 1 - (1 - FAINT) * t;
-        const mask =
-          `linear-gradient(to bottom, #000 0 ${KEEP * 100}%, rgb(0 0 0 / ${mid}) 70%, rgb(0 0 0 / ${end}) 86%)`;
+        /* No mask at all until there is something to fade. A mask paints only
+           within its own box, and the device does not stay inside that box:
+           tilted by the pointer it spills about 21px past the left edge, and
+           every one of those pixels was being cut. In the hero, and for the
+           whole travel, the chassis has to be able to lean out of its box. */
+        let mask = "none";
+        if (t > 0) {
+          const mid = 1 - 0.7 * t;
+          const end = 1 - (1 - FAINT) * t;
+          mask = `linear-gradient(to bottom, #000 0 ${KEEP * 100}%, rgb(0 0 0 / ${mid}) 70%, rgb(0 0 0 / ${end}) 86%)`;
+        }
         holder.style.maskImage = mask;
         holder.style.webkitMaskImage = mask;
       }
