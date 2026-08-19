@@ -17,7 +17,7 @@ const BEGIN = 0.14;
 const DROP = 120;
 /** Scale on arrival, and what it grows to as the reader keeps going. */
 const LANDED = 0.86;
-const CLOSE = 1.42;
+const CLOSE = 1.16;
 /** Scroll past the stop over which that growth happens. Short on purpose:
  *  the device is anchored to the page by then, so every pixel spent growing
  *  is also a pixel of it travelling up the screen. Stretch this and it
@@ -243,7 +243,7 @@ export default function TravellingDevice() {
     <div className="pointer-events-none fixed top-[88px] right-[12.4%] bottom-[192px] z-30 hidden items-center lg:flex">
       <div
         ref={holderRef}
-        className="pointer-events-auto relative h-full max-h-[500px] xl:max-h-[620px]"
+        className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[690px]"
         /* The device hangs in an out-of-flow child, so this box has nothing to
            take its width from and collapses to zero — which silently breaks
            the centring, since that is solved from this box's midpoint. */

@@ -7,6 +7,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
+import RotatingWord from "@/components/ui/RotatingWord";
 
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
@@ -231,7 +232,12 @@ export default function Hero() {
           </span>
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
-              <span className="text-accent">friction.</span>
+              {/* The brand blue itself, not the lifted tint --accent resolves
+                  to on dark chapters. That lift exists because the primary
+                  reaches only ~3.25:1 on ink, which fails AA for body copy —
+                  but this is display type well past the large-text threshold,
+                  where 3:1 is the bar. */}
+              <RotatingWord className="text-signal" />
             </span>
           </span>
         </h1>

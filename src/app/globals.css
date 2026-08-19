@@ -453,3 +453,47 @@ html[data-cursor="on"] * {
     animation: none;
   }
 }
+
+/* The headline's last word, changing. The outgoing word leaves upward while
+   the incoming one arrives from below — they overlap, so the line is never
+   empty. Removing the old one on the spot left a blank line for half of every
+   cycle, which reads as a flicker in the middle of the headline.
+
+   No clip on either: the descender on a word like "paper" would be cut by
+   one, and the fade carries the transition without it. */
+@keyframes word-cycle-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.18em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes word-cycle-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.18em);
+  }
+}
+
+@utility word-cycle {
+  animation: word-cycle-in 460ms var(--ease-out-expo) both;
+}
+
+@utility word-cycle-leaving {
+  animation: word-cycle-out 420ms var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-cycle,
+  .word-cycle-leaving {
+    animation: none;
+  }
+}
