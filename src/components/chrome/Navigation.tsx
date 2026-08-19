@@ -25,15 +25,20 @@ const CONDENSE_OVER = 200;
 
 /**
  * Breakpoint ends for the horizontal inset. At rest the bar spans the page's
- * gutter; condensed it draws inward by a fixed step — 8, 16 or 24px a side.
- * Deliberately modest and independent of viewport width: centring the bar
- * within a fixed measure made wide screens contract by hundreds of pixels,
- * which reads as the bar collapsing rather than settling.
+ * gutter; condensed it gathers to a measure and centres on it.
+ *
+ * That measure is set from what the bar actually holds. Its three blocks —
+ * wordmark, links, control — come to 703px, and 52rem leaves about 105px of
+ * air across the two gaps once the row's own padding is taken off, which is
+ * what makes it read as a pill around its contents rather than a bar that
+ * happens to be shorter. The lg inset drops to 64px so the measure, not the
+ * inset, is what governs from 1024 up: max() takes the inset only on screens
+ * too narrow for the measure to fit.
  */
 export const NAV_INSETS =
-  "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:88rem] " +
+  "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:52rem] " +
   "sm:[--nav-gutter:40px] sm:[--nav-inset:96px] " +
-  "lg:[--nav-gutter:56px] lg:[--nav-inset:144px]";
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:64px]";
 
 /**
  * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
