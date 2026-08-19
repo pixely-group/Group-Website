@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CURSOR_DOT_LINK_PX } from "@/components/chrome/CustomCursor";
+import { useMediaQuery } from "@/lib/hooks";
 import { gsap } from "@/lib/gsap";
 
 /**
@@ -12,14 +13,17 @@ import { gsap } from "@/lib/gsap";
  * but not as body text on bone.
  */
 const ACCENT = "#2d46ff";
+/**
+ * The accent at an alpha. Tailwind's `/opacity` modifier does not apply to
+ * the custom `bg-accent` utility — `bg-accent/15` matches no rule at all and
+ * paints nothing — so tinted fills are written out. Derived from ACCENT so
+ * the two cannot drift apart.
+ */
+const accentA = (a: number) =>
+  `rgb(${parseInt(ACCENT.slice(1, 3), 16)} ${parseInt(ACCENT.slice(3, 5), 16)} ${parseInt(ACCENT.slice(5, 7), 16)} / ${a})`;
 const REFUSED = "#c2402d";
 const REFUSED_TEXT = "#9c2d18";
 
-/**
- * A card authorisation, layer by layer. The timings are the story: four
- * layers of our own take 4.5 ms between them, and then the scheme takes the
- * other 179.5 — which is why refusing costs nothing and settling does.
- */
 type Layer = {
   index: string;
   /** Register title and the lettering set into the plate's face. */
@@ -34,6 +38,11 @@ type Layer = {
   ms: number;
 };
 
+/**
+ * A card authorisation, layer by layer. The timings are the story: four
+ * layers of our own take 4.5 ms between them, and then the scheme takes the
+ * other 179.5 — which is why refusing costs nothing and settling does.
+ */
 const LAYERS: readonly Layer[] = [
   {
     index: "L1",
@@ -89,47 +98,85 @@ const CUMULATIVE = LAYERS.reduce<number[]>((acc, layer, i) => {
   return acc;
 }, []);
 
+const TOTAL_MS = CUMULATIVE[LAYERS.length - 1];
+/** Everything before the rail — the part of the wait that is ours. */
+const OURS_MS = CUMULATIVE[LAYERS.length - 2];
+
 /** Policy is the layer that refuses. Everything under it is never reached. */
 const BLOCK_AT = 2;
 
-/** Isometric plate geometry — a 2:1 diamond per layer. */
-const HW = 168;
-const HH = 84;
-const GAP = 82;
-const CX = 210;
-const TOP = 96;
-const VB_W = 620;
-const VB_H = TOP + HH + GAP * (LAYERS.length - 1) + HH + 40;
+/**
+ * Isometric plate geometry — a 2:1 diamond per layer.
+ *
+ * Two of them, because the register cannot share the drawing's rhythm at one
+ * fixed size. Plate spacing scales with the column's width; a row of prose
+ * does not scale at all, so the two can only agree at a single viewport. Wide,
+ * the register is lifted out of the flow and hung on the drawing at the same
+ * viewBox fractions that place the plates, which makes them agree everywhere;
+ * that needs plates spaced far enough apart to seat a row between them.
+ * Narrow, the register goes back under the drawing as an ordinary list and the
+ * plates close back up into a stack.
+ */
+type Geo = {
+  HW: number;
+  HH: number;
+  GAP: number;
+  CX: number;
+  TOP: number;
+  VB_W: number;
+  VB_H: number;
+};
 
-const layerY = (i: number) => TOP + i * GAP;
+const NARROW: Geo = {
+  HW: 168,
+  HH: 84,
+  GAP: 82,
+  CX: 210,
+  TOP: 96,
+  VB_W: 470,
+  VB_H: 632,
+};
 
-const TRAVEL_FROM = layerY(0) - HH;
-const TRAVEL_TO = layerY(LAYERS.length - 1) + HH;
+const WIDE: Geo = {
+  HW: 200,
+  HH: 100,
+  GAP: 160,
+  CX: 260,
+  TOP: 110,
+  VB_W: 520,
+  VB_H: 890,
+};
+
+const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
+const travelFrom = (g: Geo) => layerY(g, 0) - g.HH;
+const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
+
+/** Where a register entry hangs, as a share of the drawing's height. */
+const rowTop = (g: Geo, i: number) => `${(layerY(g, i) / g.VB_H) * 100}%`;
 
 function diamond(cx: number, cy: number, hw: number, hh: number) {
   return `${cx - hw},${cy} ${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh}`;
 }
 
 /** Milliseconds spent by the time the request has reached `cy`. */
-function elapsedAt(cy: number, declined: boolean) {
+function elapsedAt(g: Geo, cy: number, declined: boolean) {
   const last = declined ? BLOCK_AT : LAYERS.length - 1;
-  if (cy <= TRAVEL_FROM) return 0;
-  if (cy >= layerY(last)) return CUMULATIVE[last];
-  if (cy <= layerY(0)) {
-    return (
-      ((cy - TRAVEL_FROM) / (layerY(0) - TRAVEL_FROM)) * CUMULATIVE[0]
-    );
+  const from = travelFrom(g);
+  if (cy <= from) return 0;
+  if (cy >= layerY(g, last)) return CUMULATIVE[last];
+  if (cy <= layerY(g, 0)) {
+    return ((cy - from) / (layerY(g, 0) - from)) * CUMULATIVE[0];
   }
-  const i = Math.min(last - 1, Math.floor((cy - layerY(0)) / GAP));
-  const t = (cy - layerY(i)) / GAP;
+  const i = Math.min(last - 1, Math.floor((cy - layerY(g, 0)) / g.GAP));
+  const t = (cy - layerY(g, i)) / g.GAP;
   return CUMULATIVE[i] + t * (CUMULATIVE[i + 1] - CUMULATIVE[i]);
 }
 
-function nearestLayer(cy: number) {
+function nearestLayer(g: Geo, cy: number) {
   let best = 0;
   let bestGap = Infinity;
   LAYERS.forEach((_, i) => {
-    const gap = Math.abs(cy - layerY(i));
+    const gap = Math.abs(cy - layerY(g, i));
     if (gap < bestGap) {
       bestGap = gap;
       best = i;
@@ -141,6 +188,9 @@ function nearestLayer(cy: number) {
 type Scenario = "approved" | "declined";
 
 export default function SecurityArchitecture() {
+  const wide = useMediaQuery("(min-width: 1024px)");
+  const geo = wide ? WIDE : NARROW;
+
   const sectionRef = useRef<HTMLElement>(null);
   const [activeLayer, setActiveLayer] = useState(0);
   /** Layers the request has actually crossed. Distinct from `activeLayer`,
@@ -159,12 +209,14 @@ export default function SecurityArchitecture() {
   const pulseRef = useRef<SVGEllipseElement>(null);
   const clockRef = useRef<HTMLSpanElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
+  const railFillRef = useRef<HTMLDivElement>(null);
+  const oursFillRef = useRef<HTMLDivElement>(null);
   // Where the scroll says the request should be. The timeline drives this
   // rather than the element, so a held selection can take the element over
   // without the scrub being disabled and left stale.
-  const beamPos = useRef({ cy: TRAVEL_FROM, opacity: 0 });
+  const beamPos = useRef({ cy: travelFrom(NARROW), opacity: 0 });
   /** What is actually drawn. */
-  const beamRender = useRef({ cy: TRAVEL_FROM });
+  const beamRender = useRef({ cy: travelFrom(NARROW) });
   /** Distance between the drawn position and the scroll's own, captured the
    *  moment control returns and then kept. Without it the request eases
    *  toward wherever the scroll target sat when the layer was picked —
@@ -172,7 +224,7 @@ export default function SecurityArchitecture() {
   const beamOffset = useRef(0);
   /** How far down the request may go. Tweened rather than switched so that
    *  refusing pulls it back up to policy instead of snapping. */
-  const ceiling = useRef({ v: TRAVEL_TO });
+  const ceiling = useRef({ v: travelTo(NARROW) });
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -180,26 +232,38 @@ export default function SecurityArchitecture() {
    *  a click cannot cancel it before the request has arrived. */
   const releaseArmed = useRef(true);
 
-  /** The clock and the verdict, written straight to the DOM — they change
-   *  every frame and have no business going through React. */
-  const paintReadout = useCallback((cy: number) => {
-    const isDeclined = scenarioRef.current === "declined";
-    const last = isDeclined ? BLOCK_AT : LAYERS.length - 1;
-    if (clockRef.current) {
-      clockRef.current.textContent = elapsedAt(cy, isDeclined).toFixed(1);
-    }
-    const status = statusRef.current;
-    if (!status) return;
-    const done = cy >= layerY(last) - 2;
-    const text = done ? (isDeclined ? "Refused" : "Authorised") : "In flight";
-    if (status.textContent === text) return;
-    status.textContent = text;
-    status.style.color = !done
-      ? "var(--muted)"
-      : isDeclined
-        ? REFUSED_TEXT
-        : ACCENT;
-  }, []);
+  /** The clock, the verdict and the two bars — all written straight to the
+   *  DOM. They change every frame and have no business going through React. */
+  const paintReadout = useCallback(
+    (cy: number) => {
+      const isDeclined = scenarioRef.current === "declined";
+      const last = isDeclined ? BLOCK_AT : LAYERS.length - 1;
+      const ms = elapsedAt(geo, cy, isDeclined);
+
+      if (clockRef.current) clockRef.current.textContent = ms.toFixed(1);
+      if (railFillRef.current) {
+        railFillRef.current.style.transform = `scaleX(${ms / TOTAL_MS})`;
+      }
+      if (oursFillRef.current) {
+        oursFillRef.current.style.transform = `scaleX(${
+          Math.min(ms, OURS_MS) / OURS_MS
+        })`;
+      }
+
+      const status = statusRef.current;
+      if (!status) return;
+      const done = cy >= layerY(geo, last) - 2;
+      const text = done ? (isDeclined ? "Refused" : "Authorised") : "In flight";
+      if (status.textContent === text) return;
+      status.textContent = text;
+      status.style.color = !done
+        ? "var(--muted)"
+        : isDeclined
+          ? REFUSED_TEXT
+          : ACCENT;
+    },
+    [geo],
+  );
 
   const selectLayer = (i: number) => {
     if (scenarioRef.current === "declined" && i > BLOCK_AT) return;
@@ -216,7 +280,7 @@ export default function SecurityArchitecture() {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     gsap.to(beamRender.current, {
-      cy: layerY(next),
+      cy: layerY(geo, next),
       duration: reduced ? 0 : 0.6,
       ease: "expo.out",
       overwrite: true,
@@ -234,17 +298,18 @@ export default function SecurityArchitecture() {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     gsap.to(ceiling.current, {
-      v: isDeclined ? layerY(BLOCK_AT) : TRAVEL_TO,
+      v: isDeclined ? layerY(geo, BLOCK_AT) : travelTo(geo),
       duration: reduced ? 0 : 0.7,
       ease: "expo.out",
       overwrite: true,
     });
     paintReadout(beamRender.current.cy);
-  }, [scenario, paintReadout]);
+  }, [scenario, geo, paintReadout]);
 
   // One marker that travels down the register to whichever layer is
   // current — the same idea as the nav's, at the same size and the same
-  // distance from its label, so the two read as one language.
+  // distance from its label, so the two read as one language. Measured
+  // rather than positioned, which is what lets it serve both layouts.
   useEffect(() => {
     const ol = registerRef.current;
     const dot = registerDotRef.current;
@@ -254,6 +319,7 @@ export default function SecurityArchitecture() {
 
     const olBox = ol.getBoundingClientRect();
     const box = heading.getBoundingClientRect();
+    const x = box.left - olBox.left - 12;
     const y = box.top - olBox.top + box.height / 2 - CURSOR_DOT_LINK_PX / 2;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -261,6 +327,7 @@ export default function SecurityArchitecture() {
 
     if (registerDotPlaced.current && !reduced) {
       gsap.to(dot, {
+        x,
         y,
         opacity: 1,
         duration: 0.45,
@@ -268,43 +335,52 @@ export default function SecurityArchitecture() {
         overwrite: true,
       });
     } else {
-      gsap.set(dot, { y });
+      gsap.set(dot, { x, y });
       gsap.to(dot, { opacity: 1, duration: reduced ? 0 : 0.25, overwrite: true });
     }
     registerDotPlaced.current = true;
-  }, [activeLayer]);
+  }, [activeLayer, wide]);
 
   // A ring in the plane of the plate each time the request lands on one.
   useEffect(() => {
     const pulse = pulseRef.current;
     if (!pulse) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    gsap.set(pulse, { attr: { cy: layerY(activeLayer) } });
+    gsap.set(pulse, { attr: { cy: layerY(geo, activeLayer) } });
     gsap.fromTo(
       pulse,
-      { opacity: 0.5, attr: { rx: 12, ry: 6 } },
+      { opacity: 0.5, attr: { rx: geo.HW * 0.06, ry: geo.HH * 0.06 } },
       {
         opacity: 0,
-        attr: { rx: 182, ry: 91 },
+        attr: { rx: geo.HW * 1.08, ry: geo.HH * 1.08 },
         duration: 1.1,
         ease: "expo.out",
         overwrite: true,
       },
     );
-  }, [activeLayer]);
+  }, [activeLayer, geo]);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
+    const g = geo;
 
     const ctx = gsap.context(() => {
       const plates = section.querySelectorAll("[data-plate]");
       const beam = section.querySelector("[data-beam]");
-      const wake = section.querySelector("[data-wake]");
       const mm = gsap.matchMedia();
       const reduced = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
+      const from = travelFrom(g);
+      const to = travelTo(g);
+
+      // Re-seat the request into this layout's coordinates.
+      beamPos.current.cy = from;
+      beamRender.current.cy = from;
+      beamOffset.current = 0;
+      ceiling.current.v =
+        scenarioRef.current === "declined" ? layerY(g, BLOCK_AT) : to;
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         // Plates assemble as the section arrives.
@@ -318,7 +394,7 @@ export default function SecurityArchitecture() {
         });
 
         // The request travels with the scroll rather than looping on its
-        // own: scrubbed against the diagram, not the section — anchored to
+        // own: scrubbed against the drawing, not the section — anchored to
         // the section it began travelling while only the heading was on
         // screen, so most of its journey happened out of sight.
         const stack = section.querySelector("[data-stack]") ?? section;
@@ -335,7 +411,7 @@ export default function SecurityArchitecture() {
         tl.to(
           beamPos.current,
           {
-            cy: TRAVEL_TO,
+            cy: to,
             duration: 1,
             ease: "none",
             onUpdate: () => {
@@ -371,7 +447,7 @@ export default function SecurityArchitecture() {
       // Nothing to scrub against: show the completed trace and let selection
       // be the only thing that moves it.
       mm.add("(prefers-reduced-motion: reduce)", () => {
-        beamPos.current.cy = TRAVEL_TO;
+        beamPos.current.cy = to;
         beamPos.current.opacity = 1;
       });
 
@@ -395,7 +471,7 @@ export default function SecurityArchitecture() {
           // when the layer was picked, which is the position it was moved
           // away from.
           beamRender.current.cy = Math.max(
-            TRAVEL_FROM,
+            from,
             beamPos.current.cy + beamOffset.current,
           );
         }
@@ -408,19 +484,15 @@ export default function SecurityArchitecture() {
 
         const cy = beamRender.current.cy;
         gsap.set(beam, { attr: { cy }, opacity: beamPos.current.opacity });
-        gsap.set(wake, {
-          attr: { y2: cy },
-          opacity: beamPos.current.opacity,
-        });
         paintReadout(cy);
 
-        const i = nearestLayer(cy);
+        const i = nearestLayer(g, cy);
         if (i !== lastIndex) {
           lastIndex = i;
           setActiveLayer(i);
         }
         const crossed = LAYERS.reduce(
-          (n, _, j) => (cy >= layerY(j) - 1 ? j + 1 : n),
+          (n, _, j) => (cy >= layerY(g, j) - 1 ? j + 1 : n),
           0,
         );
         if (crossed !== lastReached) {
@@ -437,7 +509,9 @@ export default function SecurityArchitecture() {
     }, section);
 
     return () => ctx.revert();
-  }, [paintReadout]);
+  }, [geo, paintReadout]);
+
+  const faceSize = Math.round(geo.HH * 0.155);
 
   return (
     <section
@@ -466,9 +540,7 @@ export default function SecurityArchitecture() {
         {/* — The authorisation under trace, and the run to replay */}
         <div className="mt-14 flex flex-wrap items-end justify-between gap-x-10 gap-y-6 border-t border-(--line) pt-6">
           <div>
-            <p className="type-label text-(--faint)">
-              Authorisation 8F2C·41D9
-            </p>
+            <p className="type-label text-(--faint)">Authorisation 8F2C·41D9</p>
             <p className="type-mono mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <span className="text-[1.7rem] leading-none tracking-[-0.03em]">
                 €48.20
@@ -511,9 +583,7 @@ export default function SecurityArchitecture() {
                         : undefined
                     }
                     className={`type-label rounded-[2px] px-3 py-2 transition-colors duration-300 ${
-                      on
-                        ? "text-bone"
-                        : "text-(--muted) hover:text-(--fg)"
+                      on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
                     }`}
                   >
                     {label}
@@ -524,353 +594,389 @@ export default function SecurityArchitecture() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-8">
-          {/* — The stack */}
-          <div>
-            <div data-stack className="relative">
-              <svg
-                viewBox={`0 0 ${VB_W} ${VB_H}`}
-                className="w-full"
-                role="img"
-                aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
+        {/* — The drawing. Wide, the register hangs on it at the same
+            fractions that place the plates; narrow, it follows underneath. */}
+        <div data-stack className="relative mt-12">
+          <svg
+            viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
+            className="w-full lg:w-[44%]"
+            role="img"
+            aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
+          >
+            <defs>
+              <pattern
+                id="sec-hatch"
+                width="7"
+                height="7"
+                patternTransform="rotate(45)"
+                patternUnits="userSpaceOnUse"
               >
-                <defs>
-                  <pattern
-                    id="sec-hatch"
-                    width="7"
-                    height="7"
-                    patternTransform="rotate(45)"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="7"
-                      stroke="currentColor"
-                      strokeWidth="0.6"
-                      opacity="0.28"
-                    />
-                  </pattern>
-                  {/* The trail is faintest where the request has been
-                      longest, so it reads as travelled distance. */}
-                  <linearGradient
-                    id="sec-wake"
-                    gradientUnits="userSpaceOnUse"
-                    x1={CX}
-                    y1={TRAVEL_FROM}
-                    x2={CX}
-                    y2={TRAVEL_TO}
-                  >
-                    <stop offset="0" stopColor="currentColor" stopOpacity="0" />
-                    <stop
-                      offset="1"
-                      stopColor="currentColor"
-                      stopOpacity="0.55"
-                    />
-                  </linearGradient>
-                  <filter
-                    id="sec-glow"
-                    x="-25%"
-                    y="-70%"
-                    width="150%"
-                    height="240%"
-                  >
-                    <feGaussianBlur stdDeviation="9" />
-                  </filter>
-                </defs>
-
-                {/* spine */}
                 <line
-                  x1={CX}
-                  y1={TRAVEL_FROM - 18}
-                  x2={CX}
-                  y2={TRAVEL_TO + 20}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="7"
                   stroke="currentColor"
-                  strokeOpacity="0.22"
-                  strokeDasharray="3 5"
+                  strokeWidth="0.6"
+                  opacity="0.28"
                 />
+              </pattern>
+              <filter
+                id="sec-glow"
+                x="-25%"
+                y="-70%"
+                width="150%"
+                height="240%"
+              >
+                <feGaussianBlur stdDeviation="9" />
+              </filter>
+            </defs>
 
-                {LAYERS.map((layer, i) => {
-                  const refusedHere = declined && i === BLOCK_AT;
-                  const unreached = declined && i > BLOCK_AT;
-                  const active = activeLayer === i && !unreached;
-                  const passed = i < activeLayer && !unreached;
-                  const tone = refusedHere ? REFUSED : ACCENT;
-                  const cy = layerY(i);
+            {/* spine */}
+            <line
+              x1={geo.CX}
+              y1={travelFrom(geo) - 18}
+              x2={geo.CX}
+              y2={travelTo(geo) + 20}
+              stroke="currentColor"
+              strokeOpacity="0.22"
+              strokeDasharray="3 5"
+            />
 
-                  // Surface, not just outline: cleared plates carry a tint of
-                  // the trace and the one being crossed carries a lit face.
-                  const surface = unreached
-                    ? 0
-                    : active
-                      ? 0.2
-                      : passed
-                        ? 0.09
-                        : 0;
-                  const hatch = unreached
-                    ? 0.12
-                    : active
-                      ? 0.3
-                      : passed
-                        ? 0.22
-                        : 0.42;
-                  const wall = unreached
-                    ? 0.04
-                    : active
-                      ? 0.16
-                      : passed
-                        ? 0.1
-                        : 0.07;
-                  const edge = active
-                    ? { c: tone, o: 1, w: 1.8 }
-                    : passed
-                      ? { c: tone, o: 0.55, w: 1.1 }
-                      : unreached
-                        ? { c: "currentColor", o: 0.16, w: 1 }
-                        : { c: "currentColor", o: 0.42, w: 1 };
+            {LAYERS.map((layer, i) => {
+              const refusedHere = declined && i === BLOCK_AT;
+              const unreached = declined && i > BLOCK_AT;
+              const active = activeLayer === i && !unreached;
+              const passed = i < activeLayer && !unreached;
+              const tone = refusedHere ? REFUSED : ACCENT;
+              const cy = layerY(geo, i);
 
-                  return (
-                    <g
-                      key={layer.name}
-                      data-plate
-                      onClick={() => selectLayer(i)}
-                      data-cursor={unreached ? undefined : "link"}
-                      className={
-                        unreached ? "cursor-default" : "cursor-pointer"
-                      }
-                    >
-                      {active && (
-                        <polygon
-                          points={diamond(CX, cy, HW, HH)}
-                          fill={tone}
-                          fillOpacity="0.5"
-                          filter="url(#sec-glow)"
-                        />
-                      )}
-                      {/* side wall, gives the plate thickness */}
-                      <path
-                        d={`M ${CX - HW} ${cy} L ${CX} ${cy + HH} L ${CX + HW} ${cy} L ${CX + HW} ${cy + 11} L ${CX} ${cy + HH + 11} L ${CX - HW} ${cy + 11} Z`}
-                        fill={passed || active ? tone : "currentColor"}
-                        fillOpacity={wall}
-                        className="transition-all duration-500"
-                      />
-                      <polygon
-                        points={diamond(CX, cy, HW, HH)}
-                        fill={tone}
-                        fillOpacity={surface}
-                        className="transition-all duration-500"
-                      />
-                      <polygon
-                        points={diamond(CX, cy, HW, HH)}
-                        fill="url(#sec-hatch)"
-                        fillOpacity={hatch}
-                        className="transition-[fill-opacity] duration-500"
-                      />
-                      {/* Set in the plane of the face, the way a drawing
-                          would letter it. */}
-                      <text
-                        transform={`matrix(1 0.5 -1 0.5 ${CX} ${cy})`}
-                        x="0"
-                        y="58"
-                        textAnchor="middle"
-                        fontSize="13"
-                        fontFamily="var(--font-mono)"
-                        letterSpacing="2"
-                        fill={passed || active ? tone : "currentColor"}
-                        fillOpacity={
-                          unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
-                        }
-                        className="transition-all duration-500"
-                      >
-                        {layer.face}
-                      </text>
-                      <polygon
-                        points={diamond(CX, cy, HW, HH)}
-                        fill="none"
-                        stroke={edge.c}
-                        strokeOpacity={edge.o}
-                        strokeWidth={edge.w}
-                        strokeDasharray={unreached ? "4 6" : undefined}
-                        className="transition-all duration-500"
-                      />
-                      {/* leader line out to the label column */}
-                      <line
-                        x1={CX + HW}
-                        y1={cy}
-                        x2={VB_W - 34}
-                        y2={cy - 26}
-                        stroke={active || passed ? tone : "currentColor"}
-                        strokeOpacity={
-                          unreached ? 0.14 : active ? 0.95 : passed ? 0.5 : 0.38
-                        }
-                        strokeWidth={active ? 1.4 : 1}
-                        className="transition-all duration-500"
-                      />
-                      <text
-                        x={VB_W - 4}
-                        y={cy - 31}
-                        textAnchor="end"
-                        fontSize="13"
-                        fill={active || passed ? tone : "currentColor"}
-                        fillOpacity={
-                          unreached ? 0.2 : active ? 1 : passed ? 0.6 : 0.5
-                        }
-                        fontFamily="var(--font-mono)"
-                        letterSpacing="1.6"
-                        className="transition-all duration-500"
-                      >
-                        {layer.index}
-                      </text>
-                    </g>
-                  );
-                })}
+              // Surface, not just outline: cleared plates carry a tint of
+              // the trace and the one being crossed carries a lit face.
+              const surface = unreached ? 0 : active ? 0.2 : passed ? 0.09 : 0;
+              const hatch = unreached ? 0.12 : active ? 0.3 : passed ? 0.22 : 0.42;
+              const wall = unreached ? 0.04 : active ? 0.16 : passed ? 0.1 : 0.07;
+              const edge = active
+                ? { c: tone, o: 1, w: 1.8 }
+                : passed
+                  ? { c: tone, o: 0.55, w: 1.1 }
+                  : unreached
+                    ? { c: "currentColor", o: 0.16, w: 1 }
+                    : { c: "currentColor", o: 0.42, w: 1 };
+              const wallDepth = Math.round(geo.HH * 0.13);
 
-                {/* the distance already travelled */}
-                <line
-                  data-wake
-                  x1={CX}
-                  y1={TRAVEL_FROM}
-                  x2={CX}
-                  y2={TRAVEL_FROM}
-                  stroke="url(#sec-wake)"
-                  strokeWidth="2"
-                  opacity="0"
-                  style={{ color: declined ? REFUSED : ACCENT }}
-                />
-                <ellipse
-                  ref={pulseRef}
-                  cx={CX}
-                  cy={layerY(0)}
-                  rx="12"
-                  ry="6"
-                  fill="none"
-                  stroke={declined ? REFUSED : ACCENT}
-                  strokeWidth="1.2"
-                  opacity="0"
-                />
-                <circle
-                  ref={beamElRef}
-                  data-beam
-                  cx={CX}
-                  cy={TRAVEL_FROM}
-                  r="5.5"
-                  opacity="0"
-                  style={{
-                    fill: declined ? REFUSED : ACCENT,
-                    transition: "fill 400ms var(--ease-out-expo)",
-                  }}
-                />
-              </svg>
-            </div>
-
-            {/* — What the trip cost */}
-            <div className="mt-6 flex items-end justify-between gap-6 border-t border-(--line) pt-6">
-              <div>
-                <p className="type-label text-(--faint)">Elapsed</p>
-                <p className="type-mono mt-3 flex items-baseline gap-2 text-[clamp(2.4rem,5.2vw,3.8rem)] leading-none tracking-[-0.04em]">
-                  <span ref={clockRef}>0.0</span>
-                  <span className="type-label text-(--muted)">ms</span>
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="type-label text-(--faint)">Verdict</p>
-                <p
-                  ref={statusRef}
-                  aria-live="polite"
-                  className="type-label mt-3 text-[0.8rem] text-(--muted)"
+              return (
+                <g
+                  key={layer.name}
+                  data-plate
+                  onClick={() => selectLayer(i)}
+                  data-cursor={unreached ? undefined : "link"}
+                  className={unreached ? "cursor-default" : "cursor-pointer"}
                 >
-                  In flight
-                </p>
-              </div>
+                  {active && (
+                    <polygon
+                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                      fill={tone}
+                      fillOpacity="0.5"
+                      filter="url(#sec-glow)"
+                    />
+                  )}
+                  {/* side wall, gives the plate thickness */}
+                  <path
+                    d={`M ${geo.CX - geo.HW} ${cy} L ${geo.CX} ${cy + geo.HH} L ${geo.CX + geo.HW} ${cy} L ${geo.CX + geo.HW} ${cy + wallDepth} L ${geo.CX} ${cy + geo.HH + wallDepth} L ${geo.CX - geo.HW} ${cy + wallDepth} Z`}
+                    fill={passed || active ? tone : "currentColor"}
+                    fillOpacity={wall}
+                    className="transition-all duration-500"
+                  />
+                  <polygon
+                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                    fill={tone}
+                    fillOpacity={surface}
+                    className="transition-all duration-500"
+                  />
+                  <polygon
+                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                    fill="url(#sec-hatch)"
+                    fillOpacity={hatch}
+                    className="transition-[fill-opacity] duration-500"
+                  />
+                  {/* Set in the plane of the face, the way a drawing
+                      would letter it. */}
+                  <text
+                    transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
+                    x="0"
+                    y={geo.HH * 0.69}
+                    textAnchor="middle"
+                    fontSize={faceSize}
+                    fontFamily="var(--font-mono)"
+                    letterSpacing="2"
+                    fill={passed || active ? tone : "currentColor"}
+                    fillOpacity={
+                      unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
+                    }
+                    className="transition-all duration-500"
+                  >
+                    {layer.face}
+                  </text>
+                  <polygon
+                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                    fill="none"
+                    stroke={edge.c}
+                    strokeOpacity={edge.o}
+                    strokeWidth={edge.w}
+                    strokeDasharray={unreached ? "4 6" : undefined}
+                    className="transition-all duration-500"
+                  />
+                  {/* Leader out to the label column, level with the plate's
+                      widest point — so the register entry hung at the same
+                      height continues the very same line. */}
+                  <line
+                    x1={geo.CX + geo.HW}
+                    y1={cy}
+                    x2={geo.VB_W}
+                    y2={cy}
+                    stroke={active || passed ? tone : "currentColor"}
+                    strokeOpacity={
+                      unreached ? 0.14 : active ? 0.95 : passed ? 0.5 : 0.38
+                    }
+                    strokeWidth={active ? 1.4 : 1}
+                    className="transition-all duration-500"
+                  />
+                  <text
+                    x={geo.CX + geo.HW + 10}
+                    y={cy - 9}
+                    fontSize="13"
+                    fill={active || passed ? tone : "currentColor"}
+                    fillOpacity={
+                      unreached ? 0.2 : active ? 1 : passed ? 0.6 : 0.5
+                    }
+                    fontFamily="var(--font-mono)"
+                    letterSpacing="1.6"
+                    className="transition-all duration-500"
+                  >
+                    {layer.index}
+                  </text>
+                </g>
+              );
+            })}
+
+            <ellipse
+              ref={pulseRef}
+              cx={geo.CX}
+              cy={layerY(geo, 0)}
+              rx="12"
+              ry="6"
+              fill="none"
+              stroke={declined ? REFUSED : ACCENT}
+              strokeWidth="1.2"
+              opacity="0"
+            />
+            <circle
+              ref={beamElRef}
+              data-beam
+              cx={geo.CX}
+              cy={travelFrom(geo)}
+              r="5.5"
+              opacity="0"
+              style={{
+                fill: declined ? REFUSED : ACCENT,
+                transition: "fill 400ms var(--ease-out-expo)",
+              }}
+            />
+          </svg>
+
+          <ol
+            ref={registerRef}
+            className="relative mt-10 lg:absolute lg:inset-0 lg:mt-0"
+          >
+            <span
+              ref={registerDotRef}
+              aria-hidden
+              style={{
+                width: CURSOR_DOT_LINK_PX,
+                height: CURSOR_DOT_LINK_PX,
+                opacity: 0,
+              }}
+              className="pointer-events-none absolute top-0 left-0 z-10 rounded-full bg-accent"
+            />
+            {LAYERS.map((layer, i) => {
+              const refusedHere = declined && i === BLOCK_AT;
+              const unreached = declined && i > BLOCK_AT;
+              const on = activeLayer === i && !unreached;
+              const stamped = i < reached && !unreached;
+              return (
+                <li
+                  key={layer.name}
+                  style={{ "--row-top": rowTop(geo, i) } as React.CSSProperties}
+                  className="relative border-t border-(--line) last:border-b lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
+                >
+                  {/* Carries the plate's leader across the gap, so the
+                      drawing and its key are one line, not two columns. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-3.5 right-full hidden h-px w-[8.4%] bg-(--line) lg:block"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => selectLayer(i)}
+                    aria-current={on ? "true" : undefined}
+                    disabled={unreached}
+                    data-cursor={unreached ? undefined : "link"}
+                    className={`group block w-full py-5 pr-1 pl-3 text-left transition-opacity duration-500 lg:py-0 ${
+                      unreached
+                        ? "opacity-30"
+                        : on
+                          ? "opacity-100"
+                          : "opacity-60 hover:opacity-90"
+                    }`}
+                  >
+                    {/* h-7 at lg fixes the title's centre at 14px from the
+                        entry's top — the offset both the hairline above and
+                        the entry's own translate are written against. */}
+                    <div className="flex items-baseline justify-between gap-4 lg:h-7 lg:items-center">
+                      <h3
+                        data-reg-title
+                        className={`text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
+                          on
+                            ? refusedHere
+                              ? ""
+                              : "text-accent"
+                            : "group-hover:text-accent"
+                        }`}
+                        style={
+                          on && refusedHere ? { color: REFUSED_TEXT } : undefined
+                        }
+                      >
+                        {layer.name}
+                      </h3>
+                      {/* Always rendered so it can fade in — a mounting
+                          element has nothing to transition from. */}
+                      <span
+                        aria-hidden={!stamped}
+                        className={`type-label shrink-0 text-[0.65rem] transition-all duration-500 ${
+                          stamped
+                            ? "translate-x-0 opacity-100"
+                            : "-translate-x-1 opacity-0"
+                        }`}
+                        style={{
+                          color: refusedHere ? REFUSED_TEXT : "var(--muted)",
+                        }}
+                      >
+                        {refusedHere ? layer.fail : layer.pass} ·{" "}
+                        {layer.ms.toFixed(1)} ms
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
+                      {layer.note}
+                    </p>
+                    <p className="type-label mt-3 text-(--faint)">
+                      {layer.spec}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        {/* — Where the time actually goes */}
+        <div className="mt-16 border-t border-(--line) pt-8">
+          <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+            <div>
+              <p className="type-label text-(--faint)">Elapsed</p>
+              <p className="type-mono mt-3 flex items-baseline gap-2 text-[clamp(2.6rem,6vw,4.6rem)] leading-none tracking-[-0.04em]">
+                <span ref={clockRef}>0.0</span>
+                <span className="type-label text-(--muted)">ms</span>
+              </p>
+            </div>
+            <p className="max-w-md text-[0.95rem] leading-relaxed text-(--muted)">
+              Four layers of ours answer in{" "}
+              <span className="type-mono text-(--fg)">4.5 ms</span>. The card
+              scheme takes the other{" "}
+              <span className="type-mono text-(--fg)">179.5</span>. Refusing is
+              the cheap part — which is the whole argument for doing it here.
+            </p>
+            <div className="text-right">
+              <p className="type-label text-(--faint)">Verdict</p>
+              <p
+                ref={statusRef}
+                aria-live="polite"
+                className="type-label mt-3 text-[0.8rem] text-(--muted)"
+              >
+                In flight
+              </p>
             </div>
           </div>
 
-          {/* — The register */}
-          <div>
-            <p className="type-label mb-5 text-(--faint)">
-              Trace — select a layer to hold it
-            </p>
-            <ol ref={registerRef} className="relative">
-              <span
-                ref={registerDotRef}
-                aria-hidden
-                style={{
-                  width: CURSOR_DOT_LINK_PX,
-                  height: CURSOR_DOT_LINK_PX,
-                  opacity: 0,
-                }}
-                className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
+          {/* Full scale: 184 ms across the page. Ours is the sliver. */}
+          <div className="mt-10">
+            <div className="relative h-9 border border-(--line)">
+              <div
+                ref={railFillRef}
+                className="absolute inset-y-0 left-0 w-full origin-left"
+                style={{ transform: "scaleX(0)", background: accentA(0.15) }}
               />
-              {LAYERS.map((layer, i) => {
-                const refusedHere = declined && i === BLOCK_AT;
-                const unreached = declined && i > BLOCK_AT;
-                const on = activeLayer === i && !unreached;
-                const stamped = i < reached && !unreached;
-                return (
-                  <li
-                    key={layer.name}
-                    className="border-t border-(--line) last:border-b"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => selectLayer(i)}
-                      aria-current={on ? "true" : undefined}
-                      disabled={unreached}
-                      data-cursor={unreached ? undefined : "link"}
-                      className={`group block w-full py-5 pr-1 pl-3 text-left transition-opacity duration-500 ${
-                        unreached
-                          ? "opacity-30"
-                          : on
-                            ? "opacity-100"
-                            : "opacity-60 hover:opacity-90"
-                      }`}
-                    >
-                      <div className="flex items-baseline justify-between gap-4">
-                        <h3
-                          data-reg-title
-                          className={`text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
-                            on
-                              ? refusedHere
-                                ? ""
-                                : "text-accent"
-                              : "group-hover:text-accent"
-                          }`}
-                          style={
-                            on && refusedHere ? { color: REFUSED_TEXT } : undefined
-                          }
-                        >
-                          {layer.name}
-                        </h3>
-                        {/* Always rendered so it can fade in — a mounting
-                            element has nothing to transition from. */}
-                        <span
-                          aria-hidden={!stamped}
-                          className={`type-label shrink-0 text-[0.65rem] transition-all duration-500 ${
-                            stamped
-                              ? "translate-x-0 opacity-100"
-                              : "-translate-x-1 opacity-0"
-                          }`}
-                          style={{
-                            color: refusedHere ? REFUSED_TEXT : "var(--muted)",
-                          }}
-                        >
-                          {refusedHere ? layer.fail : layer.pass} ·{" "}
-                          {layer.ms.toFixed(1)} ms
-                        </span>
-                      </div>
-                      <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
-                        {layer.note}
-                      </p>
-                      <p className="type-label mt-3 text-(--faint)">
-                        {layer.spec}
-                      </p>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+              <div
+                className="absolute inset-y-0 w-px bg-(--line-strong)"
+                style={{ left: `${(OURS_MS / TOTAL_MS) * 100}%` }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between">
+              <span
+                className="type-label text-[0.6rem] text-(--faint)"
+                style={{ color: ACCENT }}
+              >
+                ↑ ours · {OURS_MS.toFixed(1)} ms
+              </span>
+              <span className="type-label text-[0.6rem] text-(--faint)">
+                card scheme · {(TOTAL_MS - OURS_MS).toFixed(1)} ms
+              </span>
+              <span className="type-label text-[0.6rem] text-(--faint)">
+                {TOTAL_MS.toFixed(1)} ms
+              </span>
+            </div>
           </div>
+
+          {/* The sliver, opened out. Same four layers, their own scale. */}
+          <div
+            aria-hidden
+            className="mt-2 h-8"
+            style={{
+              background: accentA(0.16),
+              clipPath: `polygon(0 0, ${(OURS_MS / TOTAL_MS) * 100}% 0, 100% 100%, 0 100%)`,
+            }}
+          />
+          <div className="relative h-9 border border-(--line)">
+            <div
+              ref={oursFillRef}
+              className="absolute inset-y-0 left-0 w-full origin-left"
+              style={{ transform: "scaleX(0)", background: accentA(0.25) }}
+            />
+            {LAYERS.slice(0, LAYERS.length - 1).map((layer, i) => (
+              <div
+                key={layer.name}
+                className="absolute inset-y-0 w-px bg-(--line-strong)"
+                style={{ left: `${(CUMULATIVE[i] / OURS_MS) * 100}%` }}
+              />
+            ))}
+          </div>
+          <div className="relative mt-2 h-4">
+            {LAYERS.slice(0, LAYERS.length - 1).map((layer, i) => (
+              <span
+                key={layer.name}
+                className="type-label absolute text-[0.6rem] text-(--faint)"
+                style={{
+                  left: `${(CUMULATIVE[i] / OURS_MS) * 100}%`,
+                  transform: i === LAYERS.length - 2 ? "translateX(-100%)" : "translateX(-50%)",
+                }}
+              >
+                {layer.index}
+              </span>
+            ))}
+          </div>
+          <p className="type-label mt-4 text-[0.6rem] text-(--faint)">
+            The first {OURS_MS.toFixed(1)} ms, opened out
+          </p>
         </div>
 
         <ul className="mt-14 flex flex-wrap gap-x-10 gap-y-3 border-t border-(--line) pt-6">
