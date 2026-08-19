@@ -74,6 +74,10 @@ export default function Hero() {
   /** The device only has a column to stand in from lg up. Gating the mount
    *  rather than hiding it keeps its markup and its ticker off phones. */
   const hasDeviceColumn = useMediaQuery("(min-width: 1024px)");
+  /** Below xl the corridor between the headline and the scroll marker is
+   *  barely wider than the device, so it gets a smaller one and less room
+   *  to slide. */
+  const roomy = useMediaQuery("(min-width: 1280px)");
   const lenis = useLenis();
 
   // Pointer → NDC for the scene + subtle content parallax.
@@ -223,9 +227,9 @@ export default function Hero() {
           // h-full and comes later in the DOM, so at the same z-index it
           // covers the device and swallows every click meant for the app
           // inside it. Nothing of the content reaches into this column.
-          className="absolute top-[88px] right-[8%] bottom-[164px] z-20 flex items-center xl:right-[11%]"
+          className="absolute top-[88px] right-[13.6%] bottom-[164px] z-20 flex items-center"
         >
-          <HeroDevice className="h-full max-h-[560px]" />
+          <HeroDevice shift={roomy ? 28 : 5} className="h-full max-h-[470px] xl:max-h-[560px]" />
         </div>
       )}
 

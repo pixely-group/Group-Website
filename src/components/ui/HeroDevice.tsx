@@ -21,13 +21,26 @@ const BODY_W = SCREEN_W + BEZEL * 2;
 const BODY_H = SCREEN_H + BEZEL * 2;
 const SCREEN_R = 52;
 
-/** Resting three-quarter view, and how far the pointer may push it. */
-const REST_Y = -6;
+/**
+ * Resting three-quarter view, and how far the pointer may push it. The turn
+ * is deliberately small — five degrees off its rest either way — because the
+ * pointer's main answer is now lateral: the device slides toward whichever
+ * side the cursor is on, and the tilt only seasons that.
+ */
+const REST_Y = -5;
 const REST_X = 2;
-const SWING_Y = 8;
-const SWING_X = 5;
+const SWING_Y = 5;
+const SWING_X = 3;
 
-export default function HeroDevice({ className = "" }: { className?: string }) {
+export default function HeroDevice({
+  className = "",
+  shift = 0,
+}: {
+  /** How far the device may slide either side of rest, in px. Passed in
+   *  because only the caller knows what room its column has. */
+  shift?: number;
+  className?: string;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
   const sheenRef = useRef<HTMLDivElement>(null);
@@ -52,6 +65,7 @@ export default function HeroDevice({ className = "" }: { className?: string }) {
     const tilt = tiltRef.current;
     const sheen = sheenRef.current;
     if (!tilt || !sheen) return;
+    const travel = shift;
 
     if (!live) {
       tilt.style.transform = `rotateX(${REST_X}deg) rotateY(${REST_Y}deg)`;
@@ -77,7 +91,10 @@ export default function HeroDevice({ className = "" }: { className?: string }) {
 
       const ry = REST_Y + eased.x * SWING_Y + Math.sin(elapsed * 0.4) * 0.7;
       const rx = REST_X - eased.y * SWING_X + Math.cos(elapsed * 0.31) * 0.5;
-      tilt.style.transform = `translate3d(0,${Math.sin(elapsed * 0.5) * 5}px,0) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      // Lateral first: the device goes to the side the cursor is on.
+      const tx = eased.x * travel;
+      const ty = Math.sin(elapsed * 0.5) * 5;
+      tilt.style.transform = `translate3d(${tx}px,${ty}px,0) rotateX(${rx}deg) rotateY(${ry}deg)`;
 
       // One hairline of light travelling across the glass, opposite the turn.
       sheen.style.transform = `translate3d(${-eased.x * 34 - ry * 2.6}px,0,0) rotate(${-14 + ry * 0.4}deg)`;
@@ -88,7 +105,7 @@ export default function HeroDevice({ className = "" }: { className?: string }) {
       window.removeEventListener("pointermove", onMove);
       gsap.ticker.remove(draw);
     };
-  }, [live]);
+  }, [live, shift]);
 
   return (
     <div
