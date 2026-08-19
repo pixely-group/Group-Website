@@ -178,17 +178,17 @@
      actually available — the viewport less the ~430px the rest of the hero
      stack occupies, over the ~4 line-heights this headline needs. Measured,
      not guessed. The clamp floor still governs small screens. */
-  font-size: clamp(3.2rem, min(15vw, calc((100svh - 430px) / 5)), 11.5rem);
+  font-size: clamp(2.8rem, min(12.4vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
-/* The headline with the device beside it. Measured, not guessed: the longest
-   line sets at 9.4x the font size and its column is the viewport less a 56px
-   gutter and the 30% the device holds, so the largest safe size is
-   0.7 x (W - 112) / 9.4 — which 6.2vw sits under from 1024 up, with the 9rem
-   ceiling taking over above ~2100px. Wrapping here would not merely look
+/* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
    inside one mask breaks the stagger those masks exist for. */
 @utility text-hero-aside {
-  font-size: clamp(3.2rem, min(10.2vw, calc((100svh - 430px) / 5)), 12rem);
+  /* "Financial" measures 6.76em in this face, against the 5.3em the previous
+     headline's longest line took. The binding constraint is the device
+     column, which sits inside the 30% right padding — so the width term is
+     solved against the device's left edge, not against the text column. */
+  font-size: clamp(2.8rem, min(8.9vw, calc((100svh - 430px) / 5)), 12rem);
 }
 
 @utility text-giant {

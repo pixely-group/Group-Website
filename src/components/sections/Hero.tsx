@@ -7,7 +7,6 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
-import ZnapDots from "@/components/ui/ZnapDots";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
   ssr: false,
@@ -70,8 +69,6 @@ export default function Hero() {
     pointer: [0, 0],
   });
   const [active, setActive] = useState(true);
-  /** The signature holds undrawn until the headline reveal cues it. */
-  const [signing, setSigning] = useState(false);
   const reduced = useReducedMotion();
   const small = useMediaQuery("(max-width: 767px)");
   /** The device only has a column to stand in from lg up. Gating the mount
@@ -178,8 +175,6 @@ export default function Hero() {
 
     if (reducedNow) {
       gsap.set([lines, fades], { yPercent: 0, y: 0, opacity: 1 });
-      // The signature draws itself already-complete under reduced motion,
-      // so it needs no cue here.
       gsap.set(headline, { opacity: 1 });
       return;
     }
@@ -205,10 +200,7 @@ export default function Hero() {
           { opacity: 0, y: 22 },
           { opacity: 1, y: 0, duration: 0.9, stagger: 0.07, ease: "power3.out" },
           "-=0.7",
-        )
-        // The word writes itself once its line has settled, rather than
-        // arriving already written.
-        .call(() => setSigning(true), undefined, "-=1.05");
+        );
     });
     return () => {
       cancelled = true;
@@ -221,7 +213,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       data-theme="ink"
-      aria-label="Znapy — money should move in a Znap!"
+      aria-label="Pixely — financial services without friction"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone"
     >
       <div className="absolute inset-0" aria-hidden>
@@ -258,39 +250,32 @@ export default function Hero() {
           className="type-label mb-7 text-(--muted) opacity-0"
         >
           <span className="section-index">
-            Znapy — Financial infrastructure
+            Pixely — AI-powered fintech platform
           </span>
         </p>
 
-        <h1 className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside">
+        <h1
+          className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
+          aria-label="Financial services without friction."
+        >
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              Money
+              Financial
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              should
+              services
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              move
+              without
             </span>
           </span>
-          {/* The lettering runs above the ascender and below the descender of
-              the line it sits on, so the reveal mask is grown to clear it and
-              pulled back by an equal margin to keep the layout unchanged. */}
-          <span className="-my-[0.42em] block overflow-hidden py-[0.42em]">
+          <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
-              in a{" "}
-              {/* The lettering is taller than the line it sits on, so it hangs
-                  out of a short wrapper instead of stretching the line box and
-                  opening a gap under "move". */}
-              {/* Pulled left so the dots sit against "in a" rather than a word space
-                  plus the grid's own left inset, and kept clear of the device
-                  column, which paints above the headline. */}
-              <ZnapDots play={signing} className="-ml-[0.12em] align-baseline" />
+              <span className="text-accent">friction.</span>
             </span>
           </span>
         </h1>
@@ -298,13 +283,14 @@ export default function Hero() {
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <div data-hero-fade className="max-w-md opacity-0">
             <p className="text-[0.95rem] leading-relaxed text-(--muted)">
-              Znapy is the settlement layer for companies that operate at
-              internet speed — money that arrives in milliseconds, in any
-              currency, governed entirely by code.
+              Pixely combines payments, digital identity and artificial
+              intelligence into one platform — secure transactions, trusted
+              verification and intelligent financial services, built for
+              Algeria.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <MagneticButton href="#start" size="md">
-                Start building
+                Talk to us
               </MagneticButton>
               <MagneticButton href="#product" variant="outline" size="md">
                 Explore the platform
@@ -316,12 +302,15 @@ export default function Hero() {
             data-hero-fade
             className="flex items-end justify-between gap-10 opacity-0 md:flex-col md:items-end md:gap-5"
           >
+            {/* The three mission pillars from the deck. There are no
+                published figures for Pixely, and inventing them for a real
+                company is not a design decision to make quietly. */}
             <p className="type-label hidden leading-relaxed text-(--faint) sm:block md:text-right">
-              142 currencies
+              Financial inclusion
               <br />
-              99.995% uptime
+              Intelligent innovation
               <br />
-              24/7/365 settlement
+              Trust &amp; security
             </p>
             <div className="flex items-center gap-3">
               <span className="type-label text-(--faint)">Scroll</span>

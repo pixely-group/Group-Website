@@ -13,11 +13,11 @@ import MobileMenu from "@/components/chrome/MobileMenu";
  * and "Resources" on the footer, where the reference links live.
  */
 export const NAV_LINKS = [
-  { label: "Product", href: "#product" },
-  { label: "Solutions", href: "#solutions" },
-  { label: "Platform", href: "#network" },
+  { label: "Platform", href: "#product" },
+  { label: "Services", href: "#solutions" },
+  { label: "Identity", href: "#network" },
   { label: "Company", href: "#thesis" },
-  { label: "Resources", href: "#resources" },
+  { label: "Contact", href: "#resources" },
 ] as const;
 
 /** Scroll distance over which the bar gathers itself, in px. */
@@ -89,7 +89,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
         />
       </svg>
       <span className="type-headline text-[0.95rem] tracking-[0.06em]">
-        Znapy
+        Pixely
       </span>
     </span>
   );
@@ -361,7 +361,7 @@ export default function Navigation() {
             <a
               href="#top"
               onClick={scrollTo("#top")}
-              aria-label="Znapy — back to top"
+              aria-label="Pixely — back to top"
               data-cursor="link"
               className="relative text-(--fg)"
             >

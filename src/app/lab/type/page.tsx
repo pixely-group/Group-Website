@@ -11,7 +11,7 @@ export default function TypeLab() {
 
   return (
     <main data-theme="ink" className="min-h-[100svh] bg-ink px-6 py-16 text-bone sm:px-10 lg:px-14">
-      <p className="type-label section-index mb-3 text-(--muted)">Znapy — Bitcount</p>
+      <p className="type-label section-index mb-3 text-(--muted)">Pixely — Bitcount</p>
       <p className="mb-14 max-w-xl text-[0.9rem] leading-relaxed text-(--muted)">
         The dots are read out of the font itself, then drawn and animated one at
         a time — left to right, jittered so it reads as dots coming on rather

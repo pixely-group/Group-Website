@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
-const OLD_LINES = ["The old", "financial system", "was built for", "another world."];
+const OLD_LINES = ["Financial", "services here", "were built for", "another era."];
 const NEW_LINES = ["We're building", "what comes next."];
 
 /**

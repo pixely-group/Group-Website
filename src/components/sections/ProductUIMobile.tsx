@@ -12,7 +12,7 @@ export default function ProductUIMobile() {
     <div
       className="w-full overflow-hidden rounded-(--radius-panel) border border-ink/10 bg-[#f7f5f0] text-ink shadow-[0_40px_80px_-50px_rgba(10,10,11,0.5)]"
       role="img"
-      aria-label="Znapy treasury workspace on mobile: balances, activity, FX and an open approval"
+      aria-label="Pixely treasury workspace on mobile: balances, activity, FX and an open approval"
     >
       <div className="flex items-center justify-between border-b border-ink/8 bg-[#fbfaf7] px-4 py-3">
         <div className="flex items-center gap-2">

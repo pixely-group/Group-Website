@@ -14,31 +14,31 @@ const NetworkScene = dynamic(() => import("@/components/three/NetworkScene"), {
 const STAGES = [
   {
     index: "01",
-    title: "Connect",
-    heading: "Every rail resolves into one graph.",
-    body: "Banks, card networks, instant rails and your own entities stop being integrations and become nodes — addressable, monitored, and reconciled against a single ledger.",
-    meta: "142 currencies · 38 liquidity venues · 9 direct memberships",
+    title: "Payments",
+    heading: "Money moves in real time, not overnight.",
+    body: "Person to person, business to business, and merchant collection — settled as they happen rather than gathered into a nightly batch and cleared the following working day.",
+    meta: "Real-time transfers · Merchant collections · Instant confirmation",
   },
   {
     index: "02",
-    title: "Move",
-    heading: "Value takes the shortest path that clears.",
-    body: "A payment is a route, not a request. Znapy prices every viable path — rail, correspondent, internal book — and commits to the one that settles first at the lowest total cost.",
-    meta: "Median settlement 184 ms · 99.995% success · No batch windows",
+    title: "Identity",
+    heading: "Proved once, trusted everywhere after.",
+    body: "Digital identity verification, eKYC and KYB, and authentication designed so a person or a business proves who they are once, and every service on the platform can rely on it afterwards.",
+    meta: "eKYC · KYB · Authentication",
   },
   {
     index: "03",
-    title: "Control",
-    heading: "Policy travels with the money.",
-    body: "Limits, allowlists and n-of-m approvals are evaluated at the edge, before value leaves. Refused paths are refused in microseconds, and every decision is written to an immutable log.",
-    meta: "Sub-ms evaluation · SOC 2 Type II · Immutable event log",
+    title: "Intelligence",
+    heading: "Fraud caught before the money leaves.",
+    body: "Fraud detection, intelligent automation and AI-assisted decisioning run on the same platform that moves the payment, so a decision is made in the path of the transaction rather than after it.",
+    meta: "Fraud detection · Automation · AI-assisted decisioning",
   },
   {
     index: "04",
-    title: "Scale",
-    heading: "The graph grows. The latency doesn't.",
-    body: "New markets, entities and rails extend the same topology. Nothing is re-architected, nothing is migrated, and volume that would break a batch system is simply more edges.",
-    meta: "$12.4B processed · 180+ markets · Linear cost curve",
+    title: "Compliance",
+    heading: "Regulatory-ready by construction.",
+    body: "Compliance, risk management and audit-ready reporting are properties of the platform rather than a reporting layer assembled afterwards. New services inherit them instead of re-implementing them.",
+    meta: "Risk management · Audit-ready reporting · Regulatory compliance",
   },
 ] as const;
 
@@ -242,7 +242,7 @@ export default function NetworkNarrative() {
       ref={sectionRef}
       id="network"
       data-theme="ink"
-      aria-label="How the Znapy network works"
+      aria-label="How the Pixely network works"
       className="relative bg-theme text-theme"
       style={{ height: reduced ? undefined : "500svh" }}
     >

@@ -4,32 +4,40 @@ import { useEffect, useRef } from "react";
 import CountUp from "@/components/ui/CountUp";
 import { gsap } from "@/lib/gsap";
 
-const METRICS = [
+/* The deck publishes no figures, and a real company's site is not the place
+   to invent them — this section carries the six core services instead, which
+   is what the deck actually documents. The numbering counts up in their
+   place. */
+const SERVICES = [
   {
-    value: 12.4,
-    decimals: 1,
-    prefix: "$",
-    suffix: "B",
-    label: "Processed in 2025",
-    note: "Across 1.9M counterparties",
+    index: 1,
+    label: "Payments",
+    note: "Real-time payments, transfers and merchant collections.",
   },
   {
-    value: 184,
-    suffix: "ms",
-    label: "Median settlement",
-    note: "Initiation to confirmed receipt",
+    index: 2,
+    label: "eWallets",
+    note: "Secure digital wallets for individuals, businesses and institutions.",
   },
   {
-    value: 99.995,
-    decimals: 3,
-    suffix: "%",
-    label: "Platform uptime",
-    note: "Rolling twelve months",
+    index: 3,
+    label: "Identity",
+    note: "Digital identity verification, eKYC and KYB, and authentication built for trust.",
   },
   {
-    value: 142,
-    label: "Currencies held",
-    note: "40 with local accounts",
+    index: 4,
+    label: "AI services",
+    note: "Fraud detection, intelligent automation and AI-assisted decisioning.",
+  },
+  {
+    index: 5,
+    label: "Compliance",
+    note: "Regulatory compliance, risk management and audit-ready reporting.",
+  },
+  {
+    index: 6,
+    label: "APIs and SDKs",
+    note: "Developer-first APIs and SDKs for straightforward integration.",
   },
 ] as const;
 
@@ -64,24 +72,19 @@ export default function Metrics() {
       className="relative bg-theme px-6 pt-[6vh] pb-[16vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        <h2 className="sr-only">Znapy by the numbers</h2>
+        <h2 className="sr-only">Core services</h2>
         <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
-          06 — By the numbers
+          06 — Core services
         </p>
-        <dl className="grid gap-x-12 gap-y-16 sm:grid-cols-2">
-          {METRICS.map((m) => (
+        <dl className="grid gap-x-12 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+          {SERVICES.map((m) => (
             <div
               key={m.label}
               data-metric
               className="border-t border-(--line) pt-6"
             >
               <dt className="type-display text-[clamp(2.8rem,6vw,5.4rem)] leading-[0.92] tracking-[-0.03em] whitespace-nowrap">
-                <CountUp
-                  value={m.value}
-                  decimals={"decimals" in m ? m.decimals : 0}
-                  prefix={"prefix" in m ? m.prefix : ""}
-                  suffix={"suffix" in m ? m.suffix : ""}
-                />
+                <CountUp value={m.index} prefix="0" />
               </dt>
               <dd className="mt-5">
                 <span className="block text-[0.95rem] font-medium">

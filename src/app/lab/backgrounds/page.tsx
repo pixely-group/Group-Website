@@ -40,7 +40,7 @@ export default function BackgroundsLab() {
 
       <div className="relative z-30 flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14">
         <p className="type-label section-index mb-7 text-(--muted)">
-          Znapy — Financial infrastructure
+          Pixely — Financial infrastructure
         </p>
         <h1 className="type-display text-hero -ml-[0.06em] lg:pr-[30%] lg:text-hero-aside">
           <span className="block">Money</span>
@@ -54,7 +54,7 @@ export default function BackgroundsLab() {
 
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <p className="max-w-md text-[0.95rem] leading-relaxed text-(--muted)">
-            Znapy is the settlement layer for companies that operate at
+            Pixely is the settlement layer for companies that operate at
             internet speed — money that arrives in milliseconds, in any
             currency, governed entirely by code.
           </p>
