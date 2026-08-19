@@ -54,6 +54,22 @@ function diamond(cx: number, cy: number, hw: number, hh: number) {
 export default function SecurityArchitecture() {
   const sectionRef = useRef<HTMLElement>(null);
   const [activeLayer, setActiveLayer] = useState(0);
+  // A layer the reader has chosen. While one is held the descending request
+  // stops driving the highlight, so their selection is not overwritten a
+  // moment later. Read from a ref inside the timeline, which outlives renders.
+  const [pinned, setPinned] = useState<number | null>(null);
+  const pinnedRef = useRef<number | null>(null);
+  const beamRef = useRef<gsap.core.Timeline | null>(null);
+
+  const selectLayer = (i: number) => {
+    const next = pinnedRef.current === i ? null : i;
+    pinnedRef.current = next;
+    setPinned(next);
+    setActiveLayer(next ?? i);
+    // Hold the beam while a layer is pinned; let it resume when released.
+    if (next === null) beamRef.current?.play();
+    else beamRef.current?.pause();
+  };
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -103,7 +119,9 @@ export default function SecurityArchitecture() {
             attr: { cy: layerY(i) },
             duration: 0.42,
             ease: "power1.inOut",
-            onStart: () => setActiveLayer(i),
+            onStart: () => {
+              if (pinnedRef.current === null) setActiveLayer(i);
+            },
           });
           tl.to(beam, { duration: 0.22 });
         });
@@ -113,7 +131,11 @@ export default function SecurityArchitecture() {
           duration: 0.5,
           ease: "power2.in",
         });
-        return () => tl.kill();
+        beamRef.current = tl;
+        return () => {
+          beamRef.current = null;
+          tl.kill();
+        };
       });
 
       return () => mm.revert();
@@ -146,7 +168,11 @@ export default function SecurityArchitecture() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-6">
+        <p className="type-label mt-10 text-(--faint)">
+          Select a layer to hold it
+        </p>
+
+        <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-6">
           {/* — The stack */}
           <div className="relative">
             <svg
@@ -223,16 +249,17 @@ export default function SecurityArchitecture() {
                     <line
                       x1={CX + HW}
                       y1={cy}
-                      x2={VB_W - 16}
+                      x2={VB_W - 34}
                       y2={cy - 26}
                       stroke={on ? "#2d46ff" : "currentColor"}
-                      strokeOpacity={on ? 0.9 : 0.24}
-                      strokeWidth="1"
+                      strokeOpacity={on ? 0.95 : 0.38}
+                      strokeWidth={on ? 1.4 : 1}
                       className="transition-all duration-500"
                     />
                     <text
-                      x={VB_W - 14}
+                      x={VB_W - 4}
                       y={cy - 31}
+                      textAnchor="end"
                       fontSize="13"
                       fill={on ? "#2d46ff" : "currentColor"}
                       fillOpacity={on ? 1 : 0.5}
@@ -262,30 +289,41 @@ export default function SecurityArchitecture() {
             {LAYERS.map((layer, i) => {
               const on = activeLayer === i;
               return (
-                <li
-                  key={layer.name}
-                  className={`grid grid-cols-[3.2rem_1fr] gap-4 border-t border-(--line) py-5 transition-opacity duration-500 last:border-b ${
-                    on ? "opacity-100" : "opacity-60"
-                  }`}
-                >
-                  <span
-                    className={`type-label pt-1 transition-colors duration-500 ${
-                      on ? "text-accent" : "text-(--faint)"
+                <li key={layer.name} className="border-t border-(--line) last:border-b">
+                  <button
+                    type="button"
+                    onClick={() => selectLayer(i)}
+                    aria-current={on ? "true" : undefined}
+                    data-cursor="link"
+                    className={`group grid w-full grid-cols-[3.2rem_1fr] gap-4 py-5 text-left transition-opacity duration-500 ${
+                      on ? "opacity-100" : "opacity-60 hover:opacity-90"
                     }`}
                   >
-                    {layer.index}
-                  </span>
-                  <div>
-                    <h3 className="text-[1.05rem] font-semibold tracking-[-0.01em]">
-                      {layer.name}
-                    </h3>
-                    <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
-                      {layer.note}
-                    </p>
-                    <p className="type-label mt-3 text-(--faint)">
-                      {layer.spec}
-                    </p>
-                  </div>
+                    <span
+                      className={`type-label flex items-start gap-1.5 pt-1 transition-colors duration-500 ${
+                        on ? "text-accent" : "text-(--faint) group-hover:text-accent"
+                      }`}
+                    >
+                      {layer.index}
+                      {pinned === i && (
+                        <span
+                          aria-hidden
+                          className="mt-px inline-block size-1 rotate-45 bg-accent"
+                        />
+                      )}
+                    </span>
+                    <div>
+                      <h3 className="text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 group-hover:text-accent">
+                        {layer.name}
+                      </h3>
+                      <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted)">
+                        {layer.note}
+                      </p>
+                      <p className="type-label mt-3 text-(--faint)">
+                        {layer.spec}
+                      </p>
+                    </div>
+                  </button>
                 </li>
               );
             })}

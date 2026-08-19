@@ -30,9 +30,9 @@ const CONDENSE_OVER = 200;
  * which reads as the bar collapsing rather than settling.
  */
 export const NAV_INSETS =
-  "[--nav-gutter:24px] [--nav-inset:32px] " +
-  "sm:[--nav-gutter:40px] sm:[--nav-inset:56px] " +
-  "lg:[--nav-gutter:56px] lg:[--nav-inset:80px]";
+  "[--nav-gutter:24px] [--nav-inset:40px] " +
+  "sm:[--nav-gutter:40px] sm:[--nav-inset:72px] " +
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:104px]";
 
 /**
  * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
@@ -44,7 +44,7 @@ export const NAV_GEOMETRY = {
   offsetTop: "calc(var(--nav-p) * 12px)",
   padInline:
     "calc(var(--nav-gutter) + (var(--nav-inset) - var(--nav-gutter)) * var(--nav-p))",
-  padBlock: "calc(24px - var(--nav-p) * 16px)",
+  padBlock: "calc(24px - var(--nav-p) * 18px)",
   padLeft: "calc(var(--nav-p) * 20px)",
   padRight: "calc(var(--nav-p) * 8px)",
 } as const;
@@ -270,9 +270,13 @@ export default function Navigation() {
                       href={link.href}
                       onClick={scrollTo(link.href)}
                       data-cursor="link"
-                      className="type-label relative block py-2 text-(--muted) transition-colors duration-300 hover:text-(--fg)"
+                      className="type-label group relative block py-2 text-(--muted) transition-colors duration-300 hover:text-accent focus-visible:text-accent"
                     >
                       {link.label}
+                      <span
+                        aria-hidden
+                        className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-accent transition-transform duration-300 ease-(--ease-out-expo) group-hover:scale-x-100"
+                      />
                     </a>
                   </li>
                 ))}

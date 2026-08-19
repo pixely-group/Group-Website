@@ -195,7 +195,7 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
                 href={link.href}
                 onClick={onNavigate(link.href)}
                 data-menu-link
-                className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)]"
+                className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] transition-colors duration-300 hover:text-accent focus-visible:text-accent"
                 tabIndex={open ? 0 : -1}
               >
                 <span className="type-label w-7 shrink-0 text-accent">

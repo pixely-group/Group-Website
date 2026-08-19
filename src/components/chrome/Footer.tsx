@@ -139,7 +139,7 @@ export default function Footer() {
                         href={column.href}
                         onClick={scrollTo(column.href)}
                         data-cursor="link"
-                        className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-(--fg)"
+                        className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-accent"
                       >
                         {link}
                       </a>
@@ -173,7 +173,7 @@ export default function Footer() {
                   href="#top"
                   onClick={scrollTo("#top")}
                   data-cursor="link"
-                  className="type-label text-(--muted) transition-colors duration-300 hover:text-(--fg)"
+                  className="type-label text-(--muted) transition-colors duration-300 hover:text-accent"
                 >
                   {link}
                 </a>
