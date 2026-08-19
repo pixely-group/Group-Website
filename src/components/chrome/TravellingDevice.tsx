@@ -11,14 +11,20 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 /** Where the travel begins, as a fraction of the hero's height scrolled. */
 const BEGIN = 0.14;
-/** How far below the seam the device parks, so it sits nearer the copy that
- *  follows rather than stranded in the gap between the two sections. */
-const DROP = 96;
+/** How far below the seam the device parks. Its lower half lands over the
+ *  copy that follows, which is where the fade earns its keep. */
+const DROP = 40;
 /** Scale on arrival, and what it grows to as the reader keeps going. */
 const LANDED = 0.86;
-const CLOSE = 1.04;
-/** Scroll past the stop over which that growth happens. */
-const ZOOM = 460;
+const CLOSE = 1.42;
+/** Scroll past the stop over which that growth happens. Short on purpose:
+ *  the device is anchored to the page by then, so every pixel spent growing
+ *  is also a pixel of it travelling up the screen. Stretch this and it
+ *  reaches full size only once it has left the frame. */
+const ZOOM = 180;
+/** How faint the bottom of the device gets, so the copy in front of it stays
+ *  the thing you read. */
+const FAINT = 0.06;
 
 /**
  * The device is fixed to the viewport rather than parked inside the hero,
@@ -43,6 +49,7 @@ export default function TravellingDevice() {
   const holderRef = useRef<HTMLDivElement>(null);
   const flatten = useRef(0);
   const arrived = useRef(false);
+  const fadeStep = useRef(-1);
   const [showcase, setShowcase] = useState<"cards" | null>(null);
   const reduced = useReducedMotion();
   /** Below lg there is no column to start from and no room to travel. */
@@ -116,6 +123,22 @@ export default function TravellingDevice() {
       holder.style.transform =
         `translate3d(${dx * p}px, ${dy * p - past}px, 0) scale(${scale})`;
 
+      /* The lower half fades out as the device settles over the section copy,
+         so the text in front of it reads against the background rather than
+         against a phone. Quantised: the gradient is cheap to paint but not
+         cheap to re-parse, and at 24 steps the change is already invisible. */
+      const step = Math.round(near * 24);
+      if (step !== fadeStep.current) {
+        fadeStep.current = step;
+        const t = step / 24;
+        const mid = 1 - 0.68 * t;
+        const end = 1 - (1 - FAINT) * t;
+        const mask =
+          `linear-gradient(to bottom, #000 0 38%, rgb(0 0 0 / ${mid}) 58%, rgb(0 0 0 / ${end}) 86%)`;
+        holder.style.maskImage = mask;
+        holder.style.webkitMaskImage = mask;
+      }
+
       if (p >= 1 !== arrived.current) {
         arrived.current = p >= 1;
         setShowcase(arrived.current ? "cards" : null);
@@ -132,6 +155,8 @@ export default function TravellingDevice() {
       window.removeEventListener("resize", measure);
       ro.disconnect();
       holder.style.transform = "";
+      holder.style.maskImage = "";
+      holder.style.webkitMaskImage = "";
     };
   }, [enabled, reduced, roomy]);
 

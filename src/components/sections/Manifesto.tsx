@@ -48,18 +48,21 @@ export default function Manifesto() {
       ref={sectionRef}
       id="manifesto"
       data-theme="ink"
-      /* The device parks just inside this section's top edge and grows as the
-         reader continues, so the copy starts clear of it at its largest —
-         roughly 96px of drop plus half of a 620px device at 1.04. Enough to
-         clear, close enough to read as one composition. */
-      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[26rem]"
+      /* The device parks with its centre near this section's top edge, so the
+         copy starts across the middle of it rather than below it — measured,
+         the label wants to land at about half the device's height, which at
+         its largest puts it a little under the seam. */
+      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[4rem]"
     >
       <h2 className="sr-only">Why Pixely exists</h2>
       {/* One centred column rather than a left-aligned block with the right
           half empty. The text stays ranged left inside it: this is a
           statement, and a 60rem measure set centred would cost more in
           readability than the balance is worth. */}
-      <div className="mx-auto max-w-[60rem]">
+      {/* Above the device, which is fixed at z-30. The section's own
+          background stays below it, so the device is seen against the ink and
+          the copy is read against the device. */}
+      <div className="relative z-40 mx-auto max-w-[60rem]">
         <p className="type-label section-index mb-12 text-(--muted)" aria-hidden>
           01 — Manifesto
         </p>

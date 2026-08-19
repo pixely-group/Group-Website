@@ -528,10 +528,12 @@ const CARDS = [
 function CardsScreen({ c }: { c: C }) {
   return (
     <div className="absolute inset-x-0 top-0 px-[20px]" style={{ paddingTop: 62 }}>
-      <p style={{ fontSize: 13, color: c.MUTED, letterSpacing: "-0.01em" }}>Wallet</p>
-      <p style={{ fontSize: 26, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em", marginTop: 2 }}>
-        My cards
-      </p>
+      <div className="wallet-in">
+        <p style={{ fontSize: 13, color: c.MUTED, letterSpacing: "-0.01em" }}>Wallet</p>
+        <p style={{ fontSize: 26, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em", marginTop: 2 }}>
+          My cards
+        </p>
+      </div>
 
       {/* Height derived from the stack, not guessed: the cards are absolute,
           so a short container lets the last one overlap whatever follows. */}
@@ -545,12 +547,17 @@ function CardsScreen({ c }: { c: C }) {
         {CARDS.map((card, i) => (
           <div
             key={card.id}
+            className="wallet-in"
             style={{
               position: "absolute",
               top: i * CARD_STEP,
               left: 0,
               right: 0,
               height: CARD_H,
+              /* Dealt in from the right, one after another. The ease has a
+                 long tail rather than a bounce: these are cards being laid
+                 down, not springs. */
+              animationDelay: `${90 + i * 110}ms`,
               borderRadius: 22,
               padding: 18,
               background: card.tint,
@@ -589,7 +596,10 @@ function CardsScreen({ c }: { c: C }) {
 
       {/* The stack leaves the lower half of the screen empty, which reads as
           an unfinished screen rather than a spacious one. */}
-      <div style={{ marginTop: 26 }}>
+      <div
+        className="wallet-in"
+        style={{ marginTop: 26, animationDelay: `${90 + CARDS.length * 110}ms` }}
+      >
         <p style={{ fontSize: 12, color: c.MUTED, letterSpacing: "0.06em" }}>CARD CONTROLS</p>
         <div
           style={{
