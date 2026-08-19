@@ -2,13 +2,15 @@
 
 import dynamic from "next/dynamic";
 import {
-  Anybody,
-  Bricolage_Grotesque,
-  Gabarito,
-  Michroma,
-  Syncopate,
-  Syne,
-  Tomorrow,
+  Alex_Brush,
+  Birthstone,
+  Caveat,
+  Great_Vibes,
+  Mrs_Saint_Delafield,
+  Ms_Madi,
+  Nothing_You_Could_Do,
+  Sacramento,
+  Style_Script,
 } from "next/font/google";
 import { useState } from "react";
 
@@ -18,13 +20,15 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
 
 /* Declared here rather than in the root layout, so the candidates ship with
    this route and never reach the site's bundle. */
-const anybody = Anybody({ subsets: ["latin"], axes: ["wdth"], style: ["normal", "italic"], variable: "--f-anybody" });
-const syne = Syne({ subsets: ["latin"], variable: "--f-syne" });
-const michroma = Michroma({ subsets: ["latin"], weight: "400", variable: "--f-michroma" });
-const tomorrow = Tomorrow({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], style: ["normal", "italic"], variable: "--f-tomorrow" });
-const syncopate = Syncopate({ subsets: ["latin"], weight: ["400", "700"], variable: "--f-syncopate" });
-const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--f-bricolage" });
-const gabarito = Gabarito({ subsets: ["latin"], variable: "--f-gabarito" });
+const msMadi = Ms_Madi({ subsets: ["latin"], weight: "400", variable: "--f-msmadi" });
+const birthstone = Birthstone({ subsets: ["latin"], weight: "400", variable: "--f-birthstone" });
+const alexBrush = Alex_Brush({ subsets: ["latin"], weight: "400", variable: "--f-alexbrush" });
+const delafield = Mrs_Saint_Delafield({ subsets: ["latin"], weight: "400", variable: "--f-delafield" });
+const caveat = Caveat({ subsets: ["latin"], variable: "--f-caveat" });
+const sacramento = Sacramento({ subsets: ["latin"], weight: "400", variable: "--f-sacramento" });
+const styleScript = Style_Script({ subsets: ["latin"], weight: "400", variable: "--f-stylescript" });
+const greatVibes = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--f-greatvibes" });
+const scrawl = Nothing_You_Could_Do({ subsets: ["latin"], weight: "400", variable: "--f-scrawl" });
 
 type Range = { min: number; max: number; step: number };
 
@@ -33,108 +37,141 @@ type Candidate = {
   name: string;
   family: string;
   note: string;
-  wght: Range;
-  /** Only the variable faces carry a width axis. */
-  wdth?: Range;
-  italic?: boolean;
-  size: number;
-  track: number;
+  /** Only Caveat has a weight axis; the rest are single-weight by nature. */
+  wght?: Range;
   weight: number;
-  width: number;
+  size: number;
+  rotate: number;
+  lift: number;
+  lead: number;
+  track: number;
 };
 
 const CANDIDATES: Candidate[] = [
   {
-    id: "anybody",
-    name: "Anybody",
-    family: "var(--f-anybody)",
-    wght: { min: 300, max: 900, step: 25 },
-    wdth: { min: 50, max: 150, step: 2 },
-    italic: true,
-    weight: 700,
-    width: 125,
-    size: 1.0,
-    track: -0.02,
-    note: "A real width axis, from 50 to 150 — the only face here you can stretch. Retro-futurist bones, but continuously adjustable rather than one fixed opinion. Start wide.",
-  },
-  {
-    id: "syne",
-    name: "Syne",
-    family: "var(--f-syne)",
-    wght: { min: 400, max: 800, step: 25 },
-    weight: 800,
-    width: 100,
-    size: 1.0,
-    track: -0.03,
-    note: "The contemporary art-and-technology face. At ExtraBold the proportions go deliberately strange — narrow round shapes against wide flat ones. Unlike anything else on the page.",
-  },
-  {
-    id: "michroma",
-    name: "Michroma",
-    family: "var(--f-michroma)",
-    wght: { min: 400, max: 400, step: 1 },
+    id: "msmadi",
+    name: "Ms Madi",
+    family: "var(--f-msmadi)",
     weight: 400,
-    width: 100,
-    size: 0.82,
-    track: -0.03,
-    note: "Wide, square and even — futurist without Orbitron's costume. One weight only, so it stands or falls on the size and tracking.",
+    size: 1.52,
+    rotate: -4,
+    lift: 0.04,
+    lead: -0.06,
+    track: 0,
+    note: "A modern monoline signature — even stroke, no calligraphic contrast. The one most likely to read as a brand rather than a wedding invitation.",
   },
   {
-    id: "tomorrow",
-    name: "Tomorrow",
-    family: "var(--f-tomorrow)",
-    wght: { min: 400, max: 900, step: 100 },
-    italic: true,
+    id: "birthstone",
+    name: "Birthstone",
+    family: "var(--f-birthstone)",
+    weight: 400,
+    size: 1.46,
+    rotate: -4,
+    lift: 0.03,
+    lead: -0.06,
+    track: 0,
+    note: "Contemporary signature script with a little more pen pressure than Ms Madi. Warmer, and the ascenders loop rather than stand.",
+  },
+  {
+    id: "alexbrush",
+    name: "Alex Brush",
+    family: "var(--f-alexbrush)",
+    weight: 400,
+    size: 1.5,
+    rotate: -5,
+    lift: 0.05,
+    lead: -0.08,
+    track: 0,
+    note: "A brush signature laid down in one confident stroke. Thick-to-thin comes from speed rather than a nib, which suits a word meaning speed.",
+  },
+  {
+    id: "delafield",
+    name: "Delafield",
+    family: "var(--f-delafield)",
+    weight: 400,
+    size: 1.78,
+    rotate: -5,
+    lift: 0.06,
+    lead: -0.1,
+    track: 0,
+    note: "The closest thing here to an actual signed name — high contrast, connected, slightly unruly. Needs the most size because its x-height is tiny.",
+  },
+  {
+    id: "caveat",
+    name: "Caveat",
+    family: "var(--f-caveat)",
+    wght: { min: 400, max: 700, step: 25 },
     weight: 700,
-    width: 100,
-    size: 1.0,
-    track: -0.02,
-    note: "Technical, slightly condensed, with a true italic rather than a slanted upright. Turn the italic on — a word meaning speed is allowed to lean.",
+    size: 1.16,
+    rotate: -3,
+    lift: 0.02,
+    lead: -0.04,
+    track: 0,
+    note: "Handwriting rather than calligraphy — a marker, not a pen, and barely connected. Reads as a person wrote it rather than a brand commissioned it.",
   },
   {
-    id: "syncopate",
-    name: "Syncopate",
-    family: "var(--f-syncopate)",
-    wght: { min: 400, max: 700, step: 300 },
-    weight: 700,
-    width: 100,
-    size: 0.82,
-    track: 0.0,
-    note: "Wide and architectural, drawn to be set with air around the letters. Push the tracking positive and it stops being a word and becomes signage.",
+    id: "sacramento",
+    name: "Sacramento",
+    family: "var(--f-sacramento)",
+    weight: 400,
+    size: 1.44,
+    rotate: -3,
+    lift: 0.03,
+    lead: -0.05,
+    track: 0,
+    note: "Monoline and quiet, with almost no flourish. The most restrained of the nine — it signs without raising its voice.",
   },
   {
-    id: "bricolage",
-    name: "Bricolage",
-    family: "var(--f-bricolage)",
-    wght: { min: 300, max: 800, step: 25 },
-    weight: 700,
-    width: 100,
-    size: 1.0,
-    track: -0.03,
-    note: "A contemporary grotesque with deliberate irregularities — the terminals do not all agree with each other. Modern in a 2026 way rather than a 1970s way.",
+    id: "stylescript",
+    name: "Style Script",
+    family: "var(--f-stylescript)",
+    weight: 400,
+    size: 1.38,
+    rotate: -4,
+    lift: 0.04,
+    lead: -0.07,
+    track: 0,
+    note: "Retro brush, closer to a 1950s shopfront than a signed cheque. Bolder on the page than anything else here, and the least formal.",
   },
   {
-    id: "gabarito",
-    name: "Gabarito",
-    family: "var(--f-gabarito)",
-    wght: { min: 400, max: 900, step: 25 },
-    weight: 800,
-    width: 100,
-    size: 1.0,
-    track: -0.03,
-    note: "Geometric and warm, with flared joins that keep it from reading as another neutral sans. The friendliest of the seven, which suits an onomatopoeia.",
+    id: "greatvibes",
+    name: "Great Vibes",
+    family: "var(--f-greatvibes)",
+    weight: 400,
+    size: 1.56,
+    rotate: -4,
+    lift: 0.05,
+    lead: -0.09,
+    track: 0,
+    note: "Formal copperplate with full flourishes. Included as the far end — beautiful, and the one most at risk of reading as a certificate.",
+  },
+  {
+    id: "scrawl",
+    name: "Scrawl",
+    family: "var(--f-scrawl)",
+    weight: 400,
+    size: 1.2,
+    rotate: -2,
+    lift: 0.02,
+    lead: -0.03,
+    track: 0,
+    note: "Genuinely scrawled ballpoint — unconnected, uneven, no elegance at all. The most human and the least designed, which is either the point or the problem.",
   },
 ];
 
-type Tweak = { weight: number; width: number; size: number; track: number; italic: boolean; caps: boolean };
+type Tweak = {
+  weight: number; size: number; rotate: number;
+  lift: number; lead: number; track: number; accent: boolean;
+};
 
 const defaults = (c: Candidate): Tweak => ({
   weight: c.weight,
-  width: c.width,
   size: c.size,
+  rotate: c.rotate,
+  lift: c.lift,
+  lead: c.lead,
   track: c.track,
-  italic: false,
-  caps: false,
+  accent: false,
 });
 
 function Slider({
@@ -148,7 +185,7 @@ function Slider({
 }) {
   return (
     <label className="flex items-center gap-3">
-      <span className="type-label w-16 shrink-0 text-(--faint)">{label}</span>
+      <span className="type-label w-14 shrink-0 text-(--faint)">{label}</span>
       <input
         type="range"
         min={range.min}
@@ -157,7 +194,7 @@ function Slider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         data-cursor="link"
-        className="h-1 w-36 cursor-pointer appearance-none rounded-full bg-(--line-strong) accent-(--accent)"
+        className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-(--line-strong) accent-(--accent)"
       />
       <span className="type-label w-12 shrink-0 text-right text-(--muted)">
         {format(value)}
@@ -167,7 +204,7 @@ function Slider({
 }
 
 export default function TypeLab() {
-  const [id, setId] = useState("anybody");
+  const [id, setId] = useState("msmadi");
   const [tweaks, setTweaks] = useState<Record<string, Tweak>>({});
 
   const c = CANDIDATES.find((x) => x.id === id)!;
@@ -175,31 +212,33 @@ export default function TypeLab() {
   const set = (patch: Partial<Tweak>) =>
     setTweaks((prev) => ({ ...prev, [id]: { ...t, ...patch } }));
 
+  /* Rotation needs a block box, and the em nudges then scale with the word
+     rather than with the headline — which is what you want when resizing. */
   const face = {
     fontFamily: c.family,
     fontWeight: t.weight,
-    fontStyle: t.italic ? ("italic" as const) : ("normal" as const),
     fontSize: `${t.size}em`,
     letterSpacing: `${t.track}em`,
-    textTransform: t.caps ? ("uppercase" as const) : ("none" as const),
-    ...(c.wdth ? { fontVariationSettings: `"wdth" ${t.width}` } : {}),
+    textTransform: "none" as const,
+    display: "inline-block" as const,
+    marginLeft: `${t.lead}em`,
+    transform: `translateY(${t.lift}em) rotate(${t.rotate}deg)`,
   };
 
   /* So a choice can be applied to the site verbatim rather than re-guessed. */
   const declaration = [
     `font-family: ${c.name}`,
-    `font-weight: ${t.weight}`,
-    ...(c.wdth ? [`font-variation-settings: "wdth" ${t.width}`] : []),
-    ...(t.italic ? ["font-style: italic"] : []),
+    ...(c.wght ? [`font-weight: ${t.weight}`] : []),
     `font-size: ${t.size}em`,
-    `letter-spacing: ${t.track}em`,
-    ...(t.caps ? ["text-transform: uppercase"] : []),
+    ...(t.track ? [`letter-spacing: ${t.track}em`] : []),
+    `margin-left: ${t.lead}em`,
+    `transform: translateY(${t.lift}em) rotate(${t.rotate}deg)`,
   ].join("; ");
 
   return (
     <main
       data-theme="ink"
-      className={`${anybody.variable} ${syne.variable} ${michroma.variable} ${tomorrow.variable} ${syncopate.variable} ${bricolage.variable} ${gabarito.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
+      className={`${msMadi.variable} ${birthstone.variable} ${alexBrush.variable} ${delafield.variable} ${caveat.variable} ${sacramento.variable} ${styleScript.variable} ${greatVibes.variable} ${scrawl.variable} relative h-[100svh] min-h-[640px] overflow-hidden bg-ink text-bone`}
     >
       <div
         aria-hidden
@@ -219,15 +258,20 @@ export default function TypeLab() {
           <span className="block">Money</span>
           <span className="block">should</span>
           <span className="block">move</span>
-          <span className="block">
-            in a{" "}
+          {/* The site clips this line for the reveal, so the lab clips it too —
+              a script that overflows here would overflow there. The padding
+              grows the mask around the script's ascender and descender; the
+              negative margin puts the line back where it was, so the reveal
+              still slides up from a mask edge that sits on the baseline. */}
+          <span className="-my-[0.34em] block overflow-hidden py-[0.34em]">
+            in a
             <span style={face}>
-              Znap<span className="text-accent">!</span>
+              Znap<span className={t.accent ? undefined : "text-accent"}>!</span>
             </span>
           </span>
         </h1>
 
-        <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
+        <div className="mt-6 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <p className="max-w-md text-[0.95rem] leading-relaxed text-(--muted)">
             Znapy is the settlement layer for companies that operate at internet
             speed — money that arrives in milliseconds, in any currency,
@@ -253,7 +297,7 @@ export default function TypeLab() {
                 type="button"
                 onClick={() => setId(x.id)}
                 data-cursor="link"
-                className={`type-label rounded-[calc(var(--radius-panel)-6px)] px-4 py-2.5 transition-colors duration-300 ${
+                className={`type-label rounded-[calc(var(--radius-panel)-6px)] px-3.5 py-2.5 transition-colors duration-300 ${
                   on ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
                 }`}
               >
@@ -263,62 +307,33 @@ export default function TypeLab() {
           })}
         </div>
 
-        {/* Two fixed rounds were rejected, so this one is dialled, not picked. */}
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-(--radius-panel) border border-(--line-strong) bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
-          {c.wght.min !== c.wght.max && (
-            <Slider
-              label="Weight"
-              value={t.weight}
-              range={c.wght}
-              format={String}
-              onChange={(v) => set({ weight: v })}
-            />
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 rounded-(--radius-panel) border border-(--line-strong) bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
+          {c.wght && (
+            <Slider label="Weight" value={t.weight} range={c.wght}
+              format={String} onChange={(v) => set({ weight: v })} />
           )}
-          {c.wdth && (
-            <Slider
-              label="Width"
-              value={t.width}
-              range={c.wdth}
-              format={(v) => `${v}`}
-              onChange={(v) => set({ width: v })}
-            />
-          )}
-          <Slider
-            label="Size"
-            value={t.size}
-            range={{ min: 0.7, max: 1.25, step: 0.01 }}
-            format={(v) => v.toFixed(2)}
-            onChange={(v) => set({ size: v })}
-          />
-          <Slider
-            label="Track"
-            value={t.track}
-            range={{ min: -0.08, max: 0.14, step: 0.005 }}
-            format={(v) => v.toFixed(3)}
-            onChange={(v) => set({ track: v })}
-          />
+          <Slider label="Size" value={t.size} range={{ min: 0.9, max: 2.3, step: 0.02 }}
+            format={(v) => v.toFixed(2)} onChange={(v) => set({ size: v })} />
+          {/* A signature is never perfectly level. */}
+          <Slider label="Angle" value={t.rotate} range={{ min: -12, max: 4, step: 0.5 }}
+            format={(v) => `${v}°`} onChange={(v) => set({ rotate: v })} />
+          <Slider label="Lift" value={t.lift} range={{ min: -0.2, max: 0.2, step: 0.01 }}
+            format={(v) => v.toFixed(2)} onChange={(v) => set({ lift: v })} />
+          {/* Signatures do not respect the box they are given. */}
+          <Slider label="Tuck" value={t.lead} range={{ min: -0.35, max: 0.15, step: 0.01 }}
+            format={(v) => v.toFixed(2)} onChange={(v) => set({ lead: v })} />
+          <Slider label="Track" value={t.track} range={{ min: -0.04, max: 0.1, step: 0.005 }}
+            format={(v) => v.toFixed(3)} onChange={(v) => set({ track: v })} />
           <div className="flex items-center gap-1">
-            {c.italic && (
-              <button
-                type="button"
-                onClick={() => set({ italic: !t.italic })}
-                data-cursor="link"
-                className={`type-label rounded-(--radius-chip) px-3.5 py-2 transition-colors duration-300 ${
-                  t.italic ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
-                }`}
-              >
-                Italic
-              </button>
-            )}
             <button
               type="button"
-              onClick={() => set({ caps: !t.caps })}
+              onClick={() => set({ accent: !t.accent })}
               data-cursor="link"
               className={`type-label rounded-(--radius-chip) px-3.5 py-2 transition-colors duration-300 ${
-                t.caps ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
+                t.accent ? "bg-signal text-bone" : "text-(--muted) hover:text-(--fg)"
               }`}
             >
-              Caps
+              Plain !
             </button>
             <button
               type="button"
