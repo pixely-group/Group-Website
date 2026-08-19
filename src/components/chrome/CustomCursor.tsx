@@ -6,6 +6,19 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
 
 type CursorState = "default" | "link" | "explore" | "text";
 
+/** Diameter of the cursor's centre dot, in px. */
+export const CURSOR_DOT_PX = 6;
+
+/**
+ * Scale the dot takes over a link — the state it is in whenever it sits
+ * beside a nav item, so anything meant to read as "that same dot, parked"
+ * has to match this rendered size, not the base one.
+ */
+export const CURSOR_DOT_LINK_SCALE = 0.4;
+
+/** The dot's rendered diameter beside a link. */
+export const CURSOR_DOT_LINK_PX = CURSOR_DOT_PX * CURSOR_DOT_LINK_SCALE;
+
 /**
  * Cursor ink for the chapter beneath it: a dark section takes the light
  * cursor and vice versa. `mix-blend-difference` cannot do this job here —
@@ -65,7 +78,7 @@ export default function CustomCursor() {
       state = next;
       const scales: Record<CursorState, { ring: number; dot: number }> = {
         default: { ring: 1, dot: 1 },
-        link: { ring: 1.55, dot: 0.4 },
+        link: { ring: 1.55, dot: CURSOR_DOT_LINK_SCALE },
         explore: { ring: 2.6, dot: 0 },
         text: { ring: 0.5, dot: 0.6 },
       };
@@ -156,7 +169,13 @@ export default function CustomCursor() {
     >
       <div
         ref={dotRef}
-        className="absolute -top-[3px] -left-[3px] size-1.5 rounded-full bg-(--cursor-color) transition-[background-color] duration-300 ease-(--ease-out-expo)"
+        style={{
+          width: CURSOR_DOT_PX,
+          height: CURSOR_DOT_PX,
+          top: -CURSOR_DOT_PX / 2,
+          left: -CURSOR_DOT_PX / 2,
+        }}
+        className="absolute rounded-full bg-(--cursor-color) transition-[background-color] duration-300 ease-(--ease-out-expo)"
       />
       <div
         ref={ringRef}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { CURSOR_DOT_LINK_PX } from "@/components/chrome/CustomCursor";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
@@ -89,6 +90,7 @@ export default function Navigation() {
   const lenis = useLenis();
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const navP = useRef(0);
   // The menu reproduces the bar's geometry, and opening it stops Lenis —
@@ -196,6 +198,7 @@ export default function Navigation() {
     if (!el) return;
     e.preventDefault();
     setMenuOpen(false);
+    setActiveHref(href);
     if (lenis) {
       // The menu stops Lenis while it is open so the page behind cannot
       // scroll, and a stopped instance drops scrollTo silently. Resume
@@ -264,22 +267,40 @@ export default function Navigation() {
 
             <nav aria-label="Primary" className="relative hidden lg:block">
               <ul className="flex items-center gap-9">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      onClick={scrollTo(link.href)}
-                      data-cursor="link"
-                      className="type-label group relative block py-2 text-(--muted) transition-colors duration-300 hover:text-accent focus-visible:text-accent"
-                    >
-                      {link.label}
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-accent transition-transform duration-300 ease-(--ease-out-expo) group-hover:scale-x-100"
-                      />
-                    </a>
-                  </li>
-                ))}
+                {NAV_LINKS.map((link) => {
+                  const active = activeHref === link.href;
+                  return (
+                    <li key={link.href}>
+                      <a
+                        href={link.href}
+                        onClick={scrollTo(link.href)}
+                        data-cursor="link"
+                        aria-current={active ? "true" : undefined}
+                        className={`type-label relative block py-2 transition-colors duration-300 ${
+                          active
+                            ? "text-accent"
+                            : "text-(--muted) hover:text-accent focus-visible:text-accent"
+                        }`}
+                      >
+                        {/* Absolute so marking an entry never nudges the
+                            row. Sized from the cursor's dot as it actually
+                            renders beside a link — the cursor scales its dot
+                            down in that state, so the base 6px read far too
+                            large next to it. */}
+                        <span
+                          aria-hidden
+                          style={{
+                            width: CURSOR_DOT_LINK_PX,
+                            height: CURSOR_DOT_LINK_PX,
+                            opacity: active ? 1 : 0,
+                          }}
+                          className="absolute top-1/2 -left-3 -translate-y-1/2 rounded-full bg-accent transition-opacity duration-300 ease-(--ease-out-expo)"
+                        />
+                        {link.label}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
 
