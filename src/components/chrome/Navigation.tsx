@@ -93,6 +93,13 @@ export default function Navigation() {
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const navP = useRef(0);
+  const navRef = useRef<HTMLElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
+  // Whether the marker has been positioned once already. Deciding this from
+  // the dot's current opacity is unreliable: if the fade has not run yet the
+  // travel is mistaken for a first placement and never glides.
+  const dotPlaced = useRef(false);
+  const activeHrefRef = useRef<string | null>(null);
   // The menu reproduces the bar's geometry, and opening it stops Lenis —
   // which can reset scroll and move the bar underneath. So the menu keeps
   // whatever the bar measured at the moment the toggle was pressed.
@@ -210,6 +217,83 @@ export default function Navigation() {
     }
   };
 
+  // A single marker that moves to whichever entry is selected. Five dots
+  // fading in and out cannot show the journey between them.
+  const placeDot = useCallback((href: string | null, glide: boolean) => {
+    const dot = dotRef.current;
+    const nav = navRef.current;
+    if (!dot || !nav) return;
+
+    const index = NAV_LINKS.findIndex((l) => l.href === href);
+    if (index < 0) {
+      gsap.to(dot, { opacity: 0, duration: 0.2, overwrite: true });
+      return;
+    }
+    const link = nav.querySelectorAll("a")[index];
+    if (!link) return;
+
+    const navBox = nav.getBoundingClientRect();
+    const box = link.getBoundingClientRect();
+    const x = box.left - navBox.left - 12;
+    const y = box.top - navBox.top + box.height / 2 - CURSOR_DOT_LINK_PX / 2;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    // Travel only from a known position; the first selection should appear
+    // in place rather than fly in from the corner.
+    if (glide && dotPlaced.current && !reduced) {
+      gsap.to(dot, {
+        x,
+        y,
+        opacity: 1,
+        duration: 0.55,
+        ease: "expo.out",
+        overwrite: true,
+      });
+    } else {
+      gsap.set(dot, { x, y });
+      gsap.to(dot, {
+        opacity: 1,
+        duration: reduced ? 0 : 0.28,
+        overwrite: true,
+      });
+    }
+    dotPlaced.current = true;
+  }, []);
+
+  useEffect(() => {
+    activeHrefRef.current = activeHref;
+    placeDot(activeHref, true);
+  }, [activeHref, placeDot]);
+
+  // Realignment lives apart from selection on purpose. ResizeObserver fires
+  // once the moment it observes, and document.fonts.ready is already resolved
+  // after first load — so running these alongside a selection change would
+  // overwrite the travel tween the instant it was created, and the marker
+  // would jump instead of moving.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    let ignoreFirst = true;
+    const ro = new ResizeObserver(() => {
+      if (ignoreFirst) {
+        ignoreFirst = false;
+        return;
+      }
+      placeDot(activeHrefRef.current, false);
+    });
+    ro.observe(nav);
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (!cancelled) placeDot(activeHrefRef.current, false);
+    });
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+    };
+  }, [placeDot]);
+
   const toggleMenu = useCallback(() => {
     setMenuNavP(navP.current);
     setMenuOpen((v) => !v);
@@ -265,7 +349,22 @@ export default function Navigation() {
               <Wordmark />
             </a>
 
-            <nav aria-label="Primary" className="relative hidden lg:block">
+            <nav
+              ref={navRef}
+              aria-label="Primary"
+              className="relative hidden lg:block"
+            >
+              {/* Sized from the cursor's dot as it renders beside a link. */}
+              <span
+                ref={dotRef}
+                aria-hidden
+                style={{
+                  width: CURSOR_DOT_LINK_PX,
+                  height: CURSOR_DOT_LINK_PX,
+                  opacity: 0,
+                }}
+                className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
+              />
               <ul className="flex items-center gap-9">
                 {NAV_LINKS.map((link) => {
                   const active = activeHref === link.href;
@@ -282,20 +381,6 @@ export default function Navigation() {
                             : "text-(--muted) hover:text-accent focus-visible:text-accent"
                         }`}
                       >
-                        {/* Absolute so marking an entry never nudges the
-                            row. Sized from the cursor's dot as it actually
-                            renders beside a link — the cursor scales its dot
-                            down in that state, so the base 6px read far too
-                            large next to it. */}
-                        <span
-                          aria-hidden
-                          style={{
-                            width: CURSOR_DOT_LINK_PX,
-                            height: CURSOR_DOT_LINK_PX,
-                            opacity: active ? 1 : 0,
-                          }}
-                          className="absolute top-1/2 -left-3 -translate-y-1/2 rounded-full bg-accent transition-opacity duration-300 ease-(--ease-out-expo)"
-                        />
                         {link.label}
                       </a>
                     </li>
