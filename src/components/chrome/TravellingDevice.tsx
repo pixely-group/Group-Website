@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { DEVICE_ASPECT } from "@/lib/device";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
@@ -31,11 +32,16 @@ const LEAD = 0.06;
 /** The fade never eats more than this much of the device, whatever the
  *  measurements say. */
 const KEEP_MIN = 0.28;
-/** The mask area is grown by this much on every side. A mask paints only
- *  inside its own area, and the device leans out of its box by up to ~21px
- *  under the pointer — without the margin those pixels are cut, which is why
- *  the fade used to wait until the device was square before switching on. */
-const MASK_PAD = 64;
+/** The mask sits on its own element, inset this far outside the device on
+ *  every side. Two things have to fit in that margin: the device leans out of
+ *  its box by up to ~21px under the pointer, and its shadow reaches 100px
+ *  below the body — 50 of offset plus 90 of blur less 40 of spread.
+ *
+ *  An element rather than a bigger mask-image, because mask-clip decides what
+ *  gets cut and it defaults to the border box: growing the image does nothing
+ *  about the clip, and no-clip did not paint. Give the mask a box that is
+ *  actually larger and the default clip is already in the right place. */
+const MASK_PAD = 150;
 /** How much of the scroll the device gives back while it is growing. At a
  *  full 1:1 it rises the whole ZOOM as it zooms, and reaches full size with
  *  its top already off the screen. It is still page-anchored afterwards. */
@@ -62,6 +68,7 @@ const LINGER = 0.35;
  */
 export default function TravellingDevice() {
   const holderRef = useRef<HTMLDivElement>(null);
+  const maskRef = useRef<HTMLDivElement>(null);
   const flatten = useRef(0);
   const arrived = useRef(false);
   const fadeStep = useRef(-1);
@@ -73,7 +80,8 @@ export default function TravellingDevice() {
 
   useEffect(() => {
     const holder = holderRef.current;
-    if (!holder || !enabled || reduced) return;
+    const maskEl = maskRef.current;
+    if (!holder || !maskEl || !enabled || reduced) return;
 
     const hero = document.querySelector("#top");
     const manifesto = document.querySelector("#manifesto");
@@ -200,13 +208,8 @@ export default function TravellingDevice() {
             ` rgb(0 0 0 / 0.28) ${into(midAt).toFixed(1)}%,` +
             ` rgb(0 0 0 / ${FAINT}) ${into(1).toFixed(1)}%)`;
         }
-        holder.style.maskImage = mask;
-        holder.style.webkitMaskImage = mask;
-        /* No-repeat, or the gradient tiles outside the area and paints bands
-           across the chassis instead of leaving it alone. */
-        holder.style.maskRepeat = "no-repeat";
-        holder.style.maskPosition = "center";
-        holder.style.maskSize = `calc(100% + ${MASK_PAD * 2}px) calc(100% + ${MASK_PAD * 2}px)`;
+        maskEl.style.maskImage = mask;
+        maskEl.style.webkitMaskImage = mask;
       }
 
       if (overlapping !== arrived.current) {
@@ -225,8 +228,8 @@ export default function TravellingDevice() {
       window.removeEventListener("resize", measure);
       ro.disconnect();
       holder.style.transform = "";
-      holder.style.maskImage = "";
-      holder.style.webkitMaskImage = "";
+      maskEl.style.maskImage = "";
+      maskEl.style.webkitMaskImage = "";
     };
   }, [enabled, reduced, roomy]);
 
@@ -239,15 +242,30 @@ export default function TravellingDevice() {
     <div className="pointer-events-none fixed top-[88px] right-[12.4%] bottom-[192px] z-30 hidden items-center lg:flex">
       <div
         ref={holderRef}
-        className="pointer-events-auto h-full max-h-[500px] xl:max-h-[620px]"
-        style={{ willChange: "transform" }}
+        className="pointer-events-auto relative h-full max-h-[500px] xl:max-h-[620px]"
+        /* The device hangs in an out-of-flow child, so this box has nothing to
+           take its width from and collapses to zero — which silently breaks
+           the centring, since that is solved from this box's midpoint. */
+        style={{ willChange: "transform", aspectRatio: DEVICE_ASPECT }}
       >
-        <HeroDevice
-          shift={roomy ? 24 : 5}
-          flatten={flatten}
-          showcase={showcase}
-          className="h-full"
-        />
+        {/* Out of flow and inset outwards, so its border box — which is what
+            the mask clips to — is the device plus MASK_PAD all round. The
+            padding puts the device back in the middle of it. */}
+        <div
+          ref={maskRef}
+          className="absolute"
+          style={{ inset: -MASK_PAD, padding: MASK_PAD }}
+        >
+          {/* h-full, not size-full: the device takes its width from its own
+              aspect ratio, and pinning both dimensions overrides that and
+              draws it stretched and clipped. */}
+          <HeroDevice
+            shift={roomy ? 24 : 5}
+            flatten={flatten}
+            showcase={showcase}
+            className="h-full"
+          />
+        </div>
       </div>
     </div>
   );

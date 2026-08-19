@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
+import { BEZEL, BODY_H, BODY_W } from "@/lib/device";
 import WalletScreen from "@/components/ui/WalletScreen";
 import { gsap } from "@/lib/gsap";
 import { useFinePointer, useReducedMotion } from "@/lib/hooks";
@@ -14,11 +16,6 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
  * Dimensions are the hardware's in logical points, so the screen inside is
  * laid out at exactly the size a designer would work at.
  */
-const SCREEN_W = 402;
-const SCREEN_H = 874;
-const BEZEL = 9;
-const BODY_W = SCREEN_W + BEZEL * 2;
-const BODY_H = SCREEN_H + BEZEL * 2;
 const SCREEN_R = 52;
 
 /**

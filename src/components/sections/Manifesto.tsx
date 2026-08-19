@@ -48,11 +48,11 @@ export default function Manifesto() {
       ref={sectionRef}
       id="manifesto"
       data-theme="ink"
-      /* The device parks with its centre near this section's top edge, so the
-         copy starts across the middle of it rather than below it — measured,
-         the label wants to land at about half the device's height, which at
-         its largest puts it a little under the seam. */
-      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[4rem]"
+      /* The copy starts well down the section, so the device has the room to
+         travel, square up and grow before the first line reaches it. At 4rem
+         the copy was landing on it 200px of scroll before it had even parked,
+         which left the animation fighting the text for the same space. */
+      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[15rem]"
     >
       <h2 className="sr-only">Why Pixely exists</h2>
       {/* One centred column rather than a left-aligned block with the right
