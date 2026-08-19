@@ -137,17 +137,19 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
         style={
           {
             "--nav-p": navP,
+            "--nav-end": NAV_GEOMETRY.end,
             paddingTop: NAV_GEOMETRY.offsetTop,
-            paddingInline: NAV_GEOMETRY.padInline,
+            paddingLeft: NAV_GEOMETRY.padLeft,
+            paddingRight: NAV_GEOMETRY.padRight,
           } as React.CSSProperties
         }
       >
         <div
           className="flex min-h-10 items-center justify-between"
           style={{
-            paddingBlock: NAV_GEOMETRY.padBlock,
-            paddingLeft: NAV_GEOMETRY.padLeft,
-            paddingRight: NAV_GEOMETRY.padRight,
+            paddingBlock: NAV_GEOMETRY.rowPadBlock,
+            paddingLeft: NAV_GEOMETRY.rowPadLeft,
+            paddingRight: NAV_GEOMETRY.rowPadRight,
           }}
         >
           <Wordmark />

@@ -42,16 +42,22 @@ export const NAV_INSETS =
  * interpolate away from `none` and snaps mid-transition.
  */
 export const NAV_GEOMETRY = {
+  /** Where the bar's edges land once condensed. */
+  end: "max(var(--nav-inset), (100% - var(--nav-max)) / 2)",
   offsetTop: "calc(var(--nav-p) * 12px)",
-  // The condensed end is the breakpoint's inset, or whatever centres the bar
-  // within `--nav-max` on a display wide enough to need it — a fixed inset
-  // alone leaves the bar at ~90% of a large screen, which reads as no
-  // condensing at all. Both are lengths, so the range still interpolates.
-  padInline:
-    "calc(var(--nav-gutter) + (max(var(--nav-inset), (100% - var(--nav-max)) / 2) - var(--nav-gutter)) * var(--nav-p))",
-  padBlock: "calc(24px - var(--nav-p) * 20px)",
-  padLeft: "calc(var(--nav-p) * 20px)",
-  padRight: "calc(var(--nav-p) * 8px)",
+  /** Left follows the page gutter at rest, so the wordmark sits on the same
+   *  column as the hero headline. */
+  padLeft:
+    "calc(var(--nav-gutter) + (var(--nav-end) - var(--nav-gutter)) * var(--nav-p))",
+  /** Right starts at the row's own vertical padding instead of the gutter,
+   *  so the corner control is inset equally from the top and the right even
+   *  before the bar has a visible edge. */
+  padRight: "calc(24px + (var(--nav-end) - 24px) * var(--nav-p))",
+  rowPadBlock: "calc(24px - var(--nav-p) * 20px)",
+  rowPadLeft: "calc(var(--nav-p) * 20px)",
+  /** Matches the condensed vertical padding exactly, so the corner stays
+   *  square. Changing one without the other threw it out last time. */
+  rowPadRight: "calc(var(--nav-p) * 4px)",
 } as const;
 
 export function Wordmark({ className = "" }: { className?: string }) {
@@ -321,17 +327,21 @@ export default function Navigation() {
             the bar condenses. */}
         <div
           className={NAV_INSETS}
-          style={{
-            paddingTop: NAV_GEOMETRY.offsetTop,
-            paddingInline: NAV_GEOMETRY.padInline,
-          }}
+          style={
+            {
+              "--nav-end": NAV_GEOMETRY.end,
+              paddingTop: NAV_GEOMETRY.offsetTop,
+              paddingLeft: NAV_GEOMETRY.padLeft,
+              paddingRight: NAV_GEOMETRY.padRight,
+            } as React.CSSProperties
+          }
         >
           <div
             className="relative flex min-h-10 items-center justify-between text-(--fg)"
             style={{
-              paddingBlock: NAV_GEOMETRY.padBlock,
-              paddingLeft: NAV_GEOMETRY.padLeft,
-              paddingRight: NAV_GEOMETRY.padRight,
+              paddingBlock: NAV_GEOMETRY.rowPadBlock,
+              paddingLeft: NAV_GEOMETRY.rowPadLeft,
+              paddingRight: NAV_GEOMETRY.rowPadRight,
             }}
           >
             {/* Glass fades in as one composited layer. Animating background,
