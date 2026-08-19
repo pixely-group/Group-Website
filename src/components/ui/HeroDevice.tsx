@@ -16,25 +16,14 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
  */
 const SCREEN_W = 402;
 const SCREEN_H = 874;
-const BEZEL = 5;
+const BEZEL = 9;
 const BODY_W = SCREEN_W + BEZEL * 2;
 const BODY_H = SCREEN_H + BEZEL * 2;
 const SCREEN_R = 52;
-/**
- * Body depth. The hardware is 8.75mm thick against 71.9mm wide, and the
- * body here is 412pt wide, so the honest number is 50pt. It matters now:
- * the device used to be a single plane, which meant turning it only
- * foreshortened the front — there was no side there to come into view.
- */
-/* Kept because the body is pushed forward by it, which is what sets the
-   device's apparent size under the perspective. Nothing is drawn in the
-   depth any more: the side rails and the back panel are gone, so no turn of
-   the device can reveal either. */
-const THICK = 50;
 
 /**
  * Square to the reader at rest, and how far the pointer may push it. The
- * device has no sides and no back to show — see the note on THICK — so the
+ * device has no sides and no back to show, so the
  * swing is a parallax cue rather than a turn, and is kept small enough to
  * read as one.
  *
@@ -212,16 +201,24 @@ export default function HeroDevice({
             transformStyle: "preserve-3d",
           }}
         >
-          {/* Body: matte, with one hairline edge and a cast shadow. Pushed
-              forward by the body's own depth so it caps the rails. */}
+          {/* The body. No longer pushed forward: it used to sit at the front
+              of a 50pt depth so it capped the side rails, but with those gone
+              there is nothing to cap, and under the perspective that push
+              magnified it to 308x661 inside a 289x620 stage — a phone wider
+              than the box it was laid out in.
+
+              The frame is a raked gradient rather than a flat fill. It has no
+              sides to catch the light, so the light has to be painted on:
+              this is what keeps it reading as a device against a background
+              almost exactly as dark as it is. */}
           <div
-            className="absolute inset-0 rounded-[57px] bg-[#06070a]"
+            className="absolute inset-0 rounded-[57px]"
             style={{
-              transform: `translateZ(${THICK}px)`,
-              transformStyle: "preserve-3d",
               padding: BEZEL,
+              background:
+                "linear-gradient(148deg,#3c414d 0%,#181c24 15%,#0a0c11 46%,#0d1015 62%,#20242e 88%,#454b58 100%)",
               boxShadow:
-                "inset 0 0 0 1px rgba(236,233,225,0.22), inset 0 1px 0 rgba(236,233,225,0.4), 0 50px 90px -40px rgba(0,0,0,0.9), 0 0 90px -40px rgba(45,70,255,0.5)",
+                "inset 0 0 0 1px rgba(236,233,225,0.30), inset 0 1px 0 rgba(236,233,225,0.45), 0 50px 90px -40px rgba(0,0,0,0.9), 0 0 90px -40px rgba(45,70,255,0.5)",
             }}
           >
             <div

@@ -24,7 +24,15 @@ const CLOSE = 1.42;
 const ZOOM = 180;
 /** How faint the bottom of the device gets, so the copy in front of it stays
  *  the thing you read. */
-const FAINT = 0.06;
+const FAINT = 0.07;
+/** How much of the screen the fade leaves alone. The wallet's cards occupy
+ *  the upper half of the display and the copy crosses at about 53%, so the
+ *  fade starts below both — set higher, it dims the cards themselves. */
+const KEEP = 0.54;
+/** How much of the scroll the device gives back while it is growing. At a
+ *  full 1:1 it rises the whole ZOOM as it zooms, and reaches full size with
+ *  its top already off the screen. It is still page-anchored afterwards. */
+const LINGER = 0.35;
 
 /**
  * The device is fixed to the viewport rather than parked inside the hero,
@@ -110,8 +118,12 @@ export default function TravellingDevice() {
       const p = ease(clamp01((y - begin) / Math.max(1, stop - begin)));
       /* Past the stop the device counter-scrolls one for one, which is what
          "stopped" means from the reader's side: it holds its place on the
-         page and the page carries it away. */
+         page and the page carries it away. It gives back only a fraction of
+         that while it is still growing, so the reader sees it at full size
+         rather than watching it leave at full size. */
       const past = Math.max(0, y - stop);
+      const rise =
+        past <= ZOOM ? past * LINGER : ZOOM * LINGER + (past - ZOOM);
 
       /* Once parked it keeps coming forward, slowly, for as long as the
          reader keeps scrolling — the wallet is the thing being read by then,
@@ -121,7 +133,7 @@ export default function TravellingDevice() {
 
       flatten.current = p;
       holder.style.transform =
-        `translate3d(${dx * p}px, ${dy * p - past}px, 0) scale(${scale})`;
+        `translate3d(${dx * p}px, ${dy * p - rise}px, 0) scale(${scale})`;
 
       /* The lower half fades out as the device settles over the section copy,
          so the text in front of it reads against the background rather than
@@ -131,10 +143,10 @@ export default function TravellingDevice() {
       if (step !== fadeStep.current) {
         fadeStep.current = step;
         const t = step / 24;
-        const mid = 1 - 0.68 * t;
+        const mid = 1 - 0.7 * t;
         const end = 1 - (1 - FAINT) * t;
         const mask =
-          `linear-gradient(to bottom, #000 0 38%, rgb(0 0 0 / ${mid}) 58%, rgb(0 0 0 / ${end}) 86%)`;
+          `linear-gradient(to bottom, #000 0 ${KEEP * 100}%, rgb(0 0 0 / ${mid}) 70%, rgb(0 0 0 / ${end}) 86%)`;
         holder.style.maskImage = mask;
         holder.style.webkitMaskImage = mask;
       }
