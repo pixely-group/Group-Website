@@ -31,6 +31,11 @@ const LEAD = 0.06;
 /** The fade never eats more than this much of the device, whatever the
  *  measurements say. */
 const KEEP_MIN = 0.28;
+/** The mask area is grown by this much on every side. A mask paints only
+ *  inside its own area, and the device leans out of its box by up to ~21px
+ *  under the pointer — without the margin those pixels are cut, which is why
+ *  the fade used to wait until the device was square before switching on. */
+const MASK_PAD = 64;
 /** How much of the scroll the device gives back while it is growing. At a
  *  full 1:1 it rises the whole ZOOM as it zooms, and reaches full size with
  *  its top already off the screen. It is still page-anchored afterwards. */
@@ -172,7 +177,11 @@ export default function TravellingDevice() {
       const h = baseH * scale;
       const deviceTop = restCentreY + dy * p - rise - h / 2;
       const contact = (copyTopPage - y - deviceTop) / h;
-      const overlapping = p >= 1 && contact < 1;
+      /* Driven by the copy actually reaching the device, not by the device
+         finishing its travel. On a tall viewport the copy is already 200px
+         over it by the time it parks, and gating on arrival left the text
+         sitting on a fully opaque phone for that whole stretch. */
+      const overlapping = contact < 1;
       /* Quantised: the gradient is cheap to paint but not cheap to re-parse,
          and at this granularity the change is already invisible. */
       const step = overlapping ? Math.round(Math.max(0, contact) * 60) : -1;
@@ -182,18 +191,27 @@ export default function TravellingDevice() {
         if (overlapping) {
           const startsAt = Math.max(KEEP_MIN, step / 60 - LEAD);
           const midAt = Math.min(0.97, startsAt + 0.16);
+          /* Stops are given as fractions of the device, but the mask area is
+             larger than it by MASK_PAD on each side, so each one is remapped
+             into that larger area or the fade lands high. */
+          const into = (f: number) => ((MASK_PAD + f * h) / (h + MASK_PAD * 2)) * 100;
           mask =
-            `linear-gradient(to bottom, #000 0 ${(startsAt * 100).toFixed(1)}%,` +
-            ` rgb(0 0 0 / 0.28) ${(midAt * 100).toFixed(1)}%,` +
-            ` rgb(0 0 0 / ${FAINT}) 100%)`;
+            `linear-gradient(to bottom, #000 0 ${into(startsAt).toFixed(1)}%,` +
+            ` rgb(0 0 0 / 0.28) ${into(midAt).toFixed(1)}%,` +
+            ` rgb(0 0 0 / ${FAINT}) ${into(1).toFixed(1)}%)`;
         }
         holder.style.maskImage = mask;
         holder.style.webkitMaskImage = mask;
+        /* No-repeat, or the gradient tiles outside the area and paints bands
+           across the chassis instead of leaving it alone. */
+        holder.style.maskRepeat = "no-repeat";
+        holder.style.maskPosition = "center";
+        holder.style.maskSize = `calc(100% + ${MASK_PAD * 2}px) calc(100% + ${MASK_PAD * 2}px)`;
       }
 
-      if (p >= 1 !== arrived.current) {
-        arrived.current = p >= 1;
-        setShowcase(arrived.current ? "cards" : null);
+      if (overlapping !== arrived.current) {
+        arrived.current = overlapping;
+        setShowcase(overlapping ? "cards" : null);
       }
     };
 
