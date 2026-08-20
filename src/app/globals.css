@@ -10,15 +10,10 @@
   /* Brand blue at full chroma: the same 233° hue as #384CE3, saturation
      taken to 100%, which is as vivid as this hue can get while still
      clearing AA as text on bone (5.04:1).
-
-     One blue, but not one value. Ink is nearly black, and this blue is dark
-     itself — on the dark chapters it manages 3.23:1, which clears AA for
-     large text and fails it for everything else, section indexes included.
-     The lifted tint is the same hue carrying the luminance those chapters
-     need: 6.74:1. `--accent` resolves to whichever of the two the chapter
-     can actually be read against. Controls that put text ON the blue keep
-     the primary either way — bone reads 5.04:1 on it and 2.42:1 on the
-     lift — which is why they name `bg-signal` and not `bg-accent`. */
+     One blue now, both ways. The lifted tint used to cover the dark chapters,
+     where the primary reaches 3.25:1 — which clears AA for large text but not
+     for small. It is kept for the few places that need the headroom rather
+     than being what `--accent` resolves to. */
   --color-signal: #2d46ff;
   --color-signal-lift: #7290ff;
   /* Canvas and GL marks are small, alpha-blended and often additive, which
@@ -79,7 +74,7 @@
   --line: rgb(236 233 225 / 0.14);
   --line-strong: rgb(236 233 225 / 0.32);
   --surface: rgb(236 233 225 / 0.04);
-  --accent: var(--color-signal-lift);
+  --accent: var(--color-signal);
 }
 
 [data-theme="bone"] {
