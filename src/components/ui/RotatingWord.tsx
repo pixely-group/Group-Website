@@ -7,9 +7,10 @@ import { useReducedMotion } from "@/lib/hooks";
 
 /**
  * The last word of the headline, typed and retyped. All three finish the same
- * line — "AI-powered fintech platform for ..." — and they escalate rather
- * than list: the two things the deck says Pixely combines, and then the place
- * it is being built for.
+ * line — "AI-powered fintech platform for ..." — and they are the manifesto's
+ * own three words, the ones it sets in the serif a section later: a payment
+ * is data, so is an identity, and both should move at the speed of the
+ * network. The hero states them; the manifesto argues them.
  *
  * Capitalised, not upper-cased. The headline is set in caps and the word
  * would take them by inheritance, which is not what this face is for — the
@@ -22,7 +23,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["Payments", "Identity", "Algeria"] as const;
+const WORDS = ["Data", "Identity", "Network"] as const;
 
 /** Per character, typing — an average rather than a rate. Nobody types on a
  *  metronome, and an exactly even cadence was most of what made this read as
@@ -54,12 +55,17 @@ export default function RotatingWord({ className }: { className?: string }) {
   const dotRef = useRef<HTMLSpanElement>(null);
   const lastWidth = useRef<number | null>(null);
 
-  /* The dot slides between characters rather than snapping to each one.
-     Measured after the letter has landed and moved back by the difference,
-     then let go — so it starts from where it was standing and travels, which
-     is the whole of what made the erase feel like it was dragging the word
-     off a character at a time. Layout effect, or it would paint at the new
-     position for a frame before the correction. */
+  /* The dot slides back through the word as it is erased rather than
+     stepping off it a character at a time — measured after the letter has
+     gone, moved back to where it was standing, then let go.
+
+     Only on the way back. Typing the same way puts the dot where the letter
+     that just appeared now is, and it sits on top of it while it catches up:
+     a caret belongs at the insertion point, and going forward there is no
+     empty space for it to travel through. So it glides when the word is
+     getting shorter and holds the end of it when it is growing.
+
+     Layout effect, or it paints at the new position for a frame first. */
   useLayoutEffect(() => {
     const el = textRef.current;
     const dot = dotRef.current;
@@ -69,6 +75,12 @@ export default function RotatingWord({ className }: { className?: string }) {
     const was = lastWidth.current;
     lastWidth.current = width;
     if (was === null || was === width) return;
+
+    if (width > was) {
+      gsap.killTweensOf(dot);
+      gsap.set(dot, { x: 0 });
+      return;
+    }
 
     // Added to whatever offset it is already carrying, because the last
     // glide will not have finished — it never does.
