@@ -265,11 +265,6 @@ export default function SecurityArchitecture() {
   /** How far the stack has closed up, 1 being open. Scrubbed by the same
    *  timeline that walks the request down, so the two share one progress. */
   const squeeze = useRef({ s: 1 });
-  /** The plate under the pointer, if any. Kept in a ref as well, because
-   *  the ticker has to re-solve the leader's ends every frame — the plate
-   *  end moves with the squeeze and the title end does not. */
-  const [hoverLayer, setHoverLayer] = useState<number | null>(null);
-  const hoverRef = useRef<number | null>(null);
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -414,41 +409,6 @@ export default function SecurityArchitecture() {
     };
   }, [scenario]);
 
-  // The leader is drawn rather than faded in — from the plate outwards,
-  // which is the direction it is pointing.
-  useEffect(() => {
-    const line = document.querySelector<SVGLineElement>("[data-hover-leader]");
-    if (!line) return;
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (hoverLayer === null) {
-      gsap.to(line, { opacity: 0, duration: reduced ? 0 : 0.18 });
-      return;
-    }
-
-    // Where the row begins, in the drawing's own units. Measured rather than
-    // written down: the far end is a percentage of a container the viewBox
-    // knows nothing about. It moves only on resize, so once per hover is
-    // enough — the ticker is left with the two ends that follow the scroll.
-    const svg = line.ownerSVGElement;
-    const row = registerRef.current?.querySelectorAll("li")[hoverLayer];
-    if (svg && row) {
-      const box = svg.getBoundingClientRect();
-      const unit = box.width / geo.VB_W;
-      gsap.set(line, {
-        attr: { x2: (row.getBoundingClientRect().left - box.left) / unit },
-      });
-    }
-
-    gsap.set(line, { opacity: 1, attr: { "stroke-dashoffset": 1 } });
-    gsap.to(line, {
-      attr: { "stroke-dashoffset": 0 },
-      duration: reduced ? 0 : 0.34,
-      ease: "power2.out",
-    });
-  }, [hoverLayer, geo]);
-
   // A ring in the plane of the plate each time the request lands on one.
   useEffect(() => {
     const pulse = pulseRef.current;
@@ -479,7 +439,6 @@ export default function SecurityArchitecture() {
       const plates = section.querySelectorAll("[data-plate]");
       const lifts = section.querySelectorAll("[data-plate-lift]");
       const spine = section.querySelector("[data-spine]");
-      const hoverLine = section.querySelector("[data-hover-leader]");
       const beam = section.querySelector("[data-beam]");
       const mm = gsap.matchMedia();
       const reduced = window.matchMedia(
@@ -633,16 +592,6 @@ export default function SecurityArchitecture() {
           });
         }
 
-        // Both ends of the hover leader, every frame it is up: the plate
-        // end rides the squeeze, the title end is pinned to the row.
-        const h = hoverRef.current;
-        if (h !== null && hoverLine) {
-          const at = layerY(g, h);
-          gsap.set(hoverLine, {
-            attr: { y1: squeezeY(g, at, squeeze.current.s), y2: at },
-          });
-        }
-
         const cy = beamRender.current.cy;
         gsap.set(beam, {
           attr: { cy: squeezeY(g, cy, s) },
@@ -775,11 +724,7 @@ export default function SecurityArchitecture() {
         <div data-stack className="relative mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
-            /* The hover leader has to finish at the title, which is outside
-               this box — one line all the way there rather than a run to the
-               edge and a second piece carrying on from it. Nothing else
-               draws outside the viewBox, so there is nothing else to leak. */
-            className="w-full lg:w-[44%] lg:overflow-visible"
+            className="w-full lg:w-[44%]"
             role="img"
             aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
           >
@@ -870,15 +815,6 @@ export default function SecurityArchitecture() {
                   key={layer.name}
                   data-plate
                   onClick={() => selectLayer(i)}
-                  onMouseEnter={() => {
-                    if (!wide || unreached) return;
-                    hoverRef.current = i;
-                    setHoverLayer(i);
-                  }}
-                  onMouseLeave={() => {
-                    hoverRef.current = null;
-                    setHoverLayer(null);
-                  }}
                   data-cursor={unreached ? undefined : "link"}
                   className={unreached ? "cursor-default" : "cursor-pointer"}
                 >
@@ -953,35 +889,6 @@ export default function SecurityArchitecture() {
                 </g>
               );
             })}
-
-            {/* The leader the plates used to carry all the time, now only
-                under the pointer. It lives outside the lift groups on
-                purpose: one end is on a plate that has moved with the
-                squeeze and the other on a register row that has not, so
-                neither transform can own it. The ticker solves both ends,
-                and x2 is measured off the row it points at, because the
-                title sits beyond this box's own right edge.
-
-                Narrow has no register beside the drawing to point at, so
-                there is nothing here to draw. */}
-            {wide && (
-              <line
-                data-hover-leader
-                x1={geo.CX + geo.HW}
-                y1={layerY(geo, 0)}
-                x2={geo.VB_W}
-                y2={layerY(geo, 0)}
-                stroke={
-                  declined && hoverLayer === BLOCK_AT ? REFUSED : ACCENT
-                }
-                strokeWidth="1.2"
-                pathLength={1}
-                strokeDasharray={1}
-                strokeDashoffset={1}
-                opacity={0}
-                pointerEvents="none"
-              />
-            )}
 
             <ellipse
               ref={pulseRef}
