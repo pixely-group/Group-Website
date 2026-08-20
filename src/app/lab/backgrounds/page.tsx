@@ -49,7 +49,7 @@ export default function BackgroundsLab() {
           <span className="block">fintech</span>
           <span className="block">platform</span>
           <span className="block">
-            for <RotatingWord className="type-serif-inherit text-signal" />
+            for <RotatingWord className="type-serif-inherit text-signal normal-case" />
           </span>
         </h1>
 

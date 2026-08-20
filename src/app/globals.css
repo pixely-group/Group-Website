@@ -188,7 +188,12 @@
    ———————————————————————————————————————— */
 .nav-aside {
   --aside: clamp(0, (1 - var(--nav-p)) * 2, 1);
-  overflow: hidden;
+  /* Clipped, not hidden, and with room to spare. The button inside pulls
+     toward the pointer on hover — up to 11px across and 7px down — and a
+     plain `hidden` cropped it against the very edge it needs to lean over.
+     `clip` takes a margin; `hidden` does not. */
+  overflow: clip;
+  overflow-clip-margin: 16px;
   max-width: calc(var(--aside) * 6rem);
   margin-right: calc((var(--aside) - 1) * 0.75rem);
   opacity: var(--aside);

@@ -12,8 +12,9 @@ import { useReducedMotion } from "@/lib/hooks";
  *
  * Length is a hard constraint, not a preference: the line has to stay clear
  * of the device column, and the budget is whatever the longest Archivo line
- * above sets. Measured in the face these actually use, uppercase Fraunces
- * italic, which runs materially narrower than the display caps beside it.
+ * above sets. Measured in the face these actually use — Fraunces italic, set
+ * in its own case rather than the headline's caps, which runs narrower still.
+ * At the longest word the line ends 150px short of the device.
  */
 const WORDS = ["payments", "identity", "Algeria"] as const;
 
