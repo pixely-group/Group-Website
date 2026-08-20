@@ -15,7 +15,7 @@ const GlobeScene = dynamic(() => import("@/components/three/GlobeScene"), {
  * network spanning time zones and the wrong one for a platform being built
  * for one country.
  */
-export default function GlobalCorridors() {
+export default function AlgeriaGlobe() {
   const sectionRef = useRef<HTMLElement>(null);
   /* The scene only runs while the section is on screen — it is a long way
      down the page, and a GL loop spinning behind six other sections is work
@@ -38,7 +38,7 @@ export default function GlobalCorridors() {
     const c = gsap.context(() => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(section.querySelectorAll("[data-corridor-stat]"), {
+        gsap.from(section.querySelectorAll("[data-pillar]"), {
           opacity: 0,
           y: 22,
           duration: 0.9,
@@ -101,7 +101,7 @@ export default function GlobalCorridors() {
             ["Compliance", "Regulatory-ready by construction"],
             ["Algeria", "Where it is being built"],
           ].map(([value, label]) => (
-            <div key={label} data-corridor-stat className="pt-6">
+            <div key={label} data-pillar className="pt-6">
               <dt className="type-headline text-[1.6rem] leading-none font-medium tracking-[-0.02em]">
                 {value}
               </dt>
