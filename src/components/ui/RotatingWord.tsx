@@ -21,7 +21,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["data", "identity", "network"] as const;
+const WORDS = ["data", "identity", "the network"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an

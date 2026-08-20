@@ -208,30 +208,20 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — an AI-powered fintech platform for payments, identity and Algeria"
+          aria-label="Pixely — AI fintech for data, identity and the network"
         >
+          {/* Two lines is a width budget, not a preference. The device
+              column sits closest at 1024 — the narrowest width that still
+              gets this layout — and a line has about 560px before it reaches
+              it. So the copy came down to meet the type rather than the type
+              coming down to fit the copy, which is what the larger word and
+              the larger dot were asking for. "One platform" ran 42px past it;
+              this clears by 127. */}
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              AI-powered
+              AI fintech
             </span>
           </span>
-          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
-            <span data-hero-line className="block">
-              fintech
-            </span>
-          </span>
-          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
-            <span data-hero-line className="block">
-              platform
-            </span>
-          </span>
-          {/* Deeper than the lines above it: this one ends in Fraunces italic,
-              whose descenders run 14.5px below the baseline at this size
-              against Archivo's 10.1 — and deeper again since the word was
-              set 1.14em to hold its own against the caps. The mask was
-              cutting 2.6px off every y, g and p. Padding opens it downward
-              and the negative margin hands the space straight back, so the
-              run keeps the spacing it had. */}
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
               for{" "}

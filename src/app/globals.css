@@ -307,12 +307,18 @@
 /* Fluid display sizes */
 @utility text-hero {
   /* Width alone cannot size a full-bleed headline. On short, wide viewports
-     10.5vw overflows the screen: the eyebrow and the first line get pushed
-     up behind the navigation and clipped. The second term is the height
-     actually available — the viewport less the ~430px the rest of the hero
-     stack occupies, over the ~4 line-heights this headline needs. Measured,
-     not guessed. The clamp floor still governs small screens. */
-  font-size: clamp(2.4rem, min(10.4vw, calc((100svh - 430px) / 5)), 11.5rem);
+     it overflows: the eyebrow and the first line get pushed up behind the
+     navigation and clipped. The second term is the height actually available
+     — the viewport less the ~430px the rest of the hero stack occupies, over
+     the line-heights this headline needs. Two now, not four, so it divides by
+     3 where it divided by 5; leaving it would have reserved room for two
+     lines that no longer exist and held the type down for nothing.
+
+     The width term binds instead, and it is set by the longest the second
+     line ever gets — "for the network", whose serif runs 1.14em. At 375 that
+     line needs 327px of the 329 there are, which is no margin at all, so
+     10.4vw comes down to 10. */
+  font-size: clamp(2.3rem, min(10vw, calc((100svh - 430px) / 3)), 11.5rem);
 }
 /* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
@@ -320,13 +326,15 @@
 @utility text-hero-aside {
   /* The binding constraint is the device column, which sits inside the 30%
      right padding — so the width term is solved against the device's left
-     edge, not against the text column. Re-solved for the current headline:
-     "AI-powered" is the longest line and the only one that does not fit:
-     platform sets at 760, "for payments." at 756, both inside the device's
-     left edge at 817 — while "AI-powered" reached 890. It is the widest word
-     in the deck's own phrase and there is no shorter way to say it, so the
-     scale comes down to it rather than the line being reworded. */
-  font-size: clamp(2.4rem, min(7vw, calc((100svh - 430px) / 6.3)), 12rem);
+     edge, not against the text column.
+
+     Re-solved for the two-line headline. The longest line is no longer the
+     first: "AI fintech" sets at 430, while "for the network" reaches 505 and
+     carries the serif at 1.14em on top. The tightest width that still gets
+     this layout is 1024, where the device's left edge sits at 652 — so that
+     line has 557px before it, and 6.2vw is what keeps it there with 60 to
+     spare. The height term divides by 3 for the same reason as above. */
+  font-size: clamp(2.3rem, min(6.2vw, calc((100svh - 430px) / 3)), 12rem);
 }
 
 @utility text-giant {
@@ -648,9 +656,9 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  width: 0.34em;
-  height: 0.34em;
-  margin-left: 0.07em;
+  width: 0.44em;
+  height: 0.44em;
+  margin-left: 0.09em;
   border-radius: 50%;
   background: currentColor;
   vertical-align: baseline;
