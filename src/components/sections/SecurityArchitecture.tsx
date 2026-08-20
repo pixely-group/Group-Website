@@ -133,23 +133,23 @@ type Geo = {
 // every register entry, which hangs on a fraction of that height — or the
 // two silently part company.
 const NARROW: Geo = {
-  HW: 168,
-  HH: 84,
-  GAP: 82,
+  HW: 142,
+  HH: 71,
+  GAP: 72,
   CX: 210,
   TOP: 96,
   VB_W: 470,
-  VB_H: 96 + 82 * (LAYERS.length - 1) + 84 + 124,
+  VB_H: 96 + 72 * (LAYERS.length - 1) + 71 + 124,
 };
 
 const WIDE: Geo = {
-  HW: 200,
-  HH: 100,
-  GAP: 116,
+  HW: 170,
+  HH: 85,
+  GAP: 102,
   CX: 260,
   TOP: 110,
   VB_W: 520,
-  VB_H: 110 + 116 * (LAYERS.length - 1) + 100 + 40,
+  VB_H: 110 + 102 * (LAYERS.length - 1) + 85 + 40,
 };
 
 const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
@@ -198,6 +198,9 @@ export default function SecurityArchitecture() {
 
   const sectionRef = useRef<HTMLElement>(null);
   const [activeLayer, setActiveLayer] = useState(0);
+  const toggleRef = useRef<HTMLDivElement>(null);
+  /** Where the sliding pill sits, measured off the option it is under. */
+  const [pill, setPill] = useState({ x: 0, w: 0 });
   /** Layers the request has actually crossed. Distinct from `activeLayer`,
    *  which is merely the nearest one — at rest that is L1, and stamping it
    *  before the request has arrived contradicts a clock reading 0.0. */
@@ -331,12 +334,19 @@ export default function SecurityArchitecture() {
     ).matches;
 
     if (registerDotPlaced.current && !reduced) {
+      /* expo.out spends almost all its motion in the first fifth of the
+         tween, which is right for a short snap between neighbours and wrong
+         for a run down the whole register — it left the dot looking like it
+         jumped and then crawled. power2.inOut eases both ends, and the
+         duration grows with the distance so a long trip is not squeezed into
+         the same time as a short one. */
+      const dy = Math.abs(y - (gsap.getProperty(dot, "y") as number));
       gsap.to(dot, {
         x,
         y,
         opacity: 1,
-        duration: 0.45,
-        ease: "expo.out",
+        duration: Math.min(0.75, 0.32 + dy / 900),
+        ease: "power2.inOut",
         overwrite: true,
       });
     } else {
@@ -345,6 +355,27 @@ export default function SecurityArchitecture() {
     }
     registerDotPlaced.current = true;
   }, [activeLayer, wide]);
+
+  /* The pill follows whichever option is selected. Measured on selection and
+     on resize rather than assumed: the two labels differ in width, and the
+     bar re-flows between the narrow and wide layouts. */
+  useEffect(() => {
+    const box = toggleRef.current;
+    if (!box) return;
+    const place = () => {
+      const opts = box.querySelectorAll<HTMLElement>("[data-toggle-option]");
+      const el = opts[scenario === "declined" ? 1 : 0];
+      if (!el) return;
+      setPill({ x: el.offsetLeft, w: el.offsetWidth });
+    };
+    const raf = requestAnimationFrame(place);
+    const ro = new ResizeObserver(place);
+    ro.observe(box);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [scenario]);
 
   // A ring in the plane of the plate each time the request lands on one.
   useEffect(() => {
@@ -559,11 +590,30 @@ export default function SecurityArchitecture() {
 
           <div className="flex items-center gap-4">
             <span className="type-label text-(--faint)">Replay as</span>
+            {/* One pill that travels, rather than a background handed from
+                one button to the other. It is measured off the buttons rather
+                than positioned by hand, because "Approved" and "Refused" are
+                not the same width — a fixed half-and-half slide would sit
+                short on one side and overhang on the other. */}
             <div
+              ref={toggleRef}
               role="radiogroup"
               aria-label="Authorisation outcome"
-              className="inline-flex items-center gap-1 rounded-(--radius-chip) border border-(--line-strong) p-1"
+              className="relative inline-flex items-center gap-1 rounded-(--radius-chip) border border-(--line-strong) p-1"
             >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute top-1 left-0 rounded-[calc(var(--radius-chip)-4px)]"
+                style={{
+                  height: "calc(100% - 0.5rem)",
+                  width: pill.w,
+                  transform: `translateX(${pill.x}px)`,
+                  background: declined ? REFUSED_TEXT : ACCENT,
+                  transition:
+                    "transform 420ms var(--ease-out-expo), width 420ms var(--ease-out-expo), background-color 300ms linear",
+                  opacity: pill.w ? 1 : 0,
+                }}
+              />
               {(
                 [
                   ["approved", "Approved"],
@@ -579,15 +629,8 @@ export default function SecurityArchitecture() {
                     aria-checked={on}
                     onClick={() => setScenario(value)}
                     data-cursor="link"
-                    style={
-                      on
-                        ? {
-                            background:
-                              value === "declined" ? REFUSED_TEXT : ACCENT,
-                          }
-                        : undefined
-                    }
-                    className={`type-label rounded-[calc(var(--radius-chip)-4px)] px-3 py-2 transition-colors duration-300 ${
+                    data-toggle-option
+                    className={`type-label relative z-10 rounded-[calc(var(--radius-chip)-4px)] px-3 py-2 transition-colors duration-300 ${
                       on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
                     }`}
                   >
@@ -658,11 +701,13 @@ export default function SecurityArchitecture() {
 
               // Surface, not just outline: cleared plates carry a tint of
               // the trace and the one being crossed carries a lit face.
-              const surface = unreached ? 0 : active ? 0.2 : passed ? 0.09 : 0;
+              /* The active face used to take 0.2 of solid accent, which at
+                 this size read as a lit panel rather than a highlighted one. */
+              const surface = unreached ? 0 : active ? 0.07 : passed ? 0.04 : 0;
               const hatch = unreached ? 0.12 : active ? 0.3 : passed ? 0.22 : 0.42;
-              const wall = unreached ? 0.04 : active ? 0.16 : passed ? 0.1 : 0.07;
+              const wall = unreached ? 0.04 : active ? 0.09 : passed ? 0.065 : 0.07;
               const edge = active
-                ? { c: tone, o: 1, w: 1.8 }
+                ? { c: tone, o: 0.8, w: 1.5 }
                 : passed
                   ? { c: tone, o: 0.55, w: 1.1 }
                   : unreached
@@ -689,10 +734,13 @@ export default function SecurityArchitecture() {
                   className={unreached ? "cursor-default" : "cursor-pointer"}
                 >
                   {active && (
+                    /* The blurred bloom under the live plate. This, not the
+                       face fill, is what made the highlight read as strong —
+                       half-opacity accent spread by a 9px blur. */
                     <polygon
                       points={diamond(geo.CX, cy, geo.HW, geo.HH)}
                       fill={tone}
-                      fillOpacity="0.5"
+                      fillOpacity="0.13"
                       filter="url(#sec-glow)"
                     />
                   )}
