@@ -162,6 +162,21 @@ const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
 const travelFrom = (g: Geo) => layerY(g, 0) - g.HH;
 const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
 
+/** How far the stack closes up as the reader scrolls down it. The bottom
+ *  plate is the anchor and never moves; every plate above gives up this
+ *  share of its distance from it, so the top one travels furthest and the
+ *  run reads as depth rather than as a list sliding. At 0.92 the top plate
+ *  comes down a third of a gap. */
+const SQUEEZE = 0.92;
+
+/** Where a y sits once the stack has closed up by `s`. Affine and monotonic,
+ *  which is what lets the request keep its own honest coordinates and still
+ *  be drawn on the plate it is actually crossing. */
+const squeezeY = (g: Geo, y: number, s: number) => {
+  const anchor = layerY(g, LAYERS.length - 1);
+  return anchor + (y - anchor) * s;
+};
+
 /** Where a register entry hangs, as a share of the drawing's height. */
 const rowTop = (g: Geo, i: number) => `${(layerY(g, i) / g.VB_H) * 100}%`;
 
@@ -239,6 +254,9 @@ export default function SecurityArchitecture() {
   /** How far down the request may go. Tweened rather than switched so that
    *  refusing pulls it back up to policy instead of snapping. */
   const ceiling = useRef({ v: travelTo(NARROW) });
+  /** How far the stack has closed up, 1 being open. Scrubbed by the same
+   *  timeline that walks the request down, so the two share one progress. */
+  const squeeze = useRef({ s: 1 });
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -388,7 +406,9 @@ export default function SecurityArchitecture() {
     const pulse = pulseRef.current;
     if (!pulse) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    gsap.set(pulse, { attr: { cy: layerY(geo, activeLayer) } });
+    gsap.set(pulse, {
+      attr: { cy: squeezeY(geo, layerY(geo, activeLayer), squeeze.current.s) },
+    });
     gsap.fromTo(
       pulse,
       { opacity: 0.5, attr: { rx: geo.HW * 0.06, ry: geo.HH * 0.06 } },
@@ -409,6 +429,8 @@ export default function SecurityArchitecture() {
 
     const ctx = gsap.context(() => {
       const plates = section.querySelectorAll("[data-plate]");
+      const lifts = section.querySelectorAll("[data-plate-lift]");
+      const leaders = section.querySelectorAll("[data-leader]");
       const beam = section.querySelector("[data-beam]");
       const mm = gsap.matchMedia();
       const reduced = window.matchMedia(
@@ -421,6 +443,7 @@ export default function SecurityArchitecture() {
       beamPos.current.cy = from;
       beamRender.current.cy = from;
       beamOffset.current = 0;
+      squeeze.current.s = 1;
       ceiling.current.v =
         scenarioRef.current === "declined" ? layerY(g, BLOCK_AT) : to;
 
@@ -470,6 +493,10 @@ export default function SecurityArchitecture() {
           0,
         );
 
+        // Closing the stack up shares the request's own progress, so the
+        // plates settle exactly as it finishes crossing them.
+        tl.to(squeeze.current, { s: SQUEEZE, duration: 1, ease: "none" }, 0);
+
         // Genuine scrolling hands control back. Guarded by a moment's grace
         // so the ticks that follow a click cannot cancel it before the
         // request has even arrived.
@@ -496,6 +523,7 @@ export default function SecurityArchitecture() {
       // One writer, every frame, in both motion modes.
       let lastIndex = -1;
       let lastReached = -1;
+      let lastSqueeze = -1;
       let wasHeld = false;
       const draw = () => {
         const held = pinnedRef.current !== null;
@@ -524,8 +552,30 @@ export default function SecurityArchitecture() {
           beamRender.current.cy,
         );
 
+        // The stack closes up around the bottom plate. Written from the
+        // ticker rather than tweened per plate, so the request and the plate
+        // it is crossing can never disagree about where that layer is.
+        const s = squeeze.current.s;
+        if (s !== lastSqueeze) {
+          lastSqueeze = s;
+          LAYERS.forEach((_, i) => {
+            const at = layerY(g, i);
+            const dy = squeezeY(g, at, s) - at;
+            gsap.set(lifts[i], { y: dy });
+            // The register does not come with them. Its rows are HTML hung
+            // at a fraction of the drawing, 74px tall against a 103px pitch
+            // that is only 79 at 1024 — there is no slack there to give. So
+            // the plates drift and the leaders fan to keep meeting the rows
+            // they name, which is how a call-out drawing works anyway.
+            if (wide) gsap.set(leaders[i], { attr: { y2: at - dy } });
+          });
+        }
+
         const cy = beamRender.current.cy;
-        gsap.set(beam, { attr: { cy }, opacity: beamPos.current.opacity });
+        gsap.set(beam, {
+          attr: { cy: squeezeY(g, cy, s) },
+          opacity: beamPos.current.opacity,
+        });
         paintReadout(cy);
 
         const i = nearestLayer(g, cy);
@@ -551,7 +601,7 @@ export default function SecurityArchitecture() {
     }, section);
 
     return () => ctx.revert();
-  }, [geo, paintReadout]);
+  }, [geo, wide, paintReadout]);
 
   const faceSize = Math.round(geo.HH * 0.17);
 
@@ -739,97 +789,104 @@ export default function SecurityArchitecture() {
                   data-cursor={unreached ? undefined : "link"}
                   className={unreached ? "cursor-default" : "cursor-pointer"}
                 >
-                  {active && (
-                    /* The blurred bloom under the live plate. This, not the
-                       face fill, is what made the highlight read as strong —
-                       half-opacity accent spread by a 9px blur. */
+                  {/* The plate and everything drawn on it ride together, one
+                      group inside the group the entrance tween owns — two
+                      transforms, two writers, neither able to clear the
+                      other. */}
+                  <g data-plate-lift>
+                    {active && (
+                      /* The blurred bloom under the live plate. This, not the
+                         face fill, is what made the highlight read as strong —
+                         half-opacity accent spread by a 9px blur. */
+                      <polygon
+                        points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                        fill={tone}
+                        fillOpacity="0.13"
+                        filter="url(#sec-glow)"
+                      />
+                    )}
+                    {/* side wall, gives the plate thickness */}
+                    <path
+                      d={`M ${geo.CX - geo.HW} ${cy} L ${geo.CX} ${cy + geo.HH} L ${geo.CX + geo.HW} ${cy} L ${geo.CX + geo.HW} ${cy + wallDepth} L ${geo.CX} ${cy + geo.HH + wallDepth} L ${geo.CX - geo.HW} ${cy + wallDepth} Z`}
+                      fill={passed || active ? tone : "currentColor"}
+                      fillOpacity={wall}
+                      className="transition-all duration-500"
+                    />
                     <polygon
                       points={diamond(geo.CX, cy, geo.HW, geo.HH)}
                       fill={tone}
-                      fillOpacity="0.13"
-                      filter="url(#sec-glow)"
+                      fillOpacity={surface}
+                      className="transition-all duration-500"
                     />
-                  )}
-                  {/* side wall, gives the plate thickness */}
-                  <path
-                    d={`M ${geo.CX - geo.HW} ${cy} L ${geo.CX} ${cy + geo.HH} L ${geo.CX + geo.HW} ${cy} L ${geo.CX + geo.HW} ${cy + wallDepth} L ${geo.CX} ${cy + geo.HH + wallDepth} L ${geo.CX - geo.HW} ${cy + wallDepth} Z`}
-                    fill={passed || active ? tone : "currentColor"}
-                    fillOpacity={wall}
-                    className="transition-all duration-500"
-                  />
-                  <polygon
-                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                    fill={tone}
-                    fillOpacity={surface}
-                    className="transition-all duration-500"
-                  />
-                  <polygon
-                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                    fill="url(#sec-hatch)"
-                    fillOpacity={hatch}
-                    className="transition-[fill-opacity] duration-500"
-                  />
-                  {/* Set in the plane of the face, the way a drawing would
-                      letter it — but only where there is a face to letter.
-                      In the tight stack the plates overlap until the clear
-                      band is thinner than the word, and the register
-                      directly beneath already names every layer. */}
-                  {wide && (
-                    <text
-                      transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
-                      x={faceX}
-                      y={faceY}
-                      textAnchor="middle"
-                      fontSize={faceSize}
-                      fontFamily="var(--font-mono)"
-                      letterSpacing="2"
-                      fill={passed || active ? tone : "currentColor"}
-                      fillOpacity={
-                        unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
+                    <polygon
+                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                      fill="url(#sec-hatch)"
+                      fillOpacity={hatch}
+                      className="transition-[fill-opacity] duration-500"
+                    />
+                    {/* Set in the plane of the face, the way a drawing would
+                        letter it — but only where there is a face to letter.
+                        In the tight stack the plates overlap until the clear
+                        band is thinner than the word, and the register
+                        directly beneath already names every layer. */}
+                    {wide && (
+                      <text
+                        transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
+                        x={faceX}
+                        y={faceY}
+                        textAnchor="middle"
+                        fontSize={faceSize}
+                        fontFamily="var(--font-mono)"
+                        letterSpacing="2"
+                        fill={passed || active ? tone : "currentColor"}
+                        fillOpacity={
+                          unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
+                        }
+                        className="transition-all duration-500"
+                      >
+                        {layer.face}
+                      </text>
+                    )}
+                    <polygon
+                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                      fill="none"
+                      stroke={edge.c}
+                      strokeOpacity={edge.o}
+                      strokeWidth={edge.w}
+                      strokeDasharray={unreached ? "4 6" : undefined}
+                      className="transition-all duration-500"
+                    />
+                    {/* Leader out to the label column, level with the plate's
+                        widest point — so the register entry hung at the same
+                        height continues the very same line. */}
+                    <line
+                      data-leader
+                      x1={geo.CX + geo.HW}
+                      y1={cy}
+                      x2={geo.VB_W}
+                      y2={cy}
+                      stroke={active || passed ? tone : "currentColor"}
+                      strokeOpacity={
+                        unreached ? 0.14 : active ? 0.95 : passed ? 0.5 : 0.38
                       }
+                      strokeWidth={active ? 1.4 : 1}
+                      className="transition-all duration-500"
+                    />
+                    <text
+                      x={geo.CX + geo.HW + 10}
+                      y={cy - 9}
+                      fontSize="13"
+                      fill={active || passed ? tone : "currentColor"}
+                      fillOpacity={
+                        unreached ? 0.2 : active ? 1 : passed ? 0.6 : 0.5
+                      }
+                      fontFamily="var(--font-mono)"
+                      letterSpacing="1.6"
                       className="transition-all duration-500"
                     >
-                      {layer.face}
+                      {layer.index}
                     </text>
-                  )}
-                  <polygon
-                    points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                    fill="none"
-                    stroke={edge.c}
-                    strokeOpacity={edge.o}
-                    strokeWidth={edge.w}
-                    strokeDasharray={unreached ? "4 6" : undefined}
-                    className="transition-all duration-500"
-                  />
-                  {/* Leader out to the label column, level with the plate's
-                      widest point — so the register entry hung at the same
-                      height continues the very same line. */}
-                  <line
-                    x1={geo.CX + geo.HW}
-                    y1={cy}
-                    x2={geo.VB_W}
-                    y2={cy}
-                    stroke={active || passed ? tone : "currentColor"}
-                    strokeOpacity={
-                      unreached ? 0.14 : active ? 0.95 : passed ? 0.5 : 0.38
-                    }
-                    strokeWidth={active ? 1.4 : 1}
-                    className="transition-all duration-500"
-                  />
-                  <text
-                    x={geo.CX + geo.HW + 10}
-                    y={cy - 9}
-                    fontSize="13"
-                    fill={active || passed ? tone : "currentColor"}
-                    fillOpacity={
-                      unreached ? 0.2 : active ? 1 : passed ? 0.6 : 0.5
-                    }
-                    fontFamily="var(--font-mono)"
-                    letterSpacing="1.6"
-                    className="transition-all duration-500"
-                  >
-                    {layer.index}
-                  </text>
+                  </g>
                 </g>
               );
             })}
