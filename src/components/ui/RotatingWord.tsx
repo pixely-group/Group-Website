@@ -6,19 +6,16 @@ import { useReducedMotion } from "@/lib/hooks";
 
 /**
  * The last word of the headline, typed and retyped. All three finish the same
- * sentence — "financial services without ..." — and the second and third are
- * the deck's own words for the problem: the manifesto names paper, branches
- * and waiting as what money moves through here.
+ * line — "AI-powered fintech platform for ..." — and they escalate rather
+ * than list: the two things the deck says Pixely combines, and then the place
+ * it is being built for.
  *
  * Length is a hard constraint, not a preference: the line has to stay clear
- * of the device column, and the budget is whatever "Financial" sets, which is
- * the longest line above. Measured in the face these actually use — uppercase
- * Fraunces italic — friction sets at 486 and waiting at 441 against a budget
- * of 592. "paperwork" is the word I wanted and it does not fit in any case:
- * 964 in uppercase Archivo, 646 here. "branches" clears by 44, which is too
- * little to rely on.
+ * of the device column, and the budget is whatever the longest Archivo line
+ * above sets. Measured in the face these actually use, uppercase Fraunces
+ * italic, which runs materially narrower than the display caps beside it.
  */
-const WORDS = ["friction", "waiting", "paper"] as const;
+const WORDS = ["payments", "identity", "Algeria"] as const;
 
 /** Per character. Deleting is quicker than typing, as it is in life. */
 const TYPE = 112;

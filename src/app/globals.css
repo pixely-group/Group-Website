@@ -193,17 +193,21 @@
      actually available — the viewport less the ~430px the rest of the hero
      stack occupies, over the ~4 line-heights this headline needs. Measured,
      not guessed. The clamp floor still governs small screens. */
-  font-size: clamp(2.8rem, min(12.4vw, calc((100svh - 430px) / 5)), 11.5rem);
+  font-size: clamp(2.4rem, min(10.4vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
 /* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
    inside one mask breaks the stagger those masks exist for. */
 @utility text-hero-aside {
-  /* "Financial" measures 6.76em in this face, against the 5.3em the previous
-     headline's longest line took. The binding constraint is the device
-     column, which sits inside the 30% right padding — so the width term is
-     solved against the device's left edge, not against the text column. */
-  font-size: clamp(2.8rem, min(8.9vw, calc((100svh - 430px) / 5)), 12rem);
+  /* The binding constraint is the device column, which sits inside the 30%
+     right padding — so the width term is solved against the device's left
+     edge, not against the text column. Re-solved for the current headline:
+     "AI-powered" is the longest line and the only one that does not fit:
+     platform sets at 760, "for payments." at 756, both inside the device's
+     left edge at 817 — while "AI-powered" reached 890. It is the widest word
+     in the deck's own phrase and there is no shorter way to say it, so the
+     scale comes down to it rather than the line being reworded. */
+  font-size: clamp(2.4rem, min(7vw, calc((100svh - 430px) / 6.3)), 12rem);
 }
 
 @utility text-giant {

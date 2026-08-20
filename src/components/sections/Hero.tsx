@@ -207,31 +207,32 @@ export default function Hero() {
           className="type-label mb-7 text-(--muted) opacity-0"
         >
           <span className="section-index">
-            Pixely — AI-powered fintech platform
+            Pixely — Financial infrastructure for Algeria
           </span>
         </p>
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Financial services without friction."
+          aria-label="Pixely — an AI-powered fintech platform for payments, identity and Algeria"
         >
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              Financial
+              AI-powered
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              services
+              fintech
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.02em]">
             <span data-hero-line className="block">
-              without
+              platform
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-hero-line className="block">
+              for{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
                   to on dark chapters. That lift exists because the primary
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
