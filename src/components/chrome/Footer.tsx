@@ -5,11 +5,21 @@ import { Wordmark } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import FitText from "@/components/ui/FitText";
 
+/* The Product column carries the six core services the deck documents — the
+   same six Metrics lists — rather than the multi-currency treasury lineup the
+   pre-rebrand site sold. */
 const COLUMNS = [
   {
     heading: "Product",
     href: "#product",
-    links: ["Accounts", "Payments", "FX", "Cards", "Treasury", "Controls"],
+    links: [
+      "Payments",
+      "eWallets",
+      "Identity",
+      "AI services",
+      "Compliance",
+      "APIs and SDKs",
+    ],
   },
   {
     heading: "Solutions",
@@ -33,11 +43,13 @@ const COLUMNS = [
   },
 ] as const;
 
-/** Hubs whose local time the footer keeps, west to east. */
+/** Hubs whose local time the footer keeps, west to east. Algiers is the home
+ *  node the corridor map is drawn around, so it has to appear in a strip
+ *  labelled as the corridor's clocks — the rest are its endpoints. */
 const HUBS = [
-  { code: "SFO", tz: "America/Los_Angeles" },
   { code: "NYC", tz: "America/New_York" },
   { code: "LON", tz: "Europe/London" },
+  { code: "ALG", tz: "Africa/Algiers" },
   { code: "DXB", tz: "Asia/Dubai" },
   { code: "SGP", tz: "Asia/Singapore" },
   { code: "TYO", tz: "Asia/Tokyo" },

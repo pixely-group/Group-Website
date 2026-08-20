@@ -75,6 +75,13 @@ export const NAV_GEOMETRY = {
   /** Matches the condensed vertical padding exactly, so the corner stays
    *  square. Changing one without the other threw it out last time. */
   rowPadRight: "calc(var(--nav-p) * 4px)",
+  /** The links draw closer as the bar gathers. At rest the row has the whole
+   *  page to spread across; condensed it has 52rem, and now two controls in
+   *  the corner rather than one — 36px between links left 11px between the
+   *  last of them and the first control. 24px gives that back fourfold, and
+   *  a bar that tightens its own spacing as it closes is the same gesture
+   *  every other length in here is already making. */
+  listGap: "calc(2.25rem - var(--nav-p) * 0.75rem)",
 } as const;
 
 export function Wordmark({ className = "" }: { className?: string }) {
@@ -468,7 +475,10 @@ export default function Navigation() {
                 }}
                 className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
               />
-              <ul className="flex items-center gap-9">
+              <ul
+                className="flex items-center"
+                style={{ gap: NAV_GEOMETRY.listGap }}
+              >
                 {NAV_LINKS.map((link) => {
                   const active = activeHref === link.href;
                   return (
@@ -499,20 +509,23 @@ export default function Navigation() {
               {/* Kept out of the nav list: it is an account action, not a
                   chapter of the page, and the list is what the scrollspy
                   marks. Hidden at the same breakpoint as the button, since
-                  below it the mobile menu carries both. */}
-              <a
-                href={LOGIN_HREF}
-                onClick={
-                  LOGIN_HREF.startsWith("#")
-                    ? scrollTo(LOGIN_HREF)
-                    : undefined
-                }
-                data-cursor="link"
-                data-nav-link
-                className="type-label mr-1 hidden text-(--muted) transition-colors duration-300 ease-(--ease-swift) hover:text-accent focus-visible:text-accent sm:block"
-              >
-                Log in
-              </a>
+                  below it the mobile menu carries both. The outline against
+                  the solid is the same pairing the hero makes of its two
+                  calls — one invitation, one way back in. */}
+              <span data-nav-link className="hidden sm:block">
+                <MagneticButton
+                  href={LOGIN_HREF}
+                  onClick={
+                    LOGIN_HREF.startsWith("#")
+                      ? scrollTo(LOGIN_HREF)
+                      : undefined
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  Log in
+                </MagneticButton>
+              </span>
               {/* Wrapped rather than given `hidden` directly: the button's own
                   `inline-flex` is the same specificity and wins by CSS order. */}
               <span className="hidden sm:block">

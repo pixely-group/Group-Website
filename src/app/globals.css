@@ -99,6 +99,11 @@
   inherits: true;
   initial-value: rgb(236 233 225 / 0.32);
 }
+@property --surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 233 225 / 0.04);
+}
 
 :root,
 [data-theme="ink"] {
@@ -147,7 +152,8 @@
     --muted var(--nav-cross) var(--ease-cross),
     --faint var(--nav-cross) var(--ease-cross),
     --line var(--nav-cross) var(--ease-cross),
-    --line-strong var(--nav-cross) var(--ease-cross);
+    --line-strong var(--nav-cross) var(--ease-cross),
+    --surface var(--nav-cross) var(--ease-cross);
 }
 .nav-ground [data-nav-glass] {
   transition: background-color var(--nav-cross) var(--ease-cross);
@@ -156,7 +162,8 @@
    for the crossing: chasing a token that is itself moving, it advances by
    its curve's slope rather than its duration, and arrived a third of the
    way behind the rest of the bar. */
-.nav-ground[data-crossing] [data-nav-link] {
+.nav-ground[data-crossing] [data-nav-link],
+.nav-ground[data-crossing] [data-nav-link] a {
   transition-duration: 0s;
 }
 
