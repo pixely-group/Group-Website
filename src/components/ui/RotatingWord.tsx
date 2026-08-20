@@ -23,9 +23,14 @@ import { useReducedMotion } from "@/lib/hooks";
  */
 const WORDS = ["Payments", "Identity", "Algeria"] as const;
 
-/** Per character. Deleting is quicker than typing, as it is in life. */
+/** Per character, typing. */
 const TYPE = 112;
-const DELETE = 58;
+/** Deleting is quicker than typing, as it is in life — and it gathers pace.
+ *  A held backspace does not tick: it hesitates on the first character and
+ *  then runs. A flat rate read as a metronome dragging the word off, which is
+ *  the part of this that never felt right. */
+const DELETE_FIRST = 88;
+const DELETE_LAST = 22;
 /** How long a finished word stands before it is taken back. */
 const HOLD = 2800;
 /** A beat on the empty line before the next word starts. */
@@ -43,7 +48,14 @@ export default function RotatingWord({ className }: { className?: string }) {
     const atFull = !deleting && text === word;
     const atEmpty = deleting && text === "";
 
-    const wait = atFull ? HOLD : atEmpty ? TURNAROUND : deleting ? DELETE : TYPE;
+    /* How far into the deletion we are, 0 at the full word and 1 at the
+       last character. Cubed, so the hesitation is over quickly and most of
+       the word comes away at speed. */
+    const gone = 1 - text.length / Math.max(1, word.length);
+    const erase =
+      DELETE_LAST + (DELETE_FIRST - DELETE_LAST) * Math.pow(1 - gone, 3);
+
+    const wait = atFull ? HOLD : atEmpty ? TURNAROUND : deleting ? erase : TYPE;
 
     const id = window.setTimeout(() => {
       if (atFull) setDeleting(true);
@@ -57,16 +69,28 @@ export default function RotatingWord({ className }: { className?: string }) {
     return () => window.clearTimeout(id);
   }, [text, deleting, index, reduced]);
 
+  /* A caret blinks when it is waiting and holds steady while it is working.
+     Blinking through the typing is what made it read as a decoration rather
+     than a cursor, and it fought the letters for attention. */
+  const holding = reduced || (!deleting && text === WORDS[index]);
+
   /* The h1 carries an aria-label, so what a screen reader gets is the whole
      sentence with the first word — the typing is decoration on a line that
      already reads without it. */
   return (
     <span className={className}>
       {reduced ? WORDS[0] : text}
-      {/* The full stop doubles as the caret: it sits where the next character
-          would land and blinks on a hard step, the way a terminal cursor
-          does rather than a fade. */}
-      <span className="caret-blink">.</span>
+      {/* The full stop doubles as the caret. Drawn rather than set: a period
+          in this face is small and slanted, and this mark has to end a line
+          of display caps and be seen blinking from across the page. */}
+      {/* Both branches spell the classes out. Tailwind finds candidates by
+          scanning the source for whole tokens, and `caret-dot${…}` is not
+          one — it emitted no rule for it at all, and the dot rendered as an
+          empty inline span. */}
+      <span
+        aria-hidden
+        className={holding ? "caret-dot caret-blink" : "caret-dot"}
+      />
     </span>
   );
 }

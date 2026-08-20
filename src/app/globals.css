@@ -630,6 +630,21 @@ html[data-cursor="on"] * {
   animation: caret-blink 1.06s step-end infinite;
 }
 
+/* The rotating word's full stop, drawn rather than set. A period in Fraunces
+   italic is small and leans with the face; this one has to close a line of
+   display caps and read as a cursor from across the page, so it is a circle
+   sized in em — it tracks the headline at every breakpoint — sitting on the
+   baseline where the period was. */
+@utility caret-dot {
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.05em;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: baseline;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .caret-blink {
     animation: none;

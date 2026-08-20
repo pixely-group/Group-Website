@@ -210,22 +210,27 @@ export default function Hero() {
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
           aria-label="Pixely — an AI-powered fintech platform for payments, identity and Algeria"
         >
-          <span className="block overflow-hidden pb-[0.02em]">
+          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
               AI-powered
             </span>
           </span>
-          <span className="block overflow-hidden pb-[0.02em]">
+          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
               fintech
             </span>
           </span>
-          <span className="block overflow-hidden pb-[0.02em]">
+          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
               platform
             </span>
           </span>
-          <span className="block overflow-hidden pb-[0.06em]">
+          {/* Deeper than the lines above it: this one ends in Fraunces italic,
+              whose descenders run 14.5px below the baseline at this size
+              against Archivo's 10.1, and the mask was cutting 2.6px off every
+              y, g and p. Padding opens the mask downward and the negative
+              margin hands the space back, so the run keeps its spacing. */}
+          <span className="-mb-[0.14em] block overflow-hidden pb-[0.2em]">
             <span data-hero-line className="block">
               for{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
