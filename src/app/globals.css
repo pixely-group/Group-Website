@@ -9,9 +9,11 @@
   --color-bone-2: #f2f0ea;
   /* Brand blue at full chroma: the same 233° hue as #384CE3, saturation
      taken to 100%, which is as vivid as this hue can get while still
-     clearing AA as text on bone (5.04:1). Anything brighter drops below
-     4.5:1 there. A lifted tint covers the dark chapters, where the primary
-     itself reaches only ~3:1. `--accent` picks the right one per chapter. */
+     clearing AA as text on bone (5.04:1).
+     One blue now, both ways. The lifted tint used to cover the dark chapters,
+     where the primary reaches 3.25:1 — which clears AA for large text but not
+     for small. It is kept for the few places that need the headroom rather
+     than being what `--accent` resolves to. */
   --color-signal: #2d46ff;
   --color-signal-lift: #7290ff;
   /* Canvas and GL marks are small, alpha-blended and often additive, which
@@ -72,7 +74,7 @@
   --line: rgb(236 233 225 / 0.14);
   --line-strong: rgb(236 233 225 / 0.32);
   --surface: rgb(236 233 225 / 0.04);
-  --accent: var(--color-signal-lift);
+  --accent: var(--color-signal);
 }
 
 [data-theme="bone"] {

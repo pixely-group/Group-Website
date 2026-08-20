@@ -7,7 +7,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 const BONE = "236, 233, 225";
-const SIGNAL = "159, 180, 255";
+const SIGNAL = "45, 70, 255";
 
 /** The meridian the map is cut and centred on — Algiers, not Greenwich. */
 const CENTRE_LON = 3.06;
