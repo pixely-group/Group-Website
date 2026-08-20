@@ -193,14 +193,12 @@ export default function GlobalCorridors() {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Daylight band sweeping east: settlement follows the sun.
+      /* Where the sun is. It used to be painted as a wash across the whole
+         canvas, which filled the rectangle edge to edge and was the lighter
+         panel the map sat on rather than the page showing through. The sweep
+         itself stays — it still lights each hub as it passes, below — but
+         nothing fills the canvas now, so the only thing drawn is the map. */
       const sun = ((t * 0.045) % 1) * width;
-      const band = ctx.createLinearGradient(sun - width * 0.42, 0, sun + width * 0.42, 0);
-      band.addColorStop(0, `rgba(${BONE}, 0)`);
-      band.addColorStop(0.5, `rgba(${BONE}, 0.05)`);
-      band.addColorStop(1, `rgba(${BONE}, 0)`);
-      ctx.fillStyle = band;
-      ctx.fillRect(0, 0, width, height);
 
       /* The land, under everything else. Pre-rendered, so this is one
          blit rather than eleven thousand point-in-polygon tests. */
