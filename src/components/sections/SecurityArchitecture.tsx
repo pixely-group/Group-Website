@@ -135,11 +135,11 @@ type Geo = {
 const NARROW: Geo = {
   HW: 120,
   HH: 60,
-  GAP: 64,
+  GAP: 74,
   CX: 210,
   TOP: 84,
   VB_W: 470,
-  VB_H: 84 + 64 * (LAYERS.length - 1) + 60 + 124,
+  VB_H: 84 + 74 * (LAYERS.length - 1) + 60 + 124,
 };
 
 // The gap is not the plates' to give. Wide, every register entry hangs at the
@@ -151,11 +151,11 @@ const NARROW: Geo = {
 const WIDE: Geo = {
   HW: 144,
   HH: 72,
-  GAP: 102,
+  GAP: 118,
   CX: 260,
   TOP: 98,
   VB_W: 520,
-  VB_H: 98 + 102 * (LAYERS.length - 1) + 72 + 40,
+  VB_H: 98 + 118 * (LAYERS.length - 1) + 72 + 40,
 };
 
 const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
@@ -165,8 +165,8 @@ const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
 /** How far the stack closes up as the reader scrolls down it. The bottom
  *  plate is the anchor and never moves; every plate above gives up this
  *  share of its distance from it, so the top one travels furthest and the
- *  run reads as depth rather than as a list sliding. At 0.68 the top plate
- *  comes down 131 units and the pitch closes from 102 to 69.
+ *  run reads as depth rather than as a list sliding. At 0.64 the top plate
+ *  comes down 170 units and the pitch closes from 118 to 76.
  *
  *  What stops it going further is the face lettering, and not where you
  *  would expect. The word is set left of the plate's centre, where the
@@ -175,7 +175,7 @@ const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
  *  along the word's real box against that plate's rising edge, not against
  *  its centre line, which is the mistake that had the lettering fading out
  *  of the way for a while. */
-const SQUEEZE = 0.68;
+const SQUEEZE = 0.64;
 
 /** Where a y sits once the stack has closed up by `s`. Affine and monotonic,
  *  which is what lets the request keep its own honest coordinates and still
