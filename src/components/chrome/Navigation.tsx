@@ -12,10 +12,14 @@ import MobileMenu from "@/components/chrome/MobileMenu";
  * this page. "Company" lands on the thesis, which is the company's position,
  * and "Resources" on the footer, where the reference links live.
  */
+/* In the order the sections actually appear. Measured, not assumed: Identity
+   points at #network, which is the fourth section down, while Services points
+   at #solutions, which is the eighth — so reading the bar left to right used
+   to walk the page out of sequence. */
 export const NAV_LINKS = [
   { label: "Platform", href: "#product" },
-  { label: "Services", href: "#solutions" },
   { label: "Identity", href: "#network" },
+  { label: "Services", href: "#solutions" },
   { label: "Company", href: "#thesis" },
   { label: "Contact", href: "#resources" },
 ] as const;
