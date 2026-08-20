@@ -12,18 +12,16 @@ import { useReducedMotion } from "@/lib/hooks";
  * is data, so is an identity, and both should move at the speed of the
  * network. The hero states them; the manifesto argues them.
  *
- * Capitalised, not upper-cased. The headline is set in caps and the word
- * would take them by inheritance, which is not what this face is for — the
- * manifesto sets Fraunces lowercase inline and that is the version that
- * reads. A leading capital is what gives it enough weight to end the line
- * without shouting, so the words carry their own and `normal-case` at the
- * call site keeps the headline's transform off them.
+ * Lower case, and set in the italic — the same way the manifesto sets them.
+ * The headline is in caps and the word would take them by inheritance, which
+ * is what `normal-case` at the call site is for: the words carry whatever
+ * case is written here, and nothing else decides it for them.
  *
  * Length is a hard constraint, not a preference: the line has to stay clear
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["Data", "Identity", "Network"] as const;
+const WORDS = ["data", "identity", "network"] as const;
 
 /** Per character, typing — an average rather than a rate. Nobody types on a
  *  metronome, and an exactly even cadence was most of what made this read as

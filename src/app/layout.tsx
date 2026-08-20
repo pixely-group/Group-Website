@@ -17,11 +17,10 @@ const archivo = Archivo({
  */
 const fraunces = Fraunces({
   subsets: ["latin"],
-  // Both cuts. The manifesto sets the italic inline; the hero's rotating word
-  // is being tried upright, and asking for `not-italic` against an
-  // italic-only family gets you the italic anyway — there is nothing else
-  // for the browser to reach for.
-  style: ["normal", "italic"],
+  // Italic only, which is all either place asks for. Worth knowing if that
+  // ever changes: `not-italic` against an italic-only family renders italic
+  // regardless — the computed style says normal and the screen disagrees.
+  style: ["italic"],
   axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-fraunces",
   display: "swap",
