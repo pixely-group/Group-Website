@@ -239,7 +239,12 @@ export default function Hero() {
         </h1>
 
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
-          <div data-hero-fade className="max-w-md opacity-0">
+          {/* Lifted off the row's baseline once the two columns sit side by
+              side. The band aligns them flush at the foot, which put the
+              buttons level with the scroll hint — and that hint belongs on
+              the bottom edge in a way the buttons do not. Below md the
+              columns stack and the row's own gap does this job. */}
+          <div data-hero-fade className="max-w-md opacity-0 md:mb-8">
             <p className="text-[0.95rem] leading-relaxed text-(--muted)">
               Pixely combines payments, digital identity and artificial
               intelligence into one platform — secure transactions, trusted
