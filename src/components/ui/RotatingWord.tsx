@@ -10,13 +10,18 @@ import { useReducedMotion } from "@/lib/hooks";
  * than list: the two things the deck says Pixely combines, and then the place
  * it is being built for.
  *
+ * Capitalised, not upper-cased. The headline is set in caps and the word
+ * would take them by inheritance, which is not what this face is for — the
+ * manifesto sets Fraunces lowercase inline and that is the version that
+ * reads. A leading capital is what gives it enough weight to end the line
+ * without shouting, so the words carry their own and `normal-case` at the
+ * call site keeps the headline's transform off them.
+ *
  * Length is a hard constraint, not a preference: the line has to stay clear
  * of the device column, and the budget is whatever the longest Archivo line
- * above sets. Measured in the face these actually use — Fraunces italic, set
- * in its own case rather than the headline's caps, which runs narrower still.
- * At the longest word the line ends 150px short of the device.
+ * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["payments", "identity", "Algeria"] as const;
+const WORDS = ["Payments", "Identity", "Algeria"] as const;
 
 /** Per character. Deleting is quicker than typing, as it is in life. */
 const TYPE = 112;
