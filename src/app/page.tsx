@@ -7,7 +7,7 @@ import Manifesto from "@/components/sections/Manifesto";
 import ProductExperience from "@/components/sections/ProductExperience";
 import NetworkNarrative from "@/components/sections/NetworkNarrative";
 import SecurityArchitecture from "@/components/sections/SecurityArchitecture";
-import AlgeriaGlobe from "@/components/sections/AlgeriaGlobe";
+import GlobalCorridors from "@/components/sections/GlobalCorridors";
 import Metrics from "@/components/sections/Metrics";
 import UseCases from "@/components/sections/UseCases";
 import Thesis from "@/components/sections/Thesis";
@@ -28,7 +28,7 @@ export default function Home() {
         <ProductExperience />
         <NetworkNarrative />
         <SecurityArchitecture />
-        <AlgeriaGlobe />
+        <GlobalCorridors />
         <Metrics />
         <UseCases />
         <Thesis />
