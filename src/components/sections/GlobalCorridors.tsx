@@ -120,7 +120,7 @@ export default function GlobalCorridors() {
           /* A little variation per dot, from position alone, so the field is
              not a perfect lattice. */
           const n = (Math.sin(lon * 12.9898 + lat * 78.233) * 43758.5453) % 1;
-          const a = 0.16 + Math.abs(n) * 0.16;
+          const a = 0.2 + Math.abs(n) * 0.22;
           lc.fillStyle = `rgba(${BONE}, ${a.toFixed(3)})`;
           lc.beginPath();
           lc.arc(x, y, 0.95, 0, Math.PI * 2);
@@ -217,15 +217,16 @@ export default function GlobalCorridors() {
          blit rather than eleven thousand point-in-polygon tests. */
       if (land) ctx.drawImage(land, 0, 0, width, height);
 
-      /* The pointer carries a light across the land. Only the dots inside its
-         radius are redrawn — the rest stay in the blit — so this costs a pass
-         over the positions and a few hundred arcs, not a full rebuild.
-         The ring term is what stops it being a plain radial glow: brightness
-         peaks a little way out from the centre and travels, so the field
-         reads as something moving over it rather than a torch held to it. */
+      /* Dots under the pointer light individually. The point is that you
+         can see which dots — so the reach is short, the falloff is steep, and
+         nothing blooms: a wide radius with a soft core just paints a torch
+         beam over the land and you stop reading it as a map at all.
+
+         Only the dots in reach are redrawn; the rest stay in the blit, so
+         this costs one pass over the positions and a few dozen arcs. */
       if (pointer && !reduced) {
         const [mx, my] = pointer;
-        const REACH = 118;
+        const REACH = 52;
         for (let i = 0; i < landPts.length; i += 2) {
           const dx = landPts[i] - mx;
           if (dx < -REACH || dx > REACH) continue;
@@ -234,23 +235,15 @@ export default function GlobalCorridors() {
           const d = Math.hypot(dx, dy);
           if (d > REACH) continue;
 
-          const fall = 1 - d / REACH;
-          const ring = 0.55 + 0.45 * Math.sin(d * 0.085 - t * 3.6);
-          const glow = fall * fall * (0.4 + 0.6 * ring);
-          ctx.fillStyle = `rgba(${SIGNAL}, ${Math.min(1, glow * 1.5).toFixed(3)})`;
+          /* Cubic falloff, so a dot is either clearly lit or clearly not —
+             a linear ramp leaves a wide skirt of half-lit dots, which is the
+             haze that made the last version read as a blob. */
+          const f = 1 - d / REACH;
+          const lit = f * f * f;
+          ctx.fillStyle = `rgba(${BONE}, ${(0.25 + lit * 0.7).toFixed(3)})`;
           ctx.beginPath();
-          ctx.arc(landPts[i], landPts[i + 1], 0.95 + glow * 2.6, 0, Math.PI * 2);
+          ctx.arc(landPts[i], landPts[i + 1], 0.95 + lit * 0.85, 0, Math.PI * 2);
           ctx.fill();
-
-          /* The nearest dots go white-hot. Blue alone reads as a tint over
-             the land; the hot core is what makes it look lit from inside. */
-          if (fall > 0.72) {
-            const core = (fall - 0.72) / 0.28;
-            ctx.fillStyle = `rgba(${BONE}, ${(core * 0.9).toFixed(3)})`;
-            ctx.beginPath();
-            ctx.arc(landPts[i], landPts[i + 1], 0.9 + core * 1.1, 0, Math.PI * 2);
-            ctx.fill();
-          }
         }
       }
 
@@ -258,7 +251,7 @@ export default function GlobalCorridors() {
       ctx.lineWidth = 1;
       for (let lon = -180; lon <= 180; lon += 30) {
         const x = px(lon, width);
-        ctx.strokeStyle = `rgba(${BONE}, 0.07)`;
+        ctx.strokeStyle = `rgba(${BONE}, 0.035)`;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
@@ -267,7 +260,7 @@ export default function GlobalCorridors() {
 
       /* The centre meridian, drawn on its own: it falls on Algiers rather than
          on a multiple of thirty, so the loop above never lands on it. */
-      ctx.strokeStyle = `rgba(${SIGNAL}, 0.22)`;
+      ctx.strokeStyle = `rgba(${SIGNAL}, 0.16)`;
       ctx.beginPath();
       ctx.moveTo(px(CENTRE_LON, width), 0);
       ctx.lineTo(px(CENTRE_LON, width), height);
