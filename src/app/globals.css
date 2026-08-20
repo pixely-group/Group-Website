@@ -156,7 +156,7 @@
    for the crossing: chasing a token that is itself moving, it advances by
    its curve's slope rather than its duration, and arrived a third of the
    way behind the rest of the bar. */
-.nav-ground[data-crossing] nav a {
+.nav-ground[data-crossing] [data-nav-link] {
   transition-duration: 0s;
 }
 

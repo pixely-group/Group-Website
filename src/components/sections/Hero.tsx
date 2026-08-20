@@ -195,7 +195,7 @@ export default function Hero() {
 
       <div
         ref={contentRef}
-        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14"
+        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 md:pb-16 lg:px-14 lg:pb-20"
       >
         <p
           data-hero-fade
@@ -248,7 +248,7 @@ export default function Hero() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <MagneticButton href="#start" size="md">
-                Talk to us
+                Get started
               </MagneticButton>
               <MagneticButton href="#product" variant="outline" size="md">
                 Explore the platform

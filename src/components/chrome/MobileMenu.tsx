@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import {
+  LOGIN_HREF,
   NAV_GEOMETRY,
   NAV_INSETS,
   NAV_LINKS,
@@ -217,6 +218,21 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
             >
               <span className="type-label w-7 shrink-0">06</span>
               Get started
+            </a>
+          </li>
+          {/* Both of the bar's corner controls are hidden below sm and land
+              here instead. Signing in would have had nowhere to go on a
+              phone otherwise. */}
+          <li className="overflow-hidden">
+            <a
+              href={LOGIN_HREF}
+              onClick={onNavigate(LOGIN_HREF)}
+              data-menu-link
+              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] transition-colors duration-300 hover:text-accent focus-visible:text-accent"
+              tabIndex={open ? 0 : -1}
+            >
+              <span className="type-label w-7 shrink-0 text-accent">07</span>
+              Log in
             </a>
           </li>
         </ul>

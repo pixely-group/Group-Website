@@ -39,6 +39,14 @@ const CONDENSE_OVER = 200;
  * inset, is what governs from 1024 up: max() takes the inset only on screens
  * too narrow for the measure to fit.
  */
+/**
+ * Where signing in goes. Every other link on this site is an anchor into the
+ * page, because the site is the page — there is no app to hand off to yet.
+ * Until there is, this lands on the same section the button does; give it the
+ * real URL here and the anchor scrolling turns itself off.
+ */
+export const LOGIN_HREF = "#start";
+
 export const NAV_INSETS =
   "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:52rem] " +
   "sm:[--nav-gutter:40px] sm:[--nav-inset:96px] " +
@@ -471,6 +479,7 @@ export default function Navigation() {
                         href={link.href}
                         onClick={scrollTo(link.href)}
                         data-cursor="link"
+                        data-nav-link
                         aria-current={active ? "true" : undefined}
                         className={`type-label relative block py-2 transition-colors duration-300 ease-(--ease-swift) ${
                           active
@@ -487,6 +496,23 @@ export default function Navigation() {
             </nav>
 
             <div className="relative flex items-center gap-3">
+              {/* Kept out of the nav list: it is an account action, not a
+                  chapter of the page, and the list is what the scrollspy
+                  marks. Hidden at the same breakpoint as the button, since
+                  below it the mobile menu carries both. */}
+              <a
+                href={LOGIN_HREF}
+                onClick={
+                  LOGIN_HREF.startsWith("#")
+                    ? scrollTo(LOGIN_HREF)
+                    : undefined
+                }
+                data-cursor="link"
+                data-nav-link
+                className="type-label mr-1 hidden text-(--muted) transition-colors duration-300 ease-(--ease-swift) hover:text-accent focus-visible:text-accent sm:block"
+              >
+                Log in
+              </a>
               {/* Wrapped rather than given `hidden` directly: the button's own
                   `inline-flex` is the same specificity and wins by CSS order. */}
               <span className="hidden sm:block">
