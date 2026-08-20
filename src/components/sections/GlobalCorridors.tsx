@@ -22,12 +22,13 @@ const px = (lon: number, w: number) =>
   (((lon - CENTRE_LON + 540) % 360) / 360) * w;
 
 /**
- * The latitude band runs 78N to 42S rather than 60N to 45S. Wider, and shifted
- * north, so Algeria sits near the middle of the frame while Johannesburg and
- * Sydney still fit inside it — at the old band, centring on Algeria pushed
- * both off the bottom.
+ * The latitude band, 80N to 58S. It has to reach 55S or the bottom of South
+ * America is cut off — Tierra del Fuego sits at -55.2 — and it is shifted
+ * north so Algeria still sits above the middle of the frame rather than in it.
  */
-const py = (lat: number, h: number) => ((78 - lat) / 120) * h;
+const LAT_TOP = 80;
+const LAT_SPAN = 138;
+const py = (lat: number, h: number) => ((LAT_TOP - lat) / LAT_SPAN) * h;
 
 /**
  * Abstract corridor map: financial centres placed on their true longitudes,
@@ -54,6 +55,73 @@ export default function GlobalCorridors() {
     let running = false;
     let t = reduced ? 6 : 0;
     let last = performance.now();
+    let land: HTMLCanvasElement | null = null;
+    /** Index of the centre under the pointer, or -1. */
+    let hovered = -1;
+
+    /* Ray casting. The rings are stored open and treated as closed, which is
+       what the (n - 1) start index does. */
+    const inRing = (lon: number, lat: number, ring: (typeof WORLD)[number]) => {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+        if (
+          yi > lat !== yj > lat &&
+          lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi
+        )
+          inside = !inside;
+      }
+      return inside;
+    };
+
+    /**
+     * The land as a field of dots rather than an outline. Outlines at this
+     * scale read as a diagram; a dot field reads as a map, and it matches how
+     * everything else on the page is drawn.
+     *
+     * Built once per resize into its own canvas and blitted each frame — the
+     * land does not move, and testing eleven thousand grid points against
+     * twelve rings is not work to repeat sixty times a second.
+     */
+    const buildLand = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const c = document.createElement("canvas");
+      c.width = Math.round(width * dpr);
+      c.height = Math.round(height * dpr);
+      const lc = c.getContext("2d");
+      if (!lc) return null;
+      lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      /* Both axes are linear in this projection, so a constant step in
+         degrees is a constant step in pixels — no cosine correction. */
+      const stepLon = (360 / width) * 6.4;
+      const stepLat = (LAT_SPAN / height) * 6.4;
+
+      for (let lat = LAT_TOP; lat > LAT_TOP - LAT_SPAN; lat -= stepLat) {
+        for (let lon = -180; lon < 180; lon += stepLon) {
+          let hit = false;
+          for (const ring of WORLD) {
+            if (inRing(lon, lat, ring)) {
+              hit = true;
+              break;
+            }
+          }
+          if (!hit) continue;
+          const x = px(lon, width);
+          const y = py(lat, height);
+          /* A little variation per dot, from position alone, so the field is
+             not a perfect lattice. */
+          const n = (Math.sin(lon * 12.9898 + lat * 78.233) * 43758.5453) % 1;
+          const a = 0.16 + Math.abs(n) * 0.16;
+          lc.fillStyle = `rgba(${BONE}, ${a.toFixed(3)})`;
+          lc.beginPath();
+          lc.arc(x, y, 1.05, 0, Math.PI * 2);
+          lc.fill();
+        }
+      }
+      return c;
+    };
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -65,6 +133,7 @@ export default function GlobalCorridors() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const resolved = getComputedStyle(canvas).fontFamily;
       if (resolved) monoFamily = resolved;
+      land = buildLand();
     };
 
     const arcFor = (a: (typeof CENTRES)[number], b: (typeof CENTRES)[number]) => {
@@ -89,6 +158,38 @@ export default function GlobalCorridors() {
       ];
     };
 
+    /* Hit-testing happens against the same projection the drawing uses, so
+       the target is wherever the node actually is rather than a guess at it. */
+    const pick = (cx: number, cy: number) => {
+      let best = -1;
+      let bestD = 22;
+      CENTRES.forEach((c, i) => {
+        const d = Math.hypot(px(c.lon, width) - cx, py(c.lat, height) - cy);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      return best;
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      const next = pick(e.clientX - r.left, e.clientY - r.top);
+      if (next === hovered) return;
+      hovered = next;
+      /* Tells the custom cursor there is something here, which is the only
+         affordance a canvas can offer — it has no elements to hover. */
+      if (next >= 0) canvas.dataset.cursor = "link";
+      else delete canvas.dataset.cursor;
+    };
+    const onLeave = () => {
+      hovered = -1;
+      delete canvas.dataset.cursor;
+    };
+    canvas.addEventListener("pointermove", onMove, { passive: true });
+    canvas.addEventListener("pointerleave", onLeave, { passive: true });
+
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
@@ -101,52 +202,9 @@ export default function GlobalCorridors() {
       ctx.fillStyle = band;
       ctx.fillRect(0, 0, width, height);
 
-      /* The land, under everything else. Drawn before the grid so the
-         graticule reads over the coastlines rather than under them.
-
-         Each ring is broken wherever consecutive points jump more than half
-         the width: the map is cut at Algiers, so any coast crossing the
-         opposite meridian wraps, and joining those two points would draw a
-         straight streak the whole way across the map. */
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(${BONE}, 0.13)`;
-      ctx.fillStyle = `rgba(${BONE}, 0.028)`;
-      for (const ring of WORLD) {
-        let pen = false;
-        ctx.beginPath();
-        for (let i = 0; i < ring.length; i++) {
-          const x = px(ring[i][0], width);
-          const y = py(ring[i][1], height);
-          if (i > 0 && Math.abs(x - px(ring[i - 1][0], width)) > width * 0.5) {
-            ctx.stroke();
-            ctx.beginPath();
-            pen = false;
-          }
-          if (!pen) {
-            ctx.moveTo(x, y);
-            pen = true;
-          } else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-
-        /* Filled as a separate pass, closed, and only where the ring did not
-           have to be split — a half ring closes across open ocean. */
-        const xs = ring.map((r) => px(r[0], width));
-        const wraps = xs.some(
-          (x, i) => i > 0 && Math.abs(x - xs[i - 1]) > width * 0.5,
-        );
-        if (!wraps) {
-          ctx.beginPath();
-          ring.forEach(([lon, lat], i) => {
-            const x = px(lon, width);
-            const y = py(lat, height);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
+      /* The land, under everything else. Pre-rendered, so this is one
+         blit rather than eleven thousand point-in-polygon tests. */
+      if (land) ctx.drawImage(land, 0, 0, width, height);
 
       // Longitude grid, every 30°.
       ctx.lineWidth = 1;
@@ -177,12 +235,15 @@ export default function GlobalCorridors() {
 
       // Corridors.
       CORRIDORS.forEach((c) => {
+        const onHover = hovered >= 0 && (c.from === hovered || c.to === hovered);
         const a = CENTRES[c.from];
         const b = CENTRES[c.to];
         const p = arcFor(a, b);
 
-        ctx.strokeStyle = `rgba(${BONE}, 0.14)`;
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = onHover
+          ? `rgba(${SIGNAL}, 0.5)`
+          : `rgba(${BONE}, ${hovered >= 0 ? 0.07 : 0.14})`;
+        ctx.lineWidth = onHover ? 1.4 : 1;
         ctx.beginPath();
         ctx.moveTo(p.x1, p.y1);
         ctx.quadraticCurveTo(p.mx, p.my, p.x2, p.y2);
@@ -252,10 +313,31 @@ export default function GlobalCorridors() {
         ctx.lineTo(x, height - 22);
         ctx.stroke();
 
-        ctx.fillStyle = `rgba(${ink}, ${(home ? 0.85 : 0.34) + lit * 0.45})`;
-        ctx.font = `400 10px ${monoFamily}`;
+        const on = i === hovered;
+        if (on) {
+          /* A halo, then the full name instead of the three-letter code —
+             the label only has room to be useful one node at a time. */
+          ctx.strokeStyle = `rgba(${SIGNAL}, 0.55)`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(x, y, 13, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = `rgba(${SIGNAL}, 0.16)`;
+          ctx.beginPath();
+          ctx.arc(x, y, 13, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = on
+          ? `rgba(${SIGNAL}, 1)`
+          : `rgba(${ink}, ${(home ? 0.85 : 0.34) + lit * 0.45})`;
+        ctx.font = `400 ${on ? 11 : 10}px ${monoFamily}`;
         ctx.textAlign = i % 2 === 0 ? "left" : "right";
-        ctx.fillText(c.code, x + (i % 2 === 0 ? 8 : -8), y - 9);
+        ctx.fillText(
+          on ? c.name.toUpperCase() : c.code,
+          x + (i % 2 === 0 ? 8 : -8),
+          y - (on ? 17 : 9),
+        );
       });
     };
 
@@ -302,6 +384,9 @@ export default function GlobalCorridors() {
       ro.disconnect();
       trigger.kill();
       document.removeEventListener("visibilitychange", onVisibility);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerleave", onLeave);
+      delete canvas.dataset.cursor;
     };
   }, [reduced]);
 
@@ -352,7 +437,7 @@ export default function GlobalCorridors() {
         <div className="relative mt-14">
           <canvas
             ref={canvasRef}
-            className="block h-[clamp(260px,42vw,460px)] w-full font-mono"
+            className="block h-[clamp(300px,48vw,540px)] w-full font-mono"
             role="img"
             aria-label="Corridor map centred on Algiers, with value moving continuously between it and twelve financial centres"
           />
