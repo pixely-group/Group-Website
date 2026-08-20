@@ -165,9 +165,16 @@ const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
 /** How far the stack closes up as the reader scrolls down it. The bottom
  *  plate is the anchor and never moves; every plate above gives up this
  *  share of its distance from it, so the top one travels furthest and the
- *  run reads as depth rather than as a list sliding. At 0.92 the top plate
- *  comes down a third of a gap. */
-const SQUEEZE = 0.92;
+ *  run reads as depth rather than as a list sliding. At 0.78 the top plate
+ *  comes down 90 units — most of a gap — and the pitch closes from 102 to
+ *  80, leaving each plate a visible 80-unit band of the one above it. */
+const SQUEEZE = 0.78;
+
+/** The face lettering cannot survive that close. Every plate is drawn over
+ *  by the one below it, and by the end only 8 units of the face are still
+ *  clear — so the word goes early and deliberately rather than being cut in
+ *  half. Gone by the time the stack is a fifth of the way shut. */
+const FACE_GONE = 0.9;
 
 /** Where a y sits once the stack has closed up by `s`. Affine and monotonic,
  *  which is what lets the request keep its own honest coordinates and still
@@ -430,7 +437,8 @@ export default function SecurityArchitecture() {
     const ctx = gsap.context(() => {
       const plates = section.querySelectorAll("[data-plate]");
       const lifts = section.querySelectorAll("[data-plate-lift]");
-      const leaders = section.querySelectorAll("[data-leader]");
+      const faces = section.querySelectorAll("[data-face]");
+      const spine = section.querySelector("[data-spine]");
       const beam = section.querySelector("[data-beam]");
       const mm = gsap.matchMedia();
       const reduced = window.matchMedia(
@@ -493,9 +501,23 @@ export default function SecurityArchitecture() {
           0,
         );
 
-        // Closing the stack up shares the request's own progress, so the
-        // plates settle exactly as it finishes crossing them.
-        tl.to(squeeze.current, { s: SQUEEZE, duration: 1, ease: "none" }, 0);
+        // Closing the stack gets its own range rather than the request's.
+        // The request is scrubbed across the whole section so that it
+        // descends for as long as there is section left to read — which
+        // spends most of its progress while the drawing is still below the
+        // fold or already above it. Sharing that is what made the plates
+        // look still: a third of a gap, paid out over a thousand pixels of
+        // scroll, two thirds of them spent off screen.
+        const close = gsap.to(squeeze.current, {
+          s: SQUEEZE,
+          ease: "none",
+          scrollTrigger: {
+            trigger: stack,
+            start: "top 85%",
+            end: "bottom 60%",
+            scrub: 0.6,
+          },
+        });
 
         // Genuine scrolling hands control back. Guarded by a moment's grace
         // so the ticks that follow a click cannot cancel it before the
@@ -508,6 +530,8 @@ export default function SecurityArchitecture() {
 
         return () => {
           window.removeEventListener("scroll", releaseOnScroll);
+          close.scrollTrigger?.kill();
+          close.kill();
           tl.scrollTrigger?.kill();
           tl.kill();
         };
@@ -558,16 +582,15 @@ export default function SecurityArchitecture() {
         const s = squeeze.current.s;
         if (s !== lastSqueeze) {
           lastSqueeze = s;
+          const fade = Math.min(1, Math.max(0, (s - FACE_GONE) / (1 - FACE_GONE)));
           LAYERS.forEach((_, i) => {
             const at = layerY(g, i);
             const dy = squeezeY(g, at, s) - at;
             gsap.set(lifts[i], { y: dy });
-            // The register does not come with them. Its rows are HTML hung
-            // at a fraction of the drawing, 74px tall against a 103px pitch
-            // that is only 79 at 1024 — there is no slack there to give. So
-            // the plates drift and the leaders fan to keep meeting the rows
-            // they name, which is how a call-out drawing works anyway.
-            if (wide) gsap.set(leaders[i], { attr: { y2: at - dy } });
+            if (faces[i]) gsap.set(faces[i], { opacity: fade });
+          });
+          gsap.set(spine, {
+            attr: { y1: squeezeY(g, layerY(g, 0), s) - g.HH - 18 },
           });
         }
 
@@ -601,7 +624,7 @@ export default function SecurityArchitecture() {
     }, section);
 
     return () => ctx.revert();
-  }, [geo, wide, paintReadout]);
+  }, [geo, paintReadout]);
 
   const faceSize = Math.round(geo.HH * 0.17);
 
@@ -738,8 +761,9 @@ export default function SecurityArchitecture() {
 
             {/* spine */}
             <line
+              data-spine
               x1={geo.CX}
-              y1={travelFrom(geo) - 18}
+              y1={layerY(geo, 0) - geo.HH - 18}
               x2={geo.CX}
               y2={travelTo(geo) + 20}
               stroke="currentColor"
@@ -831,6 +855,7 @@ export default function SecurityArchitecture() {
                         directly beneath already names every layer. */}
                     {wide && (
                       <text
+                        data-face
                         transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
                         x={faceX}
                         y={faceY}
@@ -856,36 +881,6 @@ export default function SecurityArchitecture() {
                       strokeDasharray={unreached ? "4 6" : undefined}
                       className="transition-all duration-500"
                     />
-                    {/* Leader out to the label column, level with the plate's
-                        widest point — so the register entry hung at the same
-                        height continues the very same line. */}
-                    <line
-                      data-leader
-                      x1={geo.CX + geo.HW}
-                      y1={cy}
-                      x2={geo.VB_W}
-                      y2={cy}
-                      stroke={active || passed ? tone : "currentColor"}
-                      strokeOpacity={
-                        unreached ? 0.14 : active ? 0.95 : passed ? 0.5 : 0.38
-                      }
-                      strokeWidth={active ? 1.4 : 1}
-                      className="transition-all duration-500"
-                    />
-                    <text
-                      x={geo.CX + geo.HW + 10}
-                      y={cy - 9}
-                      fontSize="13"
-                      fill={active || passed ? tone : "currentColor"}
-                      fillOpacity={
-                        unreached ? 0.2 : active ? 1 : passed ? 0.6 : 0.5
-                      }
-                      fontFamily="var(--font-mono)"
-                      letterSpacing="1.6"
-                      className="transition-all duration-500"
-                    >
-                      {layer.index}
-                    </text>
                   </g>
                 </g>
               );
@@ -941,12 +936,6 @@ export default function SecurityArchitecture() {
                   style={{ "--row-top": rowTop(geo, i) } as React.CSSProperties}
                   className="relative border-t border-(--line) last:border-b lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
                 >
-                  {/* Carries the plate's leader across the gap, so the
-                      drawing and its key are one line, not two columns. */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute top-3.5 right-full hidden h-px w-[8.4%] bg-(--line) lg:block"
-                  />
                   <button
                     type="button"
                     onClick={() => selectLayer(i)}
@@ -967,7 +956,7 @@ export default function SecurityArchitecture() {
                     <div className="flex items-baseline justify-between gap-4 lg:h-7 lg:items-center">
                       <h3
                         data-reg-title
-                        className={`text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
+                        className={`flex items-baseline gap-2.5 text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
                           on
                             ? refusedHere
                               ? ""
@@ -978,6 +967,13 @@ export default function SecurityArchitecture() {
                           on && refusedHere ? { color: REFUSED_TEXT } : undefined
                         }
                       >
+                        {/* The layer's index, off the plate now that no
+                            line joins the two. Left uncoloured so it takes
+                            the title's own state and sits a shade behind
+                            it. */}
+                        <span className="type-label text-[0.62rem] opacity-45">
+                          {layer.index}
+                        </span>
                         {layer.name}
                       </h3>
                       {/* Always rendered so it can fade in — a mounting
