@@ -23,26 +23,6 @@ const CLOSE = 1.16;
  *  is also a pixel of it travelling up the screen. Stretch this and it
  *  reaches full size only once it has left the frame. */
 const ZOOM = 180;
-/** How faint the bottom of the device gets, so the copy in front of it stays
- *  the thing you read. Low enough for the wallet's light palette: at 0.07 a
- *  dark screen vanished but a white one still showed through the copy. */
-const FAINT = 0.025;
-/** How far above the copy the fade begins, as a fraction of the device. A
- *  little lead-in, so the first line does not land on a hard edge. */
-const LEAD = 0.06;
-/** The fade never eats more than this much of the device, whatever the
- *  measurements say. */
-const KEEP_MIN = 0.28;
-/** The mask sits on its own element, inset this far outside the device on
- *  every side. Two things have to fit in that margin: the device leans out of
- *  its box by up to ~21px under the pointer, and its shadow reaches 100px
- *  below the body — 50 of offset plus 90 of blur less 40 of spread.
- *
- *  An element rather than a bigger mask-image, because mask-clip decides what
- *  gets cut and it defaults to the border box: growing the image does nothing
- *  about the clip, and no-clip did not paint. Give the mask a box that is
- *  actually larger and the default clip is already in the right place. */
-const MASK_PAD = 150;
 /** How much of the scroll the device gives back while it is growing. At a
  *  full 1:1 it rises the whole ZOOM as it zooms, and reaches full size with
  *  its top already off the screen. It is still page-anchored afterwards. */
@@ -69,10 +49,8 @@ const LINGER = 0.35;
  */
 export default function TravellingDevice() {
   const holderRef = useRef<HTMLDivElement>(null);
-  const maskRef = useRef<HTMLDivElement>(null);
   const flatten = useRef(0);
   const arrived = useRef(false);
-  const fadeStep = useRef(-1);
   const [showcase, setShowcase] = useState<"cards" | null>(null);
   /* Which way the scroll crossed the threshold. The wallet pushes in from the
      right on the way down and from the left on the way back up, so the motion
@@ -85,8 +63,7 @@ export default function TravellingDevice() {
 
   useEffect(() => {
     const holder = holderRef.current;
-    const maskEl = maskRef.current;
-    if (!holder || !maskEl || !enabled || reduced) return;
+    if (!holder || !enabled || reduced) return;
 
     const hero = document.querySelector("#top");
     const manifesto = document.querySelector("#manifesto");
@@ -171,51 +148,13 @@ export default function TravellingDevice() {
       holder.style.transform =
         `translate3d(${dx * p}px, ${dy * p - rise}px, 0) scale(${scale})`;
 
-      /* The device gives way exactly where the copy begins, rather than at a
-         fixed fraction of itself. Solved from page coordinates: the device's
-         height is its own, its parked centre is known, and the copy does not
-         move — so the contact point falls out of arithmetic instead of a rect
-         read after a transform write, which would force a synchronous layout
-         every frame.
-
-         Only masked while the device is square, which is the whole time it is
-         in contact. It leans out of its own box under the pointer, and a mask
-         paints only inside that box, so masking a leaning device cuts about
-         21px off its chassis. */
-      /* Derived from the same numbers the transform is built from, not from
-         an assumed parked centre: LINGER means the device is not anchored to
-         the page while it is still growing, so a constant centre is off by
-         ZOOM * (1 - LINGER) and the fade starts below the copy instead of
-         above it. */
+      /* Solved from the same numbers the transform is built from, and only
+         to decide which screen the wallet shows. The fade is no longer this
+         component's business: it is a static scrim in the section itself, so
+         nothing here is rewritten per frame. */
       const h = baseH * scale;
       const deviceTop = restCentreY + dy * p - rise - h / 2;
-      const contact = (copyTopPage - y - deviceTop) / h;
-      /* Driven by the copy actually reaching the device, not by the device
-         finishing its travel. On a tall viewport the copy is already 200px
-         over it by the time it parks, and gating on arrival left the text
-         sitting on a fully opaque phone for that whole stretch. */
-      const overlapping = contact < 1;
-      /* Quantised: the gradient is cheap to paint but not cheap to re-parse,
-         and at this granularity the change is already invisible. */
-      const step = overlapping ? Math.round(Math.max(0, contact) * 60) : -1;
-      if (step !== fadeStep.current) {
-        fadeStep.current = step;
-        let mask = "none";
-        if (overlapping) {
-          const startsAt = Math.max(KEEP_MIN, step / 60 - LEAD);
-          const midAt = Math.min(0.97, startsAt + 0.16);
-          /* Stops are given as fractions of the device, but the mask area is
-             larger than it by MASK_PAD on each side, so each one is remapped
-             into that larger area or the fade lands high. */
-          const into = (f: number) => ((MASK_PAD + f * h) / (h + MASK_PAD * 2)) * 100;
-          mask =
-            `linear-gradient(to bottom, #000 0 ${into(startsAt).toFixed(1)}%,` +
-            ` rgb(0 0 0 / 0.15) ${into(midAt).toFixed(1)}%,` +
-            ` rgb(0 0 0 / ${FAINT}) ${into(1).toFixed(1)}%)`;
-        }
-        maskEl.style.maskImage = mask;
-        maskEl.style.webkitMaskImage = mask;
-      }
+      const overlapping = (copyTopPage - y - deviceTop) / h < 1;
 
       if (overlapping !== arrived.current) {
         arrived.current = overlapping;
@@ -234,8 +173,6 @@ export default function TravellingDevice() {
       window.removeEventListener("resize", measure);
       ro.disconnect();
       holder.style.transform = "";
-      maskEl.style.maskImage = "";
-      maskEl.style.webkitMaskImage = "";
     };
   }, [enabled, reduced, roomy]);
 
@@ -254,25 +191,16 @@ export default function TravellingDevice() {
            the centring, since that is solved from this box's midpoint. */
         style={{ willChange: "transform", aspectRatio: DEVICE_ASPECT }}
       >
-        {/* Out of flow and inset outwards, so its border box — which is what
-            the mask clips to — is the device plus MASK_PAD all round. The
-            padding puts the device back in the middle of it. */}
-        <div
-          ref={maskRef}
-          className="absolute"
-          style={{ inset: -MASK_PAD, padding: MASK_PAD }}
-        >
-          {/* h-full, not size-full: the device takes its width from its own
-              aspect ratio, and pinning both dimensions overrides that and
-              draws it stretched and clipped. */}
-          <HeroDevice
-            shift={roomy ? 24 : 5}
-            flatten={flatten}
-            showcase={showcase}
-            enterFrom={enterFrom}
-            className="h-full"
-          />
-        </div>
+        {/* h-full, not size-full: the device takes its width from its own
+            aspect ratio, and pinning both dimensions overrides that and draws
+            it stretched and clipped. */}
+        <HeroDevice
+          shift={roomy ? 24 : 5}
+          flatten={flatten}
+          showcase={showcase}
+          enterFrom={enterFrom}
+          className="h-full"
+        />
       </div>
     </div>
   );

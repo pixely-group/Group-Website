@@ -55,6 +55,29 @@ export default function Manifesto() {
       className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[15rem]"
     >
       <h2 className="sr-only">Why Pixely exists</h2>
+
+      {/* The device's fade. A scrim belonging to this section rather than a
+          mask on the device: both are anchored to the page, so their relation
+          never changes and nothing has to be recomputed while the reader
+          scrolls. The mask version was rewritten sixty times across the
+          scroll and had to be re-parsed and re-rasterised each time, which is
+          what made it band and lag.
+
+          Painted in the section's own background, so it reads as the device
+          sinking into the page, and it follows the theme rather than being a
+          hardcoded black. Between the device at z-30 and the copy at z-40. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[4rem] z-[35] hidden h-[11rem] lg:block"
+        style={{
+          background:
+            "linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--bg) 55%, transparent) 46%, color-mix(in oklab, var(--bg) 88%, transparent) 78%, var(--bg) 100%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[15rem] bottom-0 z-[35] hidden bg-theme lg:block"
+      />
       {/* One centred column rather than a left-aligned block with the right
           half empty. The text stays ranged left inside it: this is a
           statement, and a 60rem measure set centred would cost more in
