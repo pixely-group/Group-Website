@@ -75,13 +75,6 @@ export const NAV_GEOMETRY = {
   /** Matches the condensed vertical padding exactly, so the corner stays
    *  square. Changing one without the other threw it out last time. */
   rowPadRight: "calc(var(--nav-p) * 4px)",
-  /** The links draw closer as the bar gathers. At rest the row has the whole
-   *  page to spread across; condensed it has 52rem, and now two controls in
-   *  the corner rather than one — 36px between links left 11px between the
-   *  last of them and the first control. 24px gives that back fourfold, and
-   *  a bar that tightens its own spacing as it closes is the same gesture
-   *  every other length in here is already making. */
-  listGap: "calc(2.25rem - var(--nav-p) * 0.75rem)",
 } as const;
 
 export function Wordmark({ className = "" }: { className?: string }) {
@@ -146,6 +139,12 @@ export default function Navigation() {
   // which can reset scroll and move the bar underneath. So the menu keeps
   // whatever the bar measured at the moment the toggle was pressed.
   const [menuNavP, setMenuNavP] = useState(0);
+  /** The bar has gathered far enough that signing in has withdrawn. The
+   *  withdrawal itself is scrubbed in CSS; this exists because a control
+   *  that is invisible still answers the keyboard, and a tab stop you
+   *  cannot see is worse than one that is merely out of the way. */
+  const [gathered, setGathered] = useState(false);
+  const gatheredRef = useRef(false);
 
   // Condensing is driven exactly like every other scrubbed moment on the
   // page: a GSAP scrub for the smoothing lag, and an eased tween so the
@@ -159,6 +158,13 @@ export default function Navigation() {
     const setP = (p: number) => {
       navP.current = p;
       header.style.setProperty("--nav-p", p.toFixed(4));
+      // Past the point where it has faded out. Compared against a ref because
+      // this runs on every scrubbed frame.
+      const gone = p > 0.86;
+      if (gone !== gatheredRef.current) {
+        gatheredRef.current = gone;
+        setGathered(gone);
+      }
     };
 
     const ctx = gsap.context(() => {
@@ -475,10 +481,7 @@ export default function Navigation() {
                 }}
                 className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
               />
-              <ul
-                className="flex items-center"
-                style={{ gap: NAV_GEOMETRY.listGap }}
-              >
+              <ul className="flex items-center gap-9">
                 {NAV_LINKS.map((link) => {
                   const active = activeHref === link.href;
                   return (
@@ -512,7 +515,11 @@ export default function Navigation() {
                   below it the mobile menu carries both. The outline against
                   the solid is the same pairing the hero makes of its two
                   calls — one invitation, one way back in. */}
-              <span data-nav-link className="hidden sm:block">
+              <span
+                data-nav-link
+                inert={gathered}
+                className="nav-aside hidden sm:block"
+              >
                 <MagneticButton
                   href={LOGIN_HREF}
                   onClick={
@@ -523,7 +530,7 @@ export default function Navigation() {
                   variant="outline"
                   size="sm"
                 >
-                  Log in
+                  Login
                 </MagneticButton>
               </span>
               {/* Wrapped rather than given `hidden` directly: the button's own

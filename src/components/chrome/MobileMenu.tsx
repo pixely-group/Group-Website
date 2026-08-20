@@ -232,7 +232,7 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
               tabIndex={open ? 0 : -1}
             >
               <span className="type-label w-7 shrink-0 text-accent">07</span>
-              Log in
+              Login
             </a>
           </li>
         </ul>

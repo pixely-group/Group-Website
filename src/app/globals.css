@@ -167,6 +167,33 @@
   transition-duration: 0s;
 }
 
+/* ————————————————————————————————————————
+   Signing in withdraws as the bar gathers.
+
+   Closed, the bar is 52rem at every width from lg up — it does not grow to
+   fit what is in it — and two controls in the corner leave the links barely
+   a flank. This is the one that can wait: at the top of the page, where a
+   visitor is deciding, it is there; once they are reading, the bar keeps the
+   chapters and the one call to action.
+
+   Scrubbed off --nav-p rather than switched at a threshold, so it leaves
+   with the bar rather than during it. `--aside` holds at 1 for the first
+   half of the gathering and falls away over the second, which is what keeps
+   it from starting to go the instant the page moves.
+
+   max-width, not width: the button is as wide as its word and nothing here
+   knows that number. 6rem clears it, so the box stays natural until --aside
+   drops below about 0.83 and collapses from there. The negative margin takes
+   the flex gap with it, or the corner would keep 12px of nothing.
+   ———————————————————————————————————————— */
+.nav-aside {
+  --aside: clamp(0, (1 - var(--nav-p)) * 2, 1);
+  overflow: hidden;
+  max-width: calc(var(--aside) * 6rem);
+  margin-right: calc((var(--aside) - 1) * 0.75rem);
+  opacity: var(--aside);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-ground {
     --nav-cross: 1ms;
