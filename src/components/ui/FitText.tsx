@@ -18,7 +18,9 @@ export default function FitText({
   children: string;
   className?: string;
   /** Set to wrap every character in its own span — for per-letter hover. The
-   *  measurement is unaffected: it reads the wrapping span either way. */
+   *  measurement is unaffected: it reads the wrapping span either way. Each
+   *  span also carries its character as data-ch, so CSS can restate it in
+   *  pseudo-elements. */
   letterClassName?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,7 @@ export default function FitText({
           ? children
               .split("")
               .map((ch, i) => (
-                <span key={`${ch}-${i}`} className={letterClassName}>
+                <span key={`${ch}-${i}`} className={letterClassName} data-ch={ch}>
                   {ch}
                 </span>
               ))

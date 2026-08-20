@@ -518,9 +518,18 @@ html[data-cursor="on"] * {
 }
 
 /* The footer wordmark, letter by letter. Grey until the pointer finds one,
-   then white and pixelated — the filter cannot be transitioned, so the colour
-   carries the transition and the filter switches with it. */
+   then white, blocky and coming apart — and it keeps coming apart for as long
+   as the pointer stays, rather than settling into a second static state.
+
+   Three layers do it. The letter itself takes the pixelate filter and a hard
+   jitter. Two copies of it, restated from data-ch, sit exactly on top in the
+   brand blue and a warm red, each sliced by a different clip-path and shoved
+   a little sideways — which is the chromatic split and the torn scanline of a
+   failing display, and neither reads as either on its own.
+
+   steps() throughout: a glitch that eases is a wobble. */
 @utility wordmark-letter {
+  position: relative;
   display: inline-block;
   color: var(--fg);
   opacity: 0.07;
@@ -529,14 +538,106 @@ html[data-cursor="on"] * {
     color 220ms var(--ease-out-expo);
 }
 
+.wordmark-letter::before,
+.wordmark-letter::after {
+  content: attr(data-ch);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .wordmark-letter:hover {
   opacity: 1;
   color: var(--color-bone);
   filter: url(#pixelate-letter);
+  animation: wordmark-shudder 260ms steps(2, jump-none) infinite;
 }
 
+.wordmark-letter:hover::before {
+  opacity: 0.85;
+  color: var(--color-signal);
+  animation: wordmark-tear-a 420ms steps(3, jump-none) infinite;
+}
+
+.wordmark-letter:hover::after {
+  opacity: 0.7;
+  color: #ff4d3d;
+  animation: wordmark-tear-b 330ms steps(3, jump-none) infinite reverse;
+}
+
+@keyframes wordmark-shudder {
+  0% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(0.014em, -0.008em);
+  }
+  66% {
+    transform: translate(-0.012em, 0.01em);
+  }
+  100% {
+    transform: translate(0.006em, 0.004em);
+  }
+}
+
+@keyframes wordmark-tear-a {
+  0% {
+    clip-path: inset(4% 0 78% 0);
+    transform: translate(-0.05em, 0);
+  }
+  25% {
+    clip-path: inset(42% 0 38% 0);
+    transform: translate(0.06em, -0.012em);
+  }
+  50% {
+    clip-path: inset(72% 0 6% 0);
+    transform: translate(-0.035em, 0.01em);
+  }
+  75% {
+    clip-path: inset(18% 0 62% 0);
+    transform: translate(0.045em, 0.006em);
+  }
+  100% {
+    clip-path: inset(4% 0 78% 0);
+    transform: translate(-0.05em, 0);
+  }
+}
+
+@keyframes wordmark-tear-b {
+  0% {
+    clip-path: inset(58% 0 24% 0);
+    transform: translate(0.05em, 0.008em);
+  }
+  30% {
+    clip-path: inset(10% 0 70% 0);
+    transform: translate(-0.06em, 0);
+  }
+  60% {
+    clip-path: inset(80% 0 2% 0);
+    transform: translate(0.04em, -0.01em);
+  }
+  100% {
+    clip-path: inset(58% 0 24% 0);
+    transform: translate(0.05em, 0.008em);
+  }
+}
+
+/* A glitch is motion, so under this setting it does not run at all — the
+   letter still lights and pixelates, which is the affordance. */
 @media (prefers-reduced-motion: reduce) {
   .wordmark-letter {
     transition: none;
+  }
+
+  .wordmark-letter:hover,
+  .wordmark-letter:hover::before,
+  .wordmark-letter:hover::after {
+    animation: none;
+  }
+
+  .wordmark-letter:hover::before,
+  .wordmark-letter:hover::after {
+    opacity: 0;
   }
 }

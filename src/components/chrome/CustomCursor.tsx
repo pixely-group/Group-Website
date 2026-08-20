@@ -10,14 +10,17 @@ type CursorState = "default" | "link" | "explore" | "text";
 export const CURSOR_DOT_PX = 6;
 
 /**
- * Scale the dot takes over a link — the state it is in whenever it sits
- * beside a nav item, so anything meant to read as "that same dot, parked"
- * has to match this rendered size, not the base one.
+ * The cursor's resting dot, and the markers parked beside a nav item or a
+ * security plate — one number, because the marker is meant to read as that
+ * same dot left behind.
  */
 export const CURSOR_DOT_LINK_SCALE = 0.4;
 
-/** The dot's rendered diameter beside a link. */
+/** The parked marker's rendered diameter. */
 export const CURSOR_DOT_LINK_PX = CURSOR_DOT_PX * CURSOR_DOT_LINK_SCALE;
+
+/** What the dot grows to over something clickable, and only there. */
+const CURSOR_DOT_CLICKABLE_SCALE = 1.15;
 
 /**
  * Cursor ink for the chapter beneath it: a dark section takes the light
@@ -73,12 +76,25 @@ export default function CustomCursor() {
 
     let state: CursorState = "default";
 
+    /* The resting scales, applied up front. applyState bails when the state has
+       not changed, and the cursor starts in "default" — so without this the
+       very first move onto ordinary copy leaves both elements untransformed
+       at 1, and the ring only reaches its resting size after visiting a link
+       and coming back. It went unnoticed while the root-element bug kept the
+       cursor permanently in the link state. */
+    gsap.set(ring, { scale: 1.55 });
+    gsap.set(dot, { scale: CURSOR_DOT_LINK_SCALE });
+
     const applyState = (next: CursorState, labelText?: string) => {
       if (next === state && next !== "explore") return;
       state = next;
       const scales: Record<CursorState, { ring: number; dot: number }> = {
-        default: { ring: 1, dot: 1 },
-        link: { ring: 1.55, dot: CURSOR_DOT_LINK_SCALE },
+        /* The resting state is the one the cursor has actually been in
+           everywhere, because of the root-element bug above: ring at 1.55
+           with the small parked dot. Kept, so nothing changes except the one
+           thing asked for. */
+        default: { ring: 1.55, dot: CURSOR_DOT_LINK_SCALE },
+        link: { ring: 1.55, dot: CURSOR_DOT_CLICKABLE_SCALE },
         explore: { ring: 2.6, dot: 0 },
         text: { ring: 0.5, dot: 0.6 },
       };
@@ -123,7 +139,17 @@ export default function CustomCursor() {
     };
 
     const resolveTarget = (el: Element | null): [CursorState, string?] => {
-      const hit = el?.closest("[data-cursor], a, button, [role='button']");
+      /* :not(html) matters. The component marks the root element
+         data-cursor="on" for the CSS that hides the native pointer, and
+         without excluding it every element on the page has a [data-cursor]
+         ancestor — closest() finds the root, the value is neither "explore"
+         nor "text", and the cursor falls through to the link state
+         everywhere. It has been in the link state on every pixel of the page;
+         it only became visible once the link state started growing the dot
+         rather than shrinking it. */
+      const hit = el?.closest(
+        "[data-cursor]:not(html), a, button, [role='button']",
+      );
       if (!hit) return ["default"];
       const kind = (hit as HTMLElement).dataset?.cursor;
       if (kind === "explore")
