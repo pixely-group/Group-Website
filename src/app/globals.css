@@ -516,3 +516,27 @@ html[data-cursor="on"] * {
     animation: none;
   }
 }
+
+/* The footer wordmark, letter by letter. Grey until the pointer finds one,
+   then white and pixelated — the filter cannot be transitioned, so the colour
+   carries the transition and the filter switches with it. */
+@utility wordmark-letter {
+  display: inline-block;
+  color: var(--fg);
+  opacity: 0.07;
+  transition:
+    opacity 220ms var(--ease-out-expo),
+    color 220ms var(--ease-out-expo);
+}
+
+.wordmark-letter:hover {
+  opacity: 1;
+  color: var(--color-bone);
+  filter: url(#pixelate-letter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-letter {
+    transition: none;
+  }
+}

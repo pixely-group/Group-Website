@@ -309,7 +309,16 @@ function withStage(shader: string) {
 /* Exported so the hero can stand the same graph behind its copy. It is the
    whole of that section's look — nodes, segments and the packets running the
    spokes — and rebuilding a lookalike would be two things to keep in step. */
-export function NetworkMesh({ bus }: { bus: NetworkBusRef }) {
+export function NetworkMesh({
+  bus,
+  core = true,
+}: {
+  bus: NetworkBusRef;
+  /** The ring and axis at the middle of the graph. The section wants it as
+   *  the thing the network is organised around; the hero does not, because
+   *  there it is just a circle sitting in the middle of the page. */
+  core?: boolean;
+}) {
   const model = useMemo(() => buildNetwork(), []);
   const groupRef = useRef<THREE.Group>(null);
   const nodeMat = useRef<THREE.ShaderMaterial>(null);
@@ -430,7 +439,7 @@ export function NetworkMesh({ bus }: { bus: NetworkBusRef }) {
         />
       </lineSegments>
       {/* the settlement core: the wordmark, monumental again */}
-      <CoreGlyph />
+      {core && <CoreGlyph />}
     </group>
   );
 }

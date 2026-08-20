@@ -104,7 +104,7 @@ function NetworkBackdrop({ bus }: { bus: HeroBusRef }) {
     net.current.pointer = bus.current.pointer;
   });
 
-  return <NetworkMesh bus={net} />;
+  return <NetworkMesh bus={net} core={false} />;
 }
 
 function CameraRig({ bus }: { bus: HeroBusRef }) {

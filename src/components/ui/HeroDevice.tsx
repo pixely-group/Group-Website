@@ -76,7 +76,6 @@ export default function HeroDevice({
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
-  const sheenRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
 
   /** Held still while the pointer is over it. The device answers the pointer
@@ -107,8 +106,7 @@ export default function HeroDevice({
 
   useEffect(() => {
     const tilt = tiltRef.current;
-    const sheen = sheenRef.current;
-    if (!tilt || !sheen) return;
+    if (!tilt) return;
     const travel = shift;
 
     if (!live) {
@@ -154,10 +152,6 @@ export default function HeroDevice({
       const ty = Math.sin(elapsed * 0.5) * 5 * hold;
       tilt.style.transform = `translate3d(${tx}px,${ty}px,0) rotateX(${rx}deg) rotateY(${ry}deg)`;
 
-      // One hairline of light travelling across the glass, opposite the turn.
-      // It fades with the angle: on a flat face it is a smear with no cause.
-      sheen.style.opacity = `${hold}`;
-      sheen.style.transform = `translate3d(${-eased.x * 34 - ry * 2.6}px,0,0) rotate(${-14 + ry * 0.4}deg)`;
     };
     gsap.ticker.add(draw);
 
@@ -242,16 +236,6 @@ export default function HeroDevice({
                 <span className="absolute top-1/2 right-[12px] size-[8px] -translate-y-1/2 rounded-full bg-[#12161f]" />
               </div>
 
-              <div
-                ref={sheenRef}
-                aria-hidden
-                className="pointer-events-none absolute -inset-y-1/4 -inset-x-1/2"
-                style={{
-                  background:
-                    "linear-gradient(100deg, transparent 46%, rgba(236,233,225,0.018) 49.4%, rgba(236,233,225,0.038) 50.4%, rgba(236,233,225,0.018) 51.4%, transparent 55%)",
-                  willChange: "transform",
-                }}
-              />
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"

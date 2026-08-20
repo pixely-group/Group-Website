@@ -114,8 +114,8 @@ export default function Footer() {
           <div>
             <Wordmark />
             <p className="mt-5 max-w-xs text-[0.9rem] leading-relaxed text-(--muted)">
-              The settlement layer for companies that operate at internet
-              speed.
+              Payments, digital identity and AI in one platform, built for
+              Algeria.
             </p>
             <p className="type-label mt-8 flex items-center gap-2 text-(--faint)">
               <span className="relative flex size-1.5">
@@ -151,9 +151,26 @@ export default function Footer() {
           </nav>
         </div>
 
-        {/* Wordmark as a rule across the base of the page. */}
+        {/* Wordmark as a rule across the base of the page. Each letter lights
+            and pixelates under the pointer — the filter is defined once here
+            rather than per letter, since they all reference the same one. */}
         <div aria-hidden className="mt-20 overflow-hidden">
-          <FitText className="type-display leading-[0.78] text-(--fg) opacity-[0.07] select-none">
+          <svg width="0" height="0" className="absolute" aria-hidden focusable="false">
+            <filter id="pixelate-letter" x="0" y="0" width="100%" height="100%">
+              {/* One opaque pixel, composited to a cell, tiled into a grid,
+                  then used to sample the letter — which is what leaves the
+                  glyph as blocks rather than merely blurring it. */}
+              <feFlood x="2" y="2" height="1" width="1" />
+              <feComposite width="7" height="7" />
+              <feTile result="grid" />
+              <feComposite in="SourceGraphic" in2="grid" operator="in" />
+              <feMorphology operator="dilate" radius="3.5" />
+            </filter>
+          </svg>
+          <FitText
+            className="type-display leading-[0.78] select-none"
+            letterClassName="wordmark-letter"
+          >
             Pixely
           </FitText>
         </div>
@@ -183,7 +200,7 @@ export default function Footer() {
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © 2026 Pixely — Money should move in a snap
+          © 2026 Pixely — AI-powered fintech platform
         </p>
       </div>
     </footer>

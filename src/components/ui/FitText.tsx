@@ -13,9 +13,13 @@ import { useEffect, useRef } from "react";
 export default function FitText({
   children,
   className = "",
+  letterClassName,
 }: {
   children: string;
   className?: string;
+  /** Set to wrap every character in its own span — for per-letter hover. The
+   *  measurement is unaffected: it reads the wrapping span either way. */
+  letterClassName?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -52,7 +56,15 @@ export default function FitText({
   return (
     <div ref={hostRef} className="w-full">
       <span ref={textRef} className={`block w-max whitespace-nowrap ${className}`}>
-        {children}
+        {letterClassName
+          ? children
+              .split("")
+              .map((ch, i) => (
+                <span key={`${ch}-${i}`} className={letterClassName}>
+                  {ch}
+                </span>
+              ))
+          : children}
       </span>
     </div>
   );

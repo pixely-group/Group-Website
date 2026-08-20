@@ -172,6 +172,56 @@ export default function Navigation() {
     return () => ctx.revert();
   }, []);
 
+  /* Which section the reader is actually in, reflected in the bar.
+     Sorted by document position rather than by the order of NAV_LINKS: the
+     bar reads Platform, Services, Identity, but Services is further down the
+     page than Identity, so walking the links in their own order would light
+     the wrong one. */
+  useEffect(() => {
+    type Target = { href: (typeof NAV_LINKS)[number]["href"]; el: Element };
+    const targets = NAV_LINKS.map((l) => ({
+      href: l.href,
+      el: document.querySelector(l.href),
+    }))
+      .filter((t): t is Target => !!t.el)
+      .sort(
+        (a, b) =>
+          a.el.getBoundingClientRect().top - b.el.getBoundingClientRect().top,
+      );
+    if (!targets.length) return;
+
+    let last: string | null = null;
+    const pick = () => {
+      /* Two fifths down: high enough that a section counts once it is the
+         thing being read, rather than only when it fills the screen. */
+      const line = window.innerHeight * 0.4;
+      let current: string | null = null;
+      for (const t of targets) {
+        if (t.el.getBoundingClientRect().top <= line) current = t.href;
+      }
+      if (current !== last) {
+        last = current;
+        setActiveHref(current);
+      }
+    };
+
+    const st = ScrollTrigger.create({
+      trigger: document.documentElement,
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: pick,
+      onRefresh: pick,
+    });
+    /* Deferred rather than called here: setting state straight from an effect
+       body commits a render for it. */
+    const raf = requestAnimationFrame(pick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      st.kill();
+    };
+  }, []);
+
   // Pinned sections make trigger-based theme detection unreliable, so
   // hit-test what is actually rendered underneath the bar instead.
   useEffect(() => {
