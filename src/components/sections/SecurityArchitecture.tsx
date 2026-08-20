@@ -165,10 +165,17 @@ const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
 /** How far the stack closes up as the reader scrolls down it. The bottom
  *  plate is the anchor and never moves; every plate above gives up this
  *  share of its distance from it, so the top one travels furthest and the
- *  run reads as depth rather than as a list sliding. At 0.78 the top plate
- *  comes down 90 units — most of a gap — and the pitch closes from 102 to
- *  80, leaving each plate a visible 80-unit band of the one above it. */
-const SQUEEZE = 0.78;
+ *  run reads as depth rather than as a list sliding. At 0.68 the top plate
+ *  comes down 131 units and the pitch closes from 102 to 69.
+ *
+ *  What stops it going further is the face lettering, and not where you
+ *  would expect. The word is set left of the plate's centre, where the
+ *  plate below has narrowed towards its top vertex and sits lower — so it
+ *  keeps 8 units of daylight here, and does not touch until 0.62. Measured
+ *  along the word's real box against that plate's rising edge, not against
+ *  its centre line, which is the mistake that had the lettering fading out
+ *  of the way for a while. */
+const SQUEEZE = 0.68;
 
 /** Where a y sits once the stack has closed up by `s`. Affine and monotonic,
  *  which is what lets the request keep its own honest coordinates and still
@@ -258,6 +265,11 @@ export default function SecurityArchitecture() {
   /** How far the stack has closed up, 1 being open. Scrubbed by the same
    *  timeline that walks the request down, so the two share one progress. */
   const squeeze = useRef({ s: 1 });
+  /** The plate under the pointer, if any. Kept in a ref as well, because
+   *  the ticker has to re-solve the leader's ends every frame — the plate
+   *  end moves with the squeeze and the title end does not. */
+  const [hoverLayer, setHoverLayer] = useState<number | null>(null);
+  const hoverRef = useRef<number | null>(null);
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
@@ -402,6 +414,26 @@ export default function SecurityArchitecture() {
     };
   }, [scenario]);
 
+  // The leader is drawn rather than faded in — from the plate outwards,
+  // which is the direction it is pointing.
+  useEffect(() => {
+    const line = document.querySelector("[data-hover-leader]");
+    if (!line) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (hoverLayer === null) {
+      gsap.to(line, { opacity: 0, duration: reduced ? 0 : 0.18 });
+      return;
+    }
+    gsap.set(line, { opacity: 1, attr: { "stroke-dashoffset": 1 } });
+    gsap.to(line, {
+      attr: { "stroke-dashoffset": 0 },
+      duration: reduced ? 0 : 0.34,
+      ease: "power2.out",
+    });
+  }, [hoverLayer]);
+
   // A ring in the plane of the plate each time the request lands on one.
   useEffect(() => {
     const pulse = pulseRef.current;
@@ -432,6 +464,7 @@ export default function SecurityArchitecture() {
       const plates = section.querySelectorAll("[data-plate]");
       const lifts = section.querySelectorAll("[data-plate-lift]");
       const spine = section.querySelector("[data-spine]");
+      const hoverLine = section.querySelector("[data-hover-leader]");
       const beam = section.querySelector("[data-beam]");
       const mm = gsap.matchMedia();
       const reduced = window.matchMedia(
@@ -582,6 +615,16 @@ export default function SecurityArchitecture() {
           });
           gsap.set(spine, {
             attr: { y1: squeezeY(g, layerY(g, 0), s) - g.HH - 18 },
+          });
+        }
+
+        // Both ends of the hover leader, every frame it is up: the plate
+        // end rides the squeeze, the title end is pinned to the row.
+        const h = hoverRef.current;
+        if (h !== null && hoverLine) {
+          const at = layerY(g, h);
+          gsap.set(hoverLine, {
+            attr: { y1: squeezeY(g, at, squeeze.current.s), y2: at },
           });
         }
 
@@ -808,6 +851,15 @@ export default function SecurityArchitecture() {
                   key={layer.name}
                   data-plate
                   onClick={() => selectLayer(i)}
+                  onMouseEnter={() => {
+                    if (!wide || unreached) return;
+                    hoverRef.current = i;
+                    setHoverLayer(i);
+                  }}
+                  onMouseLeave={() => {
+                    hoverRef.current = null;
+                    setHoverLayer(null);
+                  }}
                   data-cursor={unreached ? undefined : "link"}
                   className={unreached ? "cursor-default" : "cursor-pointer"}
                 >
@@ -883,6 +935,33 @@ export default function SecurityArchitecture() {
               );
             })}
 
+            {/* The leader the plates used to carry all the time, now only
+                under the pointer. It lives outside the lift groups on
+                purpose: one end is on a plate that has moved with the
+                squeeze and the other on a register row that has not, so
+                neither transform can own it. The ticker solves both ends.
+
+                Narrow has no register beside the drawing to point at, so
+                there is nothing here to draw. */}
+            {wide && (
+              <line
+                data-hover-leader
+                x1={geo.CX + geo.HW}
+                y1={layerY(geo, 0)}
+                x2={geo.VB_W}
+                y2={layerY(geo, 0)}
+                stroke={
+                  declined && hoverLayer === BLOCK_AT ? REFUSED : ACCENT
+                }
+                strokeWidth="1.2"
+                pathLength={1}
+                strokeDasharray={1}
+                strokeDashoffset={1}
+                opacity={0}
+                pointerEvents="none"
+              />
+            )}
+
             <ellipse
               ref={pulseRef}
               cx={geo.CX}
@@ -910,7 +989,7 @@ export default function SecurityArchitecture() {
 
           <ol
             ref={registerRef}
-            className="relative mt-10 lg:absolute lg:inset-0 lg:mt-0"
+            className="relative mt-10 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0"
           >
             <span
               ref={registerDotRef}
@@ -931,8 +1010,23 @@ export default function SecurityArchitecture() {
                 <li
                   key={layer.name}
                   style={{ "--row-top": rowTop(geo, i) } as React.CSSProperties}
-                  className="relative border-t border-(--line) last:border-b lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
+                  className="relative border-t border-(--line) last:border-b lg:pointer-events-auto lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
                 >
+                  {/* The drawing stops at the edge of its own box; this
+                      carries the hover leader the rest of the way to the
+                      title. Held back until the drawn half has arrived, so
+                      the two read as one line rather than two. */}
+                  <span
+                    aria-hidden
+                    className={`pointer-events-none absolute top-3.5 right-full hidden h-px w-[8.4%] origin-left transition-transform duration-200 lg:block ${
+                      hoverLayer === i
+                        ? "scale-x-100 delay-[260ms]"
+                        : "scale-x-0"
+                    }`}
+                    style={{
+                      backgroundColor: refusedHere ? REFUSED : ACCENT,
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={() => selectLayer(i)}
