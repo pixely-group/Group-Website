@@ -6,7 +6,7 @@ import { ACCOUNTS, TRANSACTIONS } from "@/lib/data";
  * product composed for a narrow column.
  */
 export default function ProductUIMobile() {
-  const [usd, eur, gbp] = ACCOUNTS;
+  const [operating, trade, payroll] = ACCOUNTS;
 
   return (
     <div
@@ -29,17 +29,17 @@ export default function ProductUIMobile() {
 
       <div className="p-4">
         <p className="font-mono text-[9px] tracking-[0.12em] text-ink/45 uppercase">
-          {usd.name} · {usd.number}
+          {operating.name} · {operating.number}
         </p>
         <p className="type-mono mt-1.5 text-[1.6rem] leading-none font-medium tracking-[-0.03em]">
-          {usd.balance}
+          {operating.balance}
         </p>
         <p className="mt-2 flex items-center gap-2 font-mono text-[9px] tracking-[0.08em] text-ink/50 uppercase">
-          <span className="text-positive">{usd.delta}</span> · {usd.rail}
+          <span className="text-positive">{operating.delta}</span> · {operating.rail}
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {[eur, gbp].map((acct) => (
+          {[trade, payroll].map((acct) => (
             <div
               key={acct.name}
               className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-2.5"
@@ -89,8 +89,8 @@ export default function ProductUIMobile() {
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-3">
-            <p className="text-[10px] font-semibold">EUR → USD</p>
-            <p className="type-mono mt-1.5 text-[15px] font-medium">1.0842</p>
+            <p className="text-[10px] font-semibold">DZD → EUR</p>
+            <p className="type-mono mt-1.5 text-[15px] font-medium">147.2040</p>
             <p className="mt-1 font-mono text-[8.5px] tracking-[0.08em] text-ink/45 uppercase">
               Mid · locked 28s
             </p>
@@ -103,7 +103,7 @@ export default function ProductUIMobile() {
               </span>
             </p>
             <p className="mt-1.5 text-[10px] leading-snug text-ink/70">
-              Payroll · £184,220.40
+              Payroll · 18 422 040,00
             </p>
             <div className="mt-2 flex items-center gap-1">
               <span className="h-1 flex-1 rounded-full bg-signal/80" />

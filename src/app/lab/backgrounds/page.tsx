@@ -6,6 +6,7 @@ import BackgroundLab, {
   LAB_VARIANTS,
   type LabVariant,
 } from "@/components/three/BackgroundLab";
+import RotatingWord from "@/components/ui/RotatingWord";
 
 const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
   ssr: false,
@@ -15,7 +16,8 @@ const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
  * A place to look at background candidates in the frame they have to work in,
  * rather than describing them and hoping. The headline, the closing row and
  * the real device are all here at the hero's own sizes, so what you see is
- * what the hero would be.
+ * what the hero would be — which only holds while the copy here is the copy
+ * Hero.tsx ships, so it is kept in step with it.
  */
 export default function BackgroundsLab() {
   const [variant, setVariant] = useState<LabVariant>("aurora");
@@ -40,30 +42,29 @@ export default function BackgroundsLab() {
 
       <div className="relative z-30 flex h-full flex-col justify-end px-6 pb-9 sm:px-10 lg:px-14">
         <p className="type-label section-index mb-7 text-(--muted)">
-          Pixely — Financial infrastructure
+          Pixely — Financial infrastructure for Algeria
         </p>
         <h1 className="type-display text-hero -ml-[0.06em] lg:pr-[30%] lg:text-hero-aside">
-          <span className="block">Money</span>
-          <span className="block">should</span>
-            <span className="block">move</span>
+          <span className="block">AI-powered</span>
+          <span className="block">fintech</span>
+          <span className="block">platform</span>
           <span className="block">
-            in a <em className="type-serif text-[1.02em] font-normal">Znap</em>
-            <span className="text-accent">!</span>
+            for <RotatingWord className="type-serif-inherit text-signal" />
           </span>
         </h1>
 
         <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
           <p className="max-w-md text-[0.95rem] leading-relaxed text-(--muted)">
-            Pixely is the settlement layer for companies that operate at
-            internet speed — money that arrives in milliseconds, in any
-            currency, governed entirely by code.
+            Pixely combines payments, digital identity and artificial
+            intelligence into one platform — secure transactions, trusted
+            verification and intelligent financial services, built for Algeria.
           </p>
           <p className="type-label hidden leading-relaxed text-(--faint) sm:block md:text-right">
-            142 currencies
+            Financial inclusion
             <br />
-            99.995% uptime
+            Intelligent innovation
             <br />
-            24/7/365 settlement
+            Trust &amp; security
           </p>
         </div>
       </div>

@@ -78,14 +78,14 @@ type Tx = {
    actually shows: a card tap, a transfer out, one still clearing, one that
    did not go through. */
 const TRANSACTIONS: Tx[] = [
-  { name: "Contactless", detail: "Lisbon, PT", state: "Sent", amount: "48.20", credit: false, time: "09:41", initials: "LX" },
-  { name: "Marcus Lee", detail: "Transfer", state: "Sent", amount: "3,200.00", credit: false, time: "07:30", initials: "ML" },
-  { name: "Evelyn Harper", detail: "Incoming", state: "Pending", amount: "1,500.00", credit: true, time: "19:12", initials: "EH" },
-  { name: "Liam Patel", detail: "Transfer", state: "Received", amount: "4,000.00", credit: true, time: "20:05", initials: "LP" },
-  { name: "Sophia Chen", detail: "Card payment", state: "Failed", amount: "500.00", credit: false, time: "19:45", initials: "SC" },
-  { name: "Acme Corp", detail: "Invoice 8841", state: "Received", amount: "24,000.00", credit: true, time: "Yesterday", initials: "AC" },
-  { name: "Northwind Labs", detail: "Direct debit", state: "Sent", amount: "890.00", credit: false, time: "Yesterday", initials: "NL" },
-  { name: "Payroll", detail: "84 people", state: "Sent", amount: "128,400.00", credit: false, time: "Mon", initials: "PR" },
+  { name: "Contactless", detail: "Alger, DZ", state: "Sent", amount: "350,00", credit: false, time: "09:41", initials: "AL" },
+  { name: "Marcus Lee", detail: "Transfer", state: "Sent", amount: "3 200,00", credit: false, time: "07:30", initials: "ML" },
+  { name: "Evelyn Harper", detail: "Incoming", state: "Pending", amount: "1 500,00", credit: true, time: "19:12", initials: "EH" },
+  { name: "Liam Patel", detail: "Transfer", state: "Received", amount: "4 000,00", credit: true, time: "20:05", initials: "LP" },
+  { name: "Sophia Chen", detail: "Card payment", state: "Failed", amount: "500,00", credit: false, time: "19:45", initials: "SC" },
+  { name: "Acme Corp", detail: "Invoice 8841", state: "Received", amount: "24 000,00", credit: true, time: "Yesterday", initials: "AC" },
+  { name: "Aurès Energie", detail: "Direct debit", state: "Sent", amount: "890,00", credit: false, time: "Yesterday", initials: "AE" },
+  { name: "Payroll", detail: "84 people", state: "Sent", amount: "128 400,00", credit: false, time: "Mon", initials: "PR" },
 ];
 
 function StateMark({ state, c }: { state: Tx["state"]; c: C }) {
@@ -420,10 +420,10 @@ function SendScreen({ onBack, c }: { onBack: () => void; c: C }) {
         </span>
       </div>
       <p className="mt-[22px]" style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>Amount</p>
-      <p className="mt-[6px]" style={{ fontSize: 42, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>500.00</p>
+      <p className="mt-[6px]" style={{ fontSize: 42, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>500,00</p>
       <div className="mt-[18px]">
-        <Field label="They receive" value="500.00 EUR" c={c} />
-        <Field label="Fee" value="0.00" c={c} />
+        <Field label="They receive" value="500,00 DZD" c={c} />
+        <Field label="Fee" value="0,00" c={c} />
         <Field label="Arrives" value="~4 seconds" c={c} />
       </div>
     </Pushed>
@@ -449,14 +449,14 @@ function ReceiveScreen({ onBack, c }: { onBack: () => void; c: C }) {
       <div className="mt-[18px]">
         <Field label="Account name" value="Amine Laissoub" c={c} />
         <Field label="IBAN" value="···· 4417" c={c} />
-        <Field label="BIC" value="ZNPYGB21" c={c} />
+        <Field label="BIC" value="PXLYDZAL" c={c} />
       </div>
     </Pushed>
   );
 }
 
 function TopUpScreen({ onBack, c }: { onBack: () => void; c: C }) {
-  const [amount, setAmount] = useState("250.00");
+  const [amount, setAmount] = useState("5 000,00");
   const [done, setDone] = useState(false);
   return (
     <Pushed title="Top Up" onBack={onBack} c={c}
@@ -464,7 +464,7 @@ function TopUpScreen({ onBack, c }: { onBack: () => void; c: C }) {
       <p style={{ fontSize: 15, fontWeight: 600, color: c.MUTED }}>Amount</p>
       <p className="mt-[6px]" style={{ fontSize: 42, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>{amount}</p>
       <div className="mt-[16px] flex gap-[8px]">
-        {["50.00", "250.00", "1,000.00"].map((v) => {
+        {["1 000,00", "5 000,00", "10 000,00"].map((v) => {
           const on = v === amount;
           return (
             <button key={v} type="button" onClick={() => setAmount(v)} data-cursor="link"
@@ -477,7 +477,7 @@ function TopUpScreen({ onBack, c }: { onBack: () => void; c: C }) {
       </div>
       <div className="mt-[20px]">
         <Field label="From" value="Card ···· 4021" c={c} />
-        <Field label="Fee" value="0.00" c={c} />
+        <Field label="Fee" value="0,00" c={c} />
         <Field label="Available instantly" value="Yes" c={c} />
       </div>
     </Pushed>
@@ -505,8 +505,8 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
       <div className="mt-[24px]">
         <Field label="Type" value={tx.detail} c={c} />
         <Field label="When" value={tx.time} c={c} />
-        <Field label="Account" value="Main · EUR" c={c} />
-        <Field label="Reference" value={`ZNP-${tx.initials}-8841`} c={c} />
+        <Field label="Account" value="Main · DZD" c={c} />
+        <Field label="Reference" value={`PXY-${tx.initials}-8841`} c={c} />
       </div>
     </Pushed>
   );
@@ -764,7 +764,7 @@ export default function WalletScreen({
                 <span className="min-w-0">
                   <span className="block truncate" style={{ fontSize: 17, fontWeight: 700, color: c.FG }}>Hi, Amine</span>
                   <span className="block truncate" style={{ fontSize: 14, color: c.MUTED }}>
-                    {copied ? "Profile" : "Main account · EUR"}
+                    {copied ? "Profile" : "Main account · DZD"}
                   </span>
                 </span>
               </button>
@@ -772,9 +772,9 @@ export default function WalletScreen({
             </div>
 
             <div className="mt-[18px] px-[20px]">
-              <p style={{ fontSize: 40, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>12,481.43</p>
+              <p style={{ fontSize: 40, fontWeight: 700, color: c.FG, letterSpacing: "-0.025em" }}>12 481,43</p>
               <p className="mt-[2px]" style={{ fontSize: 15, color: c.MUTED }}>
-                <span style={{ color: c.UP, fontWeight: 600 }}>+286.27</span> today
+                <span style={{ color: c.UP, fontWeight: 600 }}>+286,27</span> today
               </p>
             </div>
 

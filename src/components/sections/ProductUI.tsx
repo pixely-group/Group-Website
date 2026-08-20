@@ -91,7 +91,7 @@ export default function ProductUI() {
             </div>
           </div>
           <div className="border-t border-ink/8 px-1 pt-3">
-            <p className="text-[11px] font-semibold">Helio Systems Inc.</p>
+            <p className="text-[11px] font-semibold">Numidia Trading SPA</p>
             <p className="mt-1 flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-ink/50 uppercase">
               <span className="inline-block size-1.5 rounded-full bg-positive" />
               Production
@@ -142,7 +142,7 @@ export default function ProductUI() {
                       </p>
                     </div>
                     <p
-                      data-ui={acct.name === "USD Operating" ? "usd-balance" : undefined}
+                      data-ui={acct.name === "DZD Operating" ? "dzd-balance" : undefined}
                       className="type-mono mt-2.5 text-[15px] font-medium tracking-[-0.02em] whitespace-nowrap"
                     >
                       {acct.balance}
@@ -224,18 +224,18 @@ export default function ProductUI() {
                 className="rounded-(--radius-mock) border border-ink/8 bg-[#fdfcfa] p-3"
               >
                 <div className="flex items-baseline justify-between">
-                  <p className="text-[11px] font-semibold">FX — EUR → USD</p>
+                  <p className="text-[11px] font-semibold">FX — DZD → EUR</p>
                   <p className="font-mono text-[9px] text-positive">MID</p>
                 </div>
-                <p className="type-mono mt-2 text-[20px] font-medium">1.0842</p>
+                <p className="type-mono mt-2 text-[20px] font-medium">147.2040</p>
                 <div className="mt-2 space-y-1 border-t border-ink/6 pt-2 font-mono text-[9.5px] text-ink/55">
                   <div className="flex justify-between">
                     <span>Convert</span>
-                    <span>€250,000.00</span>
+                    <span>36 801 000,00</span>
                   </div>
                   <div className="flex justify-between">
                     <span>You receive</span>
-                    <span className="text-ink">$271,050.00</span>
+                    <span className="text-ink">€250 000,00</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Locked for</span>
@@ -255,7 +255,7 @@ export default function ProductUI() {
                   </span>
                 </div>
                 <p className="mt-2 text-[11px] leading-snug text-ink/70">
-                  Payroll run 2026-08 · £184,220.40
+                  Payroll run 2026-08 · 18 422 040,00
                 </p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <span className="h-1 flex-1 rounded-full bg-signal/80" />
@@ -266,7 +266,7 @@ export default function ProductUI() {
                   </span>
                 </div>
                 <p className="mt-2 font-mono text-[9px] tracking-[0.06em] text-ink/45 uppercase">
-                  Policy: payouts &gt; £50k
+                  Policy: payouts &gt; 5M DZD
                 </p>
               </div>
 

@@ -118,7 +118,9 @@ function readMatrix(text: string, plain: string, family: string): Matrix | null 
 
 type Props = {
   className?: string;
-  /** The word, and the part of it that is not the mark. */
+  /** The word, and the part of it that is not the mark. Pass them equal — the
+   *  default — for a word with no mark: everything past `plain` is what takes
+   *  the accent, so an equal pair simply accents nothing. */
   text?: string;
   plain?: string;
   /** Width of the lettering, in ems of the surrounding text. */
@@ -134,10 +136,10 @@ type Props = {
   scatter?: number;
 };
 
-export default function ZnapDots({
+export default function DotMatrixText({
   className,
-  text = "Znap!",
-  plain = "Znap",
+  text = "Pixely",
+  plain = "Pixely",
   width = 3,
   weight = 1.1,
   duration = 1.4,

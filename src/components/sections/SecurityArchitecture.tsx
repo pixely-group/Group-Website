@@ -656,10 +656,10 @@ export default function SecurityArchitecture() {
             <p className="type-label text-(--faint)">Authorisation 8F2C·41D9</p>
             <p className="type-mono mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <span className="text-[1.7rem] leading-none tracking-[-0.03em]">
-                €48.20
+                350,00 DZD
               </span>
               <span className="text-[0.85rem] text-(--muted)">
-                Contactless · Lisbon, PT
+                Contactless · Alger, DZ
               </span>
               <span className="text-[0.85rem] text-(--faint)">•••• 4021</span>
             </p>

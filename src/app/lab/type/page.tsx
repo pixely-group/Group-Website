@@ -2,7 +2,7 @@
 
 import { Bitcount_Prop_Double } from "next/font/google";
 import { useState } from "react";
-import ZnapDots from "@/components/ui/ZnapDots";
+import DotMatrixText from "@/components/ui/DotMatrixText";
 
 /* Declared here rather than in the root layout: nothing on the site uses this
    face any more, so it ships with this route alone. */
@@ -28,14 +28,14 @@ export default function TypeLab() {
       </p>
 
       <div className="text-[clamp(3rem,12vw,9rem)] leading-none">
-        <ZnapDots key={`big-${take}`} width={3.4} weight={weight} duration={duration} scatter={scatter} />
+        <DotMatrixText key={`big-${take}`} width={3.4} weight={weight} duration={duration} scatter={scatter} />
       </div>
 
       <div className="mt-24 border-t border-(--line) pt-12">
         <p className="type-label mb-6 text-(--faint)">In place, at size</p>
         <h1 className="type-display -ml-[0.06em] text-[clamp(2rem,5vw,3.6rem)] leading-[0.95]">
-          move in a{" "}
-          <ZnapDots key={`inline-${take}`} weight={weight} duration={duration} scatter={scatter} className="align-baseline" />
+          Money moves with{" "}
+          <DotMatrixText key={`inline-${take}`} weight={weight} duration={duration} scatter={scatter} className="align-baseline" />
         </h1>
       </div>
 
