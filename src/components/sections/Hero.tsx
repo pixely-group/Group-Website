@@ -227,10 +227,12 @@ export default function Hero() {
           </span>
           {/* Deeper than the lines above it: this one ends in Fraunces italic,
               whose descenders run 14.5px below the baseline at this size
-              against Archivo's 10.1, and the mask was cutting 2.6px off every
-              y, g and p. Padding opens the mask downward and the negative
-              margin hands the space back, so the run keeps its spacing. */}
-          <span className="-mb-[0.14em] block overflow-hidden pb-[0.2em]">
+              against Archivo's 10.1 — and deeper again since the word was
+              set 1.14em to hold its own against the caps. The mask was
+              cutting 2.6px off every y, g and p. Padding opens it downward
+              and the negative margin hands the space straight back, so the
+              run keeps the spacing it had. */}
+          <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
               for{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
@@ -238,7 +240,7 @@ export default function Hero() {
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
                   but this is display type well past the large-text threshold,
                   where 3:1 is the bar. */}
-              <RotatingWord className="type-serif-inherit text-signal normal-case" />
+              <RotatingWord className="type-serif-inherit text-signal normal-case text-[1.14em]" />
             </span>
           </span>
         </h1>

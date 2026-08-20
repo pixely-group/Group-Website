@@ -32,7 +32,7 @@ export default function WordsLab() {
           note: "Character by character. The dot is the caret: it holds still while it works, blinks on the finished word, and slides back through the word as it is erased. 94ms a character give or take a third; the erase accelerates from 88ms to 22.",
           // Carries its own dot, because there the dot is the caret.
           node: (
-            <RotatingWord className="type-serif-inherit text-signal normal-case" />
+            <RotatingWord className="type-serif-inherit text-signal normal-case text-[1.14em]" />
           ),
         },
         {
@@ -41,7 +41,7 @@ export default function WordsLab() {
           // Carries its own dot too, but inside each word rather than after
           // the box — so the full stop swaps with the phrase it belongs to.
           node: (
-            <SwappingWord className="type-serif-inherit text-signal normal-case" />
+            <SwappingWord className="type-serif-inherit text-signal normal-case text-[1.14em]" />
           ),
         },
       ].map(({ label, note, node }) => (
