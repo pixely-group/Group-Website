@@ -95,12 +95,12 @@ function NetworkBackdrop({ bus }: { bus: HeroBusRef }) {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    /* Read off the section rather than guessed: while its Payments copy is
-       up, its own scroll trigger sits at 0.15, which NetworkMesh multiplies
-       to a stage number of 0.6 — the graph part-assembled with the flow just
-       beginning. A quarter, which is where I first put this, is the end of
-       that stage and visibly further along. The drift stays inside it. */
-    net.current.progress = 0.15 + Math.sin(t * 0.045) * 0.012;
+    /* Before the graph assembles, not after. easeAssemble ramps over a stage
+       number of 0.02 to 0.92, so anything under about 0.1 leaves the nodes at
+       their scattered positions with the segments still closed — drifting
+       points, which is what the section shows as its Payments copy arrives.
+       Both my earlier attempts were past that ramp and drew the web. */
+    net.current.progress = 0.018 + Math.sin(t * 0.05) * 0.008;
     net.current.pointer = bus.current.pointer;
   });
 
