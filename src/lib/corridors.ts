@@ -15,7 +15,6 @@ export const CENTRES = [
   { code: "HKG", name: "Hong Kong", lon: 114.2, lat: 22.3 },
   { code: "TYO", name: "Tokyo", lon: 139.7, lat: 35.7 },
   { code: "SYD", name: "Sydney", lon: 151.2, lat: -33.9 },
-  { code: "MAD", name: "Madrid", lon: -3.7, lat: 40.42 },
 ] as const;
 
 export type Corridor = {
@@ -42,5 +41,4 @@ export const CORRIDORS: Corridor[] = [
   { from: 0, to: 11, period: 4.6, offset: 0.5 },
   { from: 0, to: 10, period: 4.2, offset: 0.9 },
   { from: 0, to: 12, period: 3.6, offset: 0.2 },
-  { from: 0, to: 13, period: 1.9, offset: 0.62 },
 ];
