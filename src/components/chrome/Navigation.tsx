@@ -108,6 +108,14 @@ export function Wordmark({ className = "" }: { className?: string }) {
 export default function Navigation() {
   const lenis = useLenis();
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
+  /** Raised while the bar is between grounds. Only the links care: theirs is
+   *  the one colour in here with a transition of its own, for the pointer,
+   *  and a transition restarted every frame against a moving token advances
+   *  by that curve's slope rather than its duration — it trailed the rest of
+   *  the bar by a third of the crossing. Off while crossing, they take the
+   *  token's animated value straight and land with everything else. */
+  const [crossing, setCrossing] = useState(false);
+  const schemeRef = useRef<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -232,6 +240,7 @@ export default function Navigation() {
     const header = headerRef.current;
     if (!header) return;
     let frame = 0;
+    let cross = 0;
 
     const sample = () => {
       frame = 0;
@@ -242,10 +251,20 @@ export default function Navigation() {
       for (const el of stack) {
         if (header.contains(el)) continue;
         const themed = el.closest("main [data-theme]");
-        if (themed) {
-          setScheme(themed.getAttribute("data-theme") === "bone" ? "bone" : "ink");
-          return;
+        if (!themed) continue;
+        const next =
+          themed.getAttribute("data-theme") === "bone" ? "bone" : "ink";
+        // Compared against a ref rather than written every sample: this runs
+        // on every scroll frame, and the crossing has to be raised on the
+        // change itself, not after a render has noticed one.
+        if (next !== schemeRef.current) {
+          schemeRef.current = next;
+          setScheme(next);
+          setCrossing(true);
+          window.clearTimeout(cross);
+          cross = window.setTimeout(() => setCrossing(false), 620);
         }
+        return;
       }
     };
 
@@ -262,6 +281,7 @@ export default function Navigation() {
     return () => {
       if (frame) cancelAnimationFrame(frame);
       window.clearTimeout(fallback);
+      window.clearTimeout(cross);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
@@ -378,7 +398,8 @@ export default function Navigation() {
       <header
         ref={headerRef}
         data-theme={scheme}
-        className="fixed inset-x-0 top-0 z-(--z-nav)"
+        data-crossing={crossing || undefined}
+        className="nav-ground fixed inset-x-0 top-0 z-(--z-nav)"
         style={{ "--nav-p": 0 } as React.CSSProperties}
       >
         {/* Full-bleed at rest, so the wordmark sits on the page's gutter and
@@ -408,6 +429,7 @@ export default function Navigation() {
                 quite lands together. */}
             <span
               aria-hidden
+              data-nav-glass
               className={`pointer-events-none absolute inset-0 rounded-(--radius-panel) border border-(--line) ${glass} backdrop-blur-xl`}
               style={{ opacity: "var(--nav-p)" }}
             />
@@ -443,12 +465,14 @@ export default function Navigation() {
                   const active = activeHref === link.href;
                   return (
                     <li key={link.href}>
+                      {/* This transition is for the pointer only; the bar
+                          switches it off while it is crossing grounds. */}
                       <a
                         href={link.href}
                         onClick={scrollTo(link.href)}
                         data-cursor="link"
                         aria-current={active ? "true" : undefined}
-                        className={`type-label relative block py-2 transition-colors duration-300 ${
+                        className={`type-label relative block py-2 transition-colors duration-300 ease-(--ease-swift) ${
                           active
                             ? "text-accent"
                             : "text-(--muted) hover:text-accent focus-visible:text-accent"

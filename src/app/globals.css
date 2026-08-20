@@ -33,6 +33,11 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-inout-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-swift: cubic-bezier(0.55, 0, 0.1, 1);
+  /* For colour crossing rather than motion: off the mark straight away, so
+     it answers the scroll, then a long settle. The motion curves above all
+     hold still at the start, which on a colour reads as a delay and then a
+     swipe. */
+  --ease-cross: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 200ms;
   --duration-base: 500ms;
   --duration-slow: 900ms;
@@ -64,7 +69,37 @@
 /* ————————————————————————————————————————
    Chapter theming: each section declares data-theme,
    children read the semantic vars.
+
+   Registered, so they can be interpolated. Sections never change theme, so
+   this costs them nothing — it exists for the one element that does: the
+   nav, which crosses grounds as chapters pass beneath it. See `.nav-ground`.
    ———————————————————————————————————————— */
+@property --fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ece9e1;
+}
+@property --muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 233 225 / 0.52);
+}
+@property --faint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 233 225 / 0.28);
+}
+@property --line {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 233 225 / 0.14);
+}
+@property --line-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 233 225 / 0.32);
+}
+
 :root,
 [data-theme="ink"] {
   --bg: var(--color-ink);
@@ -86,6 +121,49 @@
   --line-strong: rgb(19 19 22 / 0.4);
   --surface: rgb(19 19 22 / 0.04);
   --accent: var(--color-signal);
+}
+
+/* ————————————————————————————————————————
+   The nav crossing from one chapter's ground to the next.
+
+   It animates the tokens, not the colours. Every colour in the bar is
+   already written in terms of them — the wordmark's strokes ride
+   currentColor, the burger rides currentColor, the links read --muted, the
+   pill's hairline reads --line — so moving the tokens moves all of it on one
+   clock, and no element in there has to know the crossing is happening.
+
+   That is the actual repair. The bar was not too fast, it was not agreed:
+   the links carried a 300ms colour transition and the wordmark, the burger
+   and the pill's fill carried none at all, so the bar came apart on the way
+   over and reassembled on the far side.
+
+   The fill is the one thing no token covers — it is picked by class, ink/64
+   or bone/72 — so it is named and given the same clock by hand.
+   ———————————————————————————————————————— */
+.nav-ground {
+  --nav-cross: 560ms;
+  transition:
+    --fg var(--nav-cross) var(--ease-cross),
+    --muted var(--nav-cross) var(--ease-cross),
+    --faint var(--nav-cross) var(--ease-cross),
+    --line var(--nav-cross) var(--ease-cross),
+    --line-strong var(--nav-cross) var(--ease-cross);
+}
+.nav-ground [data-nav-glass] {
+  transition: background-color var(--nav-cross) var(--ease-cross);
+}
+/* The links keep a colour transition for the pointer. It has to stand down
+   for the crossing: chasing a token that is itself moving, it advances by
+   its curve's slope rather than its duration, and arrived a third of the
+   way behind the rest of the bar. */
+.nav-ground[data-crossing] nav a {
+  transition-duration: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-ground {
+    --nav-cross: 1ms;
+  }
 }
 
 @utility bg-theme {
