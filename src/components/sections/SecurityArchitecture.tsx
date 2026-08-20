@@ -133,23 +133,29 @@ type Geo = {
 // every register entry, which hangs on a fraction of that height — or the
 // two silently part company.
 const NARROW: Geo = {
-  HW: 142,
-  HH: 71,
-  GAP: 72,
+  HW: 120,
+  HH: 60,
+  GAP: 64,
   CX: 210,
-  TOP: 96,
+  TOP: 84,
   VB_W: 470,
-  VB_H: 96 + 72 * (LAYERS.length - 1) + 71 + 124,
+  VB_H: 84 + 64 * (LAYERS.length - 1) + 60 + 124,
 };
 
+// The gap is not the plates' to give. Wide, every register entry hangs at the
+// same fraction of the drawing that places its plate, and those entries are
+// 74px tall against a 103px pitch — closing the stack up would run the words
+// of one layer into the next. So the plates come down and the spacing stays,
+// which is also the only reading of "smaller plates" that survives at 1024,
+// where the drawing is scaled down but the type is not.
 const WIDE: Geo = {
-  HW: 170,
-  HH: 85,
+  HW: 144,
+  HH: 72,
   GAP: 102,
   CX: 260,
-  TOP: 110,
+  TOP: 98,
   VB_W: 520,
-  VB_H: 110 + 102 * (LAYERS.length - 1) + 85 + 40,
+  VB_H: 98 + 102 * (LAYERS.length - 1) + 72 + 40,
 };
 
 const layerY = (g: Geo, i: number) => g.TOP + i * g.GAP;
@@ -547,7 +553,7 @@ export default function SecurityArchitecture() {
     return () => ctx.revert();
   }, [geo, paintReadout]);
 
-  const faceSize = Math.round(geo.HH * 0.155);
+  const faceSize = Math.round(geo.HH * 0.17);
 
   return (
     <section
