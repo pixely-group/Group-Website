@@ -306,7 +306,10 @@ function withStage(shader: string) {
   return shader.replace("${STAGE}", STAGE_GLSL);
 }
 
-function NetworkMesh({ bus }: { bus: NetworkBusRef }) {
+/* Exported so the hero can stand the same graph behind its copy. It is the
+   whole of that section's look — nodes, segments and the packets running the
+   spokes — and rebuilding a lookalike would be two things to keep in step. */
+export function NetworkMesh({ bus }: { bus: NetworkBusRef }) {
   const model = useMemo(() => buildNetwork(), []);
   const groupRef = useRef<THREE.Group>(null);
   const nodeMat = useRef<THREE.ShaderMaterial>(null);

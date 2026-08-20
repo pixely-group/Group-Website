@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { HeroBus } from "@/components/three/HeroScene";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
+import { useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 import RotatingWord from "@/components/ui/RotatingWord";
 
@@ -67,7 +67,6 @@ export default function Hero() {
   });
   const [active, setActive] = useState(true);
   const reduced = useReducedMotion();
-  const small = useMediaQuery("(max-width: 767px)");
   const lenis = useLenis();
 
   // Pointer → NDC for the scene + subtle content parallax.
@@ -189,11 +188,7 @@ export default function Hero() {
         {reduced ? (
           <HeroPoster />
         ) : (
-          <HeroScene
-            bus={bus}
-            count={small ? 4500 : 14000}
-            active={active}
-          />
+          <HeroScene bus={bus} active={active} />
         )}
       </div>
 
