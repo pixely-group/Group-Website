@@ -56,8 +56,12 @@ export default function GlobalCorridors() {
     let t = reduced ? 6 : 0;
     let last = performance.now();
     let land: HTMLCanvasElement | null = null;
+    /** Every land dot, x and y interleaved, for the pointer to light. */
+    let landPts = new Float32Array(0);
     /** Index of the centre under the pointer, or -1. */
     let hovered = -1;
+    /** Pointer in canvas space, or null when it is not over the map. */
+    let pointer: [number, number] | null = null;
 
     /* Ray casting. The rings are stored open and treated as closed, which is
        what the (n - 1) start index does. */
@@ -94,9 +98,12 @@ export default function GlobalCorridors() {
       lc.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       /* Both axes are linear in this projection, so a constant step in
-         degrees is a constant step in pixels — no cosine correction. */
-      const stepLon = (360 / width) * 6.4;
-      const stepLat = (LAT_SPAN / height) * 6.4;
+         degrees is a constant step in pixels — no cosine correction.
+         4.2px rather than 6.4: at the coarser pitch Britain came out as three
+         dots and Ireland as one, which is not a country, it is a smudge. */
+      const stepLon = (360 / width) * 4.2;
+      const stepLat = (LAT_SPAN / height) * 4.2;
+      const pts: number[] = [];
 
       for (let lat = LAT_TOP; lat > LAT_TOP - LAT_SPAN; lat -= stepLat) {
         for (let lon = -180; lon < 180; lon += stepLon) {
@@ -116,10 +123,12 @@ export default function GlobalCorridors() {
           const a = 0.16 + Math.abs(n) * 0.16;
           lc.fillStyle = `rgba(${BONE}, ${a.toFixed(3)})`;
           lc.beginPath();
-          lc.arc(x, y, 1.05, 0, Math.PI * 2);
+          lc.arc(x, y, 0.95, 0, Math.PI * 2);
           lc.fill();
+          pts.push(x, y);
         }
       }
+      landPts = new Float32Array(pts);
       return c;
     };
 
@@ -175,7 +184,8 @@ export default function GlobalCorridors() {
 
     const onMove = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
-      const next = pick(e.clientX - r.left, e.clientY - r.top);
+      pointer = [e.clientX - r.left, e.clientY - r.top];
+      const next = pick(pointer[0], pointer[1]);
       if (next === hovered) return;
       hovered = next;
       /* Tells the custom cursor there is something here, which is the only
@@ -185,6 +195,7 @@ export default function GlobalCorridors() {
     };
     const onLeave = () => {
       hovered = -1;
+      pointer = null;
       delete canvas.dataset.cursor;
     };
     canvas.addEventListener("pointermove", onMove, { passive: true });
@@ -205,6 +216,43 @@ export default function GlobalCorridors() {
       /* The land, under everything else. Pre-rendered, so this is one
          blit rather than eleven thousand point-in-polygon tests. */
       if (land) ctx.drawImage(land, 0, 0, width, height);
+
+      /* The pointer carries a light across the land. Only the dots inside its
+         radius are redrawn — the rest stay in the blit — so this costs a pass
+         over the positions and a few hundred arcs, not a full rebuild.
+         The ring term is what stops it being a plain radial glow: brightness
+         peaks a little way out from the centre and travels, so the field
+         reads as something moving over it rather than a torch held to it. */
+      if (pointer && !reduced) {
+        const [mx, my] = pointer;
+        const REACH = 118;
+        for (let i = 0; i < landPts.length; i += 2) {
+          const dx = landPts[i] - mx;
+          if (dx < -REACH || dx > REACH) continue;
+          const dy = landPts[i + 1] - my;
+          if (dy < -REACH || dy > REACH) continue;
+          const d = Math.hypot(dx, dy);
+          if (d > REACH) continue;
+
+          const fall = 1 - d / REACH;
+          const ring = 0.55 + 0.45 * Math.sin(d * 0.085 - t * 3.6);
+          const glow = fall * fall * (0.4 + 0.6 * ring);
+          ctx.fillStyle = `rgba(${SIGNAL}, ${Math.min(1, glow * 1.5).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(landPts[i], landPts[i + 1], 0.95 + glow * 2.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          /* The nearest dots go white-hot. Blue alone reads as a tint over
+             the land; the hot core is what makes it look lit from inside. */
+          if (fall > 0.72) {
+            const core = (fall - 0.72) / 0.28;
+            ctx.fillStyle = `rgba(${BONE}, ${(core * 0.9).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(landPts[i], landPts[i + 1], 0.9 + core * 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
 
       // Longitude grid, every 30°.
       ctx.lineWidth = 1;
@@ -339,6 +387,29 @@ export default function GlobalCorridors() {
           y - (on ? 17 : 9),
         );
       });
+
+      /* Feathered edges. Everything above stops dead on the canvas rectangle
+         — the graticule, the daylight band, the land — and four hard edges
+         around a map is a frame. Erasing the border with a gradient lets it
+         sit on the page rather than in a box. */
+      ctx.globalCompositeOperation = "destination-out";
+      const fadeX = Math.min(120, width * 0.12);
+      const fadeY = Math.min(70, height * 0.14);
+      const wipe = (
+        x0: number, y0: number, x1: number, y1: number,
+        w: number, h: number,
+      ) => {
+        const grd = ctx.createLinearGradient(x0, y0, x1, y1);
+        grd.addColorStop(0, "rgba(0,0,0,1)");
+        grd.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grd;
+        ctx.fillRect(Math.min(x0, x1), Math.min(y0, y1), w, h);
+      };
+      wipe(0, 0, fadeX, 0, fadeX, height);
+      wipe(width, 0, width - fadeX, 0, fadeX, height);
+      wipe(0, 0, 0, fadeY, width, fadeY);
+      wipe(0, height, 0, height - fadeY, width, fadeY);
+      ctx.globalCompositeOperation = "source-over";
     };
 
     const frame = (now: number) => {
@@ -439,11 +510,7 @@ export default function GlobalCorridors() {
             ref={canvasRef}
             className="block h-[clamp(300px,48vw,540px)] w-full font-mono"
             role="img"
-            aria-label="Corridor map centred on Algiers, with value moving continuously between it and twelve financial centres"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-(--line)"
+            aria-label="World map centred on Algiers, with value moving continuously between it and thirteen financial centres"
           />
           <div
             aria-hidden
