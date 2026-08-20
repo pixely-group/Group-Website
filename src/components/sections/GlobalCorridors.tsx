@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { CENTRES, CORRIDORS } from "@/lib/corridors";
+import { WORLD } from "@/lib/worldmap";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
@@ -99,6 +100,53 @@ export default function GlobalCorridors() {
       band.addColorStop(1, `rgba(${BONE}, 0)`);
       ctx.fillStyle = band;
       ctx.fillRect(0, 0, width, height);
+
+      /* The land, under everything else. Drawn before the grid so the
+         graticule reads over the coastlines rather than under them.
+
+         Each ring is broken wherever consecutive points jump more than half
+         the width: the map is cut at Algiers, so any coast crossing the
+         opposite meridian wraps, and joining those two points would draw a
+         straight streak the whole way across the map. */
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${BONE}, 0.13)`;
+      ctx.fillStyle = `rgba(${BONE}, 0.028)`;
+      for (const ring of WORLD) {
+        let pen = false;
+        ctx.beginPath();
+        for (let i = 0; i < ring.length; i++) {
+          const x = px(ring[i][0], width);
+          const y = py(ring[i][1], height);
+          if (i > 0 && Math.abs(x - px(ring[i - 1][0], width)) > width * 0.5) {
+            ctx.stroke();
+            ctx.beginPath();
+            pen = false;
+          }
+          if (!pen) {
+            ctx.moveTo(x, y);
+            pen = true;
+          } else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        /* Filled as a separate pass, closed, and only where the ring did not
+           have to be split — a half ring closes across open ocean. */
+        const xs = ring.map((r) => px(r[0], width));
+        const wraps = xs.some(
+          (x, i) => i > 0 && Math.abs(x - xs[i - 1]) > width * 0.5,
+        );
+        if (!wraps) {
+          ctx.beginPath();
+          ring.forEach(([lon, lat], i) => {
+            const x = px(lon, width);
+            const y = py(lat, height);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
 
       // Longitude grid, every 30°.
       ctx.lineWidth = 1;
