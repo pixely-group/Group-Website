@@ -668,6 +668,22 @@ export default function WalletScreen({
 
   const [view, setView] = useState<View>({ name: "none" });
   const home = () => setView({ name: "none" });
+
+  /* The scroll owns the screen. If a flow was open when the reader scrolled —
+     a transaction, Send, Receive — it has to close, because those views are
+     pushed over whatever tab is showing and would keep painting over the
+     wallet. Left alone, the phone appears stuck on whatever was open before
+     the scroll, which is exactly how it looked.
+
+     Adjusted during render rather than from an effect: this is React's own
+     pattern for reacting to a changed prop, and it avoids committing a frame
+     that still shows the stale screen. */
+  const [lastShowcase, setLastShowcase] = useState(showcase);
+  if (showcase !== lastShowcase) {
+    setLastShowcase(showcase);
+    setView({ name: "none" });
+    setTab("home");
+  }
   const openTx = (tx: Tx) => setView({ name: "tx", tx });
   const [snap, setSnap] = useState(1);
   const [dragTop, setDragTop] = useState<number | null>(null);
