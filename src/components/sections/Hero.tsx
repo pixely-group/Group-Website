@@ -238,7 +238,7 @@ export default function Hero() {
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
                   but this is display type well past the large-text threshold,
                   where 3:1 is the bar. */}
-              <RotatingWord className="type-serif-inherit text-signal normal-case" />
+              <RotatingWord className="type-serif-inherit text-signal normal-case not-italic" />
             </span>
           </span>
         </h1>

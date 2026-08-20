@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
@@ -23,8 +24,11 @@ import { useReducedMotion } from "@/lib/hooks";
  */
 const WORDS = ["Payments", "Identity", "Algeria"] as const;
 
-/** Per character, typing. */
-const TYPE = 112;
+/** Per character, typing — an average rather than a rate. Nobody types on a
+ *  metronome, and an exactly even cadence was most of what made this read as
+ *  a machine going through the motions rather than a word being written. */
+const TYPE = 94;
+const TYPE_JITTER = 0.34;
 /** Deleting is quicker than typing, as it is in life — and it gathers pace.
  *  A held backspace does not tick: it hesitates on the first character and
  *  then runs. A flat rate read as a metronome dragging the word off, which is
@@ -35,12 +39,43 @@ const DELETE_LAST = 22;
 const HOLD = 2800;
 /** A beat on the empty line before the next word starts. */
 const TURNAROUND = 420;
+/** How long the dot takes to reach a position it has just been moved to. It
+ *  outlasts a typed character on purpose: the tween is overwritten before it
+ *  lands, so the dot is always travelling rather than arriving, and the run
+ *  reads as one movement instead of eight. */
+const GLIDE = 0.19;
 
 export default function RotatingWord({ className }: { className?: string }) {
   const [index, setIndex] = useState(0);
   const [text, setText] = useState<string>(WORDS[0]);
   const [deleting, setDeleting] = useState(false);
   const reduced = useReducedMotion();
+  const textRef = useRef<HTMLSpanElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
+  const lastWidth = useRef<number | null>(null);
+
+  /* The dot slides between characters rather than snapping to each one.
+     Measured after the letter has landed and moved back by the difference,
+     then let go — so it starts from where it was standing and travels, which
+     is the whole of what made the erase feel like it was dragging the word
+     off a character at a time. Layout effect, or it would paint at the new
+     position for a frame before the correction. */
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    const dot = dotRef.current;
+    if (!el || !dot || reduced) return;
+
+    const width = el.getBoundingClientRect().width;
+    const was = lastWidth.current;
+    lastWidth.current = width;
+    if (was === null || was === width) return;
+
+    // Added to whatever offset it is already carrying, because the last
+    // glide will not have finished — it never does.
+    const carried = (gsap.getProperty(dot, "x") as number) || 0;
+    gsap.set(dot, { x: carried + (was - width) });
+    gsap.to(dot, { x: 0, duration: GLIDE, ease: "power2.out", overwrite: true });
+  }, [text, reduced]);
 
   useEffect(() => {
     if (reduced) return;
@@ -55,7 +90,11 @@ export default function RotatingWord({ className }: { className?: string }) {
     const erase =
       DELETE_LAST + (DELETE_FIRST - DELETE_LAST) * Math.pow(1 - gone, 3);
 
-    const wait = atFull ? HOLD : atEmpty ? TURNAROUND : deleting ? erase : TYPE;
+    /* Typing wanders; erasing does not. A backspace held down is a machine
+       and should sound like one, but a word being written is a hand. */
+    const tap = TYPE * (1 - TYPE_JITTER + Math.random() * TYPE_JITTER * 2);
+
+    const wait = atFull ? HOLD : atEmpty ? TURNAROUND : deleting ? erase : tap;
 
     const id = window.setTimeout(() => {
       if (atFull) setDeleting(true);
@@ -79,7 +118,7 @@ export default function RotatingWord({ className }: { className?: string }) {
      already reads without it. */
   return (
     <span className={className}>
-      {reduced ? WORDS[0] : text}
+      <span ref={textRef}>{reduced ? WORDS[0] : text}</span>
       {/* The full stop doubles as the caret. Drawn rather than set: a period
           in this face is small and slanted, and this mark has to end a line
           of display caps and be seen blinking from across the page. */}
@@ -88,6 +127,7 @@ export default function RotatingWord({ className }: { className?: string }) {
           one — it emitted no rule for it at all, and the dot rendered as an
           empty inline span. */}
       <span
+        ref={dotRef}
         aria-hidden
         className={holding ? "caret-dot caret-blink" : "caret-dot"}
       />

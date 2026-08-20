@@ -637,9 +637,9 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  width: 0.22em;
-  height: 0.22em;
-  margin-left: 0.05em;
+  width: 0.34em;
+  height: 0.34em;
+  margin-left: 0.07em;
   border-radius: 50%;
   background: currentColor;
   vertical-align: baseline;
