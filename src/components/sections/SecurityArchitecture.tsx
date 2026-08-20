@@ -417,7 +417,7 @@ export default function SecurityArchitecture() {
   // The leader is drawn rather than faded in — from the plate outwards,
   // which is the direction it is pointing.
   useEffect(() => {
-    const line = document.querySelector("[data-hover-leader]");
+    const line = document.querySelector<SVGLineElement>("[data-hover-leader]");
     if (!line) return;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -426,13 +426,28 @@ export default function SecurityArchitecture() {
       gsap.to(line, { opacity: 0, duration: reduced ? 0 : 0.18 });
       return;
     }
+
+    // Where the row begins, in the drawing's own units. Measured rather than
+    // written down: the far end is a percentage of a container the viewBox
+    // knows nothing about. It moves only on resize, so once per hover is
+    // enough — the ticker is left with the two ends that follow the scroll.
+    const svg = line.ownerSVGElement;
+    const row = registerRef.current?.querySelectorAll("li")[hoverLayer];
+    if (svg && row) {
+      const box = svg.getBoundingClientRect();
+      const unit = box.width / geo.VB_W;
+      gsap.set(line, {
+        attr: { x2: (row.getBoundingClientRect().left - box.left) / unit },
+      });
+    }
+
     gsap.set(line, { opacity: 1, attr: { "stroke-dashoffset": 1 } });
     gsap.to(line, {
       attr: { "stroke-dashoffset": 0 },
       duration: reduced ? 0 : 0.34,
       ease: "power2.out",
     });
-  }, [hoverLayer]);
+  }, [hoverLayer, geo]);
 
   // A ring in the plane of the plate each time the request lands on one.
   useEffect(() => {
@@ -760,7 +775,11 @@ export default function SecurityArchitecture() {
         <div data-stack className="relative mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
-            className="w-full lg:w-[44%]"
+            /* The hover leader has to finish at the title, which is outside
+               this box — one line all the way there rather than a run to the
+               edge and a second piece carrying on from it. Nothing else
+               draws outside the viewBox, so there is nothing else to leak. */
+            className="w-full lg:w-[44%] lg:overflow-visible"
             role="img"
             aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
           >
@@ -939,7 +958,9 @@ export default function SecurityArchitecture() {
                 under the pointer. It lives outside the lift groups on
                 purpose: one end is on a plate that has moved with the
                 squeeze and the other on a register row that has not, so
-                neither transform can own it. The ticker solves both ends.
+                neither transform can own it. The ticker solves both ends,
+                and x2 is measured off the row it points at, because the
+                title sits beyond this box's own right edge.
 
                 Narrow has no register beside the drawing to point at, so
                 there is nothing here to draw. */}
@@ -1012,21 +1033,6 @@ export default function SecurityArchitecture() {
                   style={{ "--row-top": rowTop(geo, i) } as React.CSSProperties}
                   className="relative border-t border-(--line) last:border-b lg:pointer-events-auto lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
                 >
-                  {/* The drawing stops at the edge of its own box; this
-                      carries the hover leader the rest of the way to the
-                      title. Held back until the drawn half has arrived, so
-                      the two read as one line rather than two. */}
-                  <span
-                    aria-hidden
-                    className={`pointer-events-none absolute top-3.5 right-full hidden h-px w-[8.4%] origin-left transition-transform duration-200 lg:block ${
-                      hoverLayer === i
-                        ? "scale-x-100 delay-[260ms]"
-                        : "scale-x-0"
-                    }`}
-                    style={{
-                      backgroundColor: refusedHere ? REFUSED : ACCENT,
-                    }}
-                  />
                   <button
                     type="button"
                     onClick={() => selectLayer(i)}
