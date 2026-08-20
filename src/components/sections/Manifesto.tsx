@@ -68,7 +68,7 @@ export default function Manifesto() {
           hardcoded black. Between the device at z-30 and the copy at z-40. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[4rem] z-[35] hidden h-[11rem] lg:block"
+        className="pointer-events-none absolute inset-x-0 top-[13rem] z-[35] hidden h-[5.5rem] lg:block"
         style={{
           background:
             "linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--bg) 55%, transparent) 46%, color-mix(in oklab, var(--bg) 88%, transparent) 78%, var(--bg) 100%)",
@@ -76,7 +76,7 @@ export default function Manifesto() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[15rem] bottom-0 z-[35] hidden bg-theme lg:block"
+        className="pointer-events-none absolute inset-x-0 top-[18.5rem] bottom-0 z-[35] hidden bg-theme lg:block"
       />
       {/* One centred column rather than a left-aligned block with the right
           half empty. The text stays ranged left inside it: this is a

@@ -154,6 +154,22 @@
     "WONK" 1;
 }
 
+/* The same face, but inheriting whatever case it lands in. type-serif forces
+   lower, which is right where it sets a word inside running prose — and wrong
+   in the headline, where the word has to sit in caps with the rest of the
+   line. Kept separate rather than fought with utility order, which is not
+   guaranteed between a custom utility and a core one. */
+@utility type-serif-inherit {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  font-variation-settings:
+    "opsz" 144,
+    "SOFT" 0,
+    "WONK" 1;
+}
+
 /* Machine voice: mono micro-labels. */
 @utility type-label {
   font-family: var(--font-mono);

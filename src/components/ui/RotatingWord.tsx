@@ -10,21 +10,23 @@ import { useReducedMotion } from "@/lib/hooks";
  * the deck's own words for the problem: the manifesto names paper, branches
  * and waiting as what money moves through here.
  *
- * Length is a hard constraint, not a preference. The hero's type scale is
- * solved against "Financial", which sets at 767px, and the line has to stay
- * clear of the device column. Measured in the real face at the real size:
- * friction 715, waiting 649, paper 518 — against paperwork at 964 and
- * branches at 851, either of which runs past the device.
+ * Length is a hard constraint, not a preference: the line has to stay clear
+ * of the device column, and the budget is whatever "Financial" sets, which is
+ * the longest line above. Measured in the face these actually use — uppercase
+ * Fraunces italic — friction sets at 486 and waiting at 441 against a budget
+ * of 592. "paperwork" is the word I wanted and it does not fit in any case:
+ * 964 in uppercase Archivo, 646 here. "branches" clears by 44, which is too
+ * little to rely on.
  */
 const WORDS = ["friction", "waiting", "paper"] as const;
 
 /** Per character. Deleting is quicker than typing, as it is in life. */
-const TYPE = 68;
-const DELETE = 34;
+const TYPE = 112;
+const DELETE = 58;
 /** How long a finished word stands before it is taken back. */
-const HOLD = 1900;
+const HOLD = 2800;
 /** A beat on the empty line before the next word starts. */
-const TURNAROUND = 260;
+const TURNAROUND = 420;
 
 export default function RotatingWord({ className }: { className?: string }) {
   const [index, setIndex] = useState(0);
