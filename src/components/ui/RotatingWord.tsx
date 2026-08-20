@@ -23,11 +23,12 @@ import { useReducedMotion } from "@/lib/hooks";
  */
 const WORDS = ["data", "identity", "network"] as const;
 
-/** Per character, typing — an average rather than a rate. Nobody types on a
- *  metronome, and an exactly even cadence was most of what made this read as
- *  a machine going through the motions rather than a word being written. */
-const TYPE = 94;
-const TYPE_JITTER = 0.34;
+/** Per character, typing. A ramp, the same shape the erase runs — which is
+ *  the half of this that already worked. Jitter was the wrong instinct: an
+ *  uneven cadence is the opposite of a smooth one, and scattering the
+ *  intervals to make it feel alive is what stopped it feeling elegant. */
+const TYPE_FIRST = 132;
+const TYPE_LAST = 76;
 /** Deleting is quicker than typing, as it is in life — and it gathers pace.
  *  A held backspace does not tick: it hesitates on the first character and
  *  then runs. A flat rate read as a metronome dragging the word off, which is
@@ -39,10 +40,16 @@ const HOLD = 2800;
 /** A beat on the empty line before the next word starts. */
 const TURNAROUND = 420;
 /** How long the dot takes to reach a position it has just been moved to. It
- *  outlasts a typed character on purpose: the tween is overwritten before it
- *  lands, so the dot is always travelling rather than arriving, and the run
- *  reads as one movement instead of eight. */
-const GLIDE = 0.19;
+ *  outlasts a character on purpose: the tween is overwritten before it lands,
+ *  so the dot is always travelling rather than arriving, and the run reads as
+ *  one movement instead of eight. Shorter going forward, where it has to stay
+ *  near the letter it is setting down rather than trail the whole word. */
+const GLIDE_BACK = 0.19;
+const GLIDE_ON = 0.15;
+/** A letter arrives under the dot rather than in front of it: held back
+ *  until the dot has begun to move off, then brought up as it passes. */
+const LETTER_IN = 0.24;
+const LETTER_WAIT = 0.05;
 
 export default function RotatingWord({ className }: { className?: string }) {
   const [index, setIndex] = useState(0);
@@ -74,17 +81,40 @@ export default function RotatingWord({ className }: { className?: string }) {
     lastWidth.current = width;
     if (was === null || was === width) return;
 
-    if (width > was) {
-      gsap.killTweensOf(dot);
-      gsap.set(dot, { x: 0 });
-      return;
-    }
+    const writing = width > was;
 
     // Added to whatever offset it is already carrying, because the last
     // glide will not have finished — it never does.
     const carried = (gsap.getProperty(dot, "x") as number) || 0;
     gsap.set(dot, { x: carried + (was - width) });
-    gsap.to(dot, { x: 0, duration: GLIDE, ease: "power2.out", overwrite: true });
+    gsap.to(dot, {
+      x: 0,
+      duration: writing ? GLIDE_ON : GLIDE_BACK,
+      ease: "power2.out",
+      overwrite: true,
+    });
+
+    /* Going forward the dot travels across ground the letter is about to
+       occupy, so the letter is brought up behind it rather than being there
+       already — the dot passes over something faint and leaves it solid.
+       Popping the glyph in at full strength and teleporting the dot a whole
+       character clear of it is what made the writing read as a stutter next
+       to the erase. */
+    if (writing) {
+      const letter = el.lastElementChild;
+      if (letter) {
+        gsap.fromTo(
+          letter,
+          { opacity: 0 },
+          {
+            opacity: 1,
+            duration: LETTER_IN,
+            delay: LETTER_WAIT,
+            ease: "power2.out",
+          },
+        );
+      }
+    }
   }, [text, reduced]);
 
   useEffect(() => {
@@ -100,9 +130,12 @@ export default function RotatingWord({ className }: { className?: string }) {
     const erase =
       DELETE_LAST + (DELETE_FIRST - DELETE_LAST) * Math.pow(1 - gone, 3);
 
-    /* Typing wanders; erasing does not. A backspace held down is a machine
-       and should sound like one, but a word being written is a hand. */
-    const tap = TYPE * (1 - TYPE_JITTER + Math.random() * TYPE_JITTER * 2);
+    /* And the same shape going the other way: a little deliberate on the
+       first letters, settling into a pace. Squared rather than cubed, so it
+       is a hand finding its rhythm rather than a machine winding up. */
+    const written = text.length / Math.max(1, word.length);
+    const tap =
+      TYPE_LAST + (TYPE_FIRST - TYPE_LAST) * Math.pow(1 - written, 2);
 
     const wait = atFull ? HOLD : atEmpty ? TURNAROUND : deleting ? erase : tap;
 
@@ -128,7 +161,14 @@ export default function RotatingWord({ className }: { className?: string }) {
      already reads without it. */
   return (
     <span className={className}>
-      <span ref={textRef}>{reduced ? WORDS[0] : text}</span>
+      {/* One span per letter, so the one that has just landed can be
+          brought up on its own. Keyed by position: erasing drops them off
+          the end, which leaves every remaining node exactly where it was. */}
+      <span ref={textRef}>
+        {reduced
+          ? WORDS[0]
+          : text.split("").map((ch, i) => <span key={i}>{ch}</span>)}
+      </span>
       {/* The full stop doubles as the caret. Drawn rather than set: a period
           in this face is small and slanted, and this mark has to end a line
           of display caps and be seen blinking from across the page. */}
