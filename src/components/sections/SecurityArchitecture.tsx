@@ -170,12 +170,6 @@ const travelTo = (g: Geo) => layerY(g, LAYERS.length - 1) + g.HH;
  *  80, leaving each plate a visible 80-unit band of the one above it. */
 const SQUEEZE = 0.78;
 
-/** The face lettering cannot survive that close. Every plate is drawn over
- *  by the one below it, and by the end only 8 units of the face are still
- *  clear — so the word goes early and deliberately rather than being cut in
- *  half. Gone by the time the stack is a fifth of the way shut. */
-const FACE_GONE = 0.9;
-
 /** Where a y sits once the stack has closed up by `s`. Affine and monotonic,
  *  which is what lets the request keep its own honest coordinates and still
  *  be drawn on the plate it is actually crossing. */
@@ -437,7 +431,6 @@ export default function SecurityArchitecture() {
     const ctx = gsap.context(() => {
       const plates = section.querySelectorAll("[data-plate]");
       const lifts = section.querySelectorAll("[data-plate-lift]");
-      const faces = section.querySelectorAll("[data-face]");
       const spine = section.querySelector("[data-spine]");
       const beam = section.querySelector("[data-beam]");
       const mm = gsap.matchMedia();
@@ -582,12 +575,10 @@ export default function SecurityArchitecture() {
         const s = squeeze.current.s;
         if (s !== lastSqueeze) {
           lastSqueeze = s;
-          const fade = Math.min(1, Math.max(0, (s - FACE_GONE) / (1 - FACE_GONE)));
           LAYERS.forEach((_, i) => {
             const at = layerY(g, i);
             const dy = squeezeY(g, at, s) - at;
             gsap.set(lifts[i], { y: dy });
-            if (faces[i]) gsap.set(faces[i], { opacity: fade });
           });
           gsap.set(spine, {
             attr: { y1: squeezeY(g, layerY(g, 0), s) - g.HH - 18 },
@@ -802,6 +793,13 @@ export default function SecurityArchitecture() {
               // ran past the edge from 0.71·HH out. 0.55·HH out and 0.26·HH
               // up clears both by more than 20. Expressed as the one point
               // in the face's own plane that lands there.
+              //
+              // That placement is also what carries the word through the
+              // close. Set there, its lowest ink lands 5 units above the
+              // plate's own centre, while the plate below does not begin
+              // until 8 units past it even fully shut — 12 units of daylight
+              // at the tightest the stack gets. The lettering needs nothing
+              // done to it.
               const faceX = -geo.HH * 0.535;
               const faceY = geo.HH * 0.015;
 
@@ -855,7 +853,6 @@ export default function SecurityArchitecture() {
                         directly beneath already names every layer. */}
                     {wide && (
                       <text
-                        data-face
                         transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
                         x={faceX}
                         y={faceY}
