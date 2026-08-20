@@ -651,6 +651,67 @@ html[data-cursor="on"] * {
   }
 }
 
+/* ————————————————————————————————————————
+   The rotating word, swapped whole rather than typed.
+
+   Every word stands in the same box, out of flow, and the box is clipped —
+   so one rises out through the top while the next rises in from underneath.
+   The clip is open above and just deep enough below to let descenders
+   through at rest; the travel is longer than that slack, so nothing shows
+   before it is meant to.
+
+   The box's own width is on the same clock and the same curve, which is what
+   makes the rest of the line move with the word instead of after it. 0.8s on
+   cubic-bezier(0.2, 1, 0.3, 1), taken from the reference: long, and almost
+   all of it spent settling.
+   ———————————————————————————————————————— */
+.swap-word {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  /* Vertical only. The right stays open because the word is the last thing
+     on its line and the box takes 800ms to reach the new word's width — clip
+     that edge and the incoming word is cut mid-letter while it waits for the
+     box to catch up, which is exactly what it looked like. */
+  clip-path: inset(-0.4em -2em -0.2em 0);
+  transition: width 800ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+.swap-word__sizer {
+  visibility: hidden;
+  /* Or it wraps. The box is given the active word's measured width, and
+     without this the sizer's own copy of that word breaks to a second line
+     inside it — which doubled the box's height and took the clip region with
+     it, so a word on its way out stayed visible a whole line above. */
+  white-space: nowrap;
+}
+.swap-word__item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  opacity: 0;
+  /* Where a word waits: below the box, outside the clip. */
+  transform: translateY(0.94em);
+  transition:
+    transform 800ms cubic-bezier(0.2, 1, 0.3, 1),
+    opacity 800ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+.swap-word__item.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.swap-word__item.is-out {
+  opacity: 0;
+  transform: translateY(-0.94em);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swap-word,
+  .swap-word__item {
+    transition: none;
+  }
+}
+
 /* The footer wordmark, letter by letter. Grey until the pointer finds one,
    then white, blocky and coming apart — and it keeps coming apart for as long
    as the pointer stays, rather than settling into a second static state.
