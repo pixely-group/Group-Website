@@ -74,6 +74,10 @@ export default function TravellingDevice() {
   const arrived = useRef(false);
   const fadeStep = useRef(-1);
   const [showcase, setShowcase] = useState<"cards" | null>(null);
+  /* Which way the scroll crossed the threshold. The wallet pushes in from the
+     right on the way down and from the left on the way back up, so the motion
+     reverses with the reader rather than always arriving the same way. */
+  const [enterFrom, setEnterFrom] = useState<"left" | "right" | null>(null);
   const reduced = useReducedMotion();
   /** Below lg there is no column to start from and no room to travel. */
   const enabled = useMediaQuery("(min-width: 1024px)");
@@ -216,6 +220,7 @@ export default function TravellingDevice() {
       if (overlapping !== arrived.current) {
         arrived.current = overlapping;
         setShowcase(overlapping ? "cards" : null);
+        setEnterFrom(overlapping ? "right" : "left");
       }
     };
 
@@ -264,6 +269,7 @@ export default function TravellingDevice() {
             shift={roomy ? 24 : 5}
             flatten={flatten}
             showcase={showcase}
+            enterFrom={enterFrom}
             className="h-full"
           />
         </div>

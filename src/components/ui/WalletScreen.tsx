@@ -525,10 +525,10 @@ const CARDS = [
 ];
 
 /** The wallet as the device shows it once it has turned to face the reader. */
-function CardsScreen({ c }: { c: C }) {
+function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
   return (
     <div className="absolute inset-x-0 top-0 px-[20px]" style={{ paddingTop: 62 }}>
-      <div className="wallet-in">
+      <div className={pushIn}>
         <p style={{ fontSize: 13, color: c.MUTED, letterSpacing: "-0.01em" }}>Wallet</p>
         <p style={{ fontSize: 26, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em", marginTop: 2 }}>
           My cards
@@ -547,7 +547,7 @@ function CardsScreen({ c }: { c: C }) {
         {CARDS.map((card, i) => (
           <div
             key={card.id}
-            className="wallet-in"
+            className={pushIn}
             style={{
               position: "absolute",
               top: i * CARD_STEP,
@@ -597,7 +597,7 @@ function CardsScreen({ c }: { c: C }) {
       {/* The stack leaves the lower half of the screen empty, which reads as
           an unfinished screen rather than a spacious one. */}
       <div
-        className="wallet-in"
+        className={pushIn}
         style={{ marginTop: 26, animationDelay: `${90 + CARDS.length * 110}ms` }}
       >
         <p style={{ fontSize: 12, color: c.MUTED, letterSpacing: "0.06em" }}>CARD CONTROLS</p>
@@ -651,7 +651,15 @@ function CardsScreen({ c }: { c: C }) {
   );
 }
 
-export default function WalletScreen({ showcase }: { showcase?: "cards" | null } = {}) {
+export default function WalletScreen({
+  showcase,
+  enterFrom,
+}: {
+  showcase?: "cards" | null;
+  /** Which way the last screen change came from, or null on first paint. */
+  enterFrom?: "left" | "right" | null;
+} = {}) {
+  const pushIn = enterFrom === "right" ? "wallet-in" : enterFrom === "left" ? "wallet-in-back" : "";
   const [tab, setTab] = useState<Tab>("home");
   const [themeId, setThemeId] = useState<ThemeId>("dark");
   const systemDark = useMediaQuery("(prefers-color-scheme: dark)", true);
@@ -718,9 +726,11 @@ export default function WalletScreen({ showcase }: { showcase?: "cards" | null }
       className="relative size-full overflow-hidden"
       style={{ background: c.BG, fontFamily: font }}
     >
-      {showcase === "cards" && <CardsScreen c={c} />}
+      {showcase === "cards" && <CardsScreen c={c} pushIn={pushIn} />}
       {!showcase && tab === "home" && (
-        <>
+        /* Keyed on the direction, so returning to this screen replays the
+           animation rather than the element being reused untouched. */
+        <div key={`home-${enterFrom ?? "first"}`} className={pushIn}>
           <div className="absolute inset-x-0 top-0 bottom-0 rounded-b-[26px]" style={{ background: c.PANEL }}>
             <div className="h-[54px]" />
 
@@ -787,7 +797,7 @@ export default function WalletScreen({ showcase }: { showcase?: "cards" | null }
               {TRANSACTIONS.map((t) => <TxRow key={t.name} t={t} c={c} onOpen={openTx} />)}
             </ul>
           </div>
-        </>
+        </div>
       )}
 
       {!showcase && tab === "search" && <SearchScreen c={c} onOpen={openTx} />}

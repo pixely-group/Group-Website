@@ -56,6 +56,7 @@ export default function HeroDevice({
   className = "",
   shift = 0,
   showcase = null,
+  enterFrom = null,
   flatten,
 }: {
   /** How far the device may slide either side of rest, in px. Passed in
@@ -63,6 +64,9 @@ export default function HeroDevice({
   shift?: number;
   /** Forces the app to a particular screen, for the scroll sequence. */
   showcase?: "cards" | null;
+  /** Which way the last screen change came from, so it can animate back the
+   *  way it arrived when the reader scrolls up again. */
+  enterFrom?: "left" | "right" | null;
   /** 0 is the resting three-quarter view with the pointer live; 1 is square
    *  to the reader and still. Read from a ref every frame rather than passed
    *  as a value, so the scroll can drive it without re-rendering the app
@@ -229,7 +233,7 @@ export default function HeroDevice({
               className="relative size-full overflow-hidden bg-black"
               style={{ borderRadius: SCREEN_R }}
             >
-              <WalletScreen showcase={showcase} />
+              <WalletScreen showcase={showcase} enterFrom={enterFrom} />
 
               <div
                 aria-hidden

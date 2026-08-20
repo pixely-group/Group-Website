@@ -429,11 +429,14 @@ html[data-cursor="on"] * {
   }
 }
 
-/* The wallet's contents push in from the right when the device turns to face
-   the reader. Driven by keyframes rather than a mount flag and a transition:
-   the flag needs a frame to flip, and a starved rAF leaves the whole screen
-   sitting at opacity 0. */
-@keyframes wallet-push-in {
+/* The wallet's contents push in when the screen changes — from the right on
+   the way down, from the left on the way back up, so the motion reverses with
+   the scroll rather than always arriving the same way.
+
+   Driven by keyframes rather than a mount flag and a transition: the flag
+   needs a frame to flip, and a starved rAF leaves the whole screen sitting at
+   opacity 0. */
+@keyframes wallet-push-from-right {
   from {
     opacity: 0;
     transform: translateX(34px);
@@ -444,56 +447,52 @@ html[data-cursor="on"] * {
   }
 }
 
+@keyframes wallet-push-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @utility wallet-in {
-  animation: wallet-push-in 620ms var(--ease-out-expo) both;
+  animation: wallet-push-from-right 620ms var(--ease-out-expo) both;
+}
+
+@utility wallet-in-back {
+  animation: wallet-push-from-left 620ms var(--ease-out-expo) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wallet-in {
+  .wallet-in,
+  .wallet-in-back {
     animation: none;
   }
 }
 
-/* The headline's last word, changing. The outgoing word leaves upward while
-   the incoming one arrives from below — they overlap, so the line is never
-   empty. Removing the old one on the spot left a blank line for half of every
-   cycle, which reads as a flicker in the middle of the headline.
-
-   No clip on either: the descender on a word like "paper" would be cut by
-   one, and the fade carries the transition without it. */
-@keyframes word-cycle-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.18em);
-  }
-  to {
+/* The full stop at the end of the headline, doubling as the caret for the
+   word being typed in front of it. step-end rather than a fade: a terminal
+   cursor is on or off, and easing it reads as a pulse instead. */
+@keyframes caret-blink {
+  0%,
+  49% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50%,
+  100% {
+    opacity: 0.15;
   }
 }
 
-@keyframes word-cycle-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-0.18em);
-  }
-}
-
-@utility word-cycle {
-  animation: word-cycle-in 460ms var(--ease-out-expo) both;
-}
-
-@utility word-cycle-leaving {
-  animation: word-cycle-out 420ms var(--ease-out-expo) both;
+@utility caret-blink {
+  animation: caret-blink 1.06s step-end infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .word-cycle,
-  .word-cycle-leaving {
+  .caret-blink {
     animation: none;
   }
 }
