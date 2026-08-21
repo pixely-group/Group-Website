@@ -328,14 +328,15 @@
      right padding — so the width term is solved against the device's left
      edge, not against the text column.
 
-     Re-solved for the two-line headline. "Digital rails" is the longest
-     line — 571px of ink against "for payments" at 488 — and the tightest
-     width that still gets this layout is 1024, where the device's left edge
-     sits at 652. 6vw leaves that line ending at 592, which is 60px clear of
-     the device; 6.2 left only 41 and read as touching it. The height term
-     divides by 3 because the headline is two lines now, not the four the
-     old divisor reserved for. */
-  font-size: clamp(2.3rem, min(6vw, calc((100svh - 430px) / 3)), 12rem);
+     Re-solved for the two-line headline, and the scale is set by the copy
+     rather than the other way round. At 1024 — the tightest width that still
+     gets this layout, where the device's left edge sits at 652 — a line has
+     557px of ink. That is about eleven characters, which is enough for a
+     label and not enough for a claim: every headline worth running was over
+     it. So the width term comes down to 5.5vw to buy the words the room they
+     need. The height term divides by 3 because the headline is two lines
+     now, not the four the old divisor reserved for. */
+  font-size: clamp(2.3rem, min(5.5vw, calc((100svh - 430px) / 3)), 12rem);
 }
 
 @utility text-giant {
@@ -624,12 +625,12 @@ html[data-cursor="on"] * {
 /* The full stop at the end of the headline, doubling as the caret for the
    word being typed in front of it. step-end rather than a fade: a terminal
    cursor is on or off, and easing it reads as a pulse instead. */
-/* It breathes rather than flicks. A hard step between two opacities is how a
-   terminal caret behaves, and it was right when the dot was a period standing
-   in for one — but everything around it eases now, and a mark that snaps on
-   and off is the one thing in the line still behaving like a machine. It
-   never goes fully out either: a dot that vanishes reads as a fault at this
-   size.
+/* It breathes rather than flicks, and it does it in colour rather than in
+   opacity. Fading a mark this size to 0.3 does not read as dimming — it reads
+   as a hole, because what comes through is the starfield behind the hero
+   rather than a paler blue. The pulse travels up the same hue instead: the
+   brand blue to the lifted tint the dark chapters use, both of them solid the
+   whole way.
 
    `scale`, not a transform. The dot carries a translate of its own while it
    glides, and a keyframe writing `transform` would take that over; the
@@ -637,12 +638,12 @@ html[data-cursor="on"] * {
 @keyframes caret-blink {
   0%,
   100% {
-    opacity: 1;
+    background-color: var(--color-signal);
     scale: 1;
   }
   50% {
-    opacity: 0.3;
-    scale: 0.84;
+    background-color: var(--color-signal-lift);
+    scale: 0.94;
   }
 }
 
@@ -657,11 +658,13 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  width: 0.44em;
-  height: 0.44em;
-  margin-left: 0.09em;
+  width: 0.32em;
+  height: 0.32em;
+  margin-left: 0.08em;
   border-radius: 50%;
-  background: currentColor;
+  /* Named rather than currentColor, so the pulse has a colour to travel from
+     and cannot be handed a transparent one by whatever it sits inside. */
+  background: var(--color-signal);
   vertical-align: baseline;
 }
 

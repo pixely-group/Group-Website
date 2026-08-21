@@ -208,7 +208,7 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — digital rails for payments, identity and Algeria"
+          aria-label="Pixely — one account, no branches, no forms, no waiting"
         >
           {/* Two lines is a width budget, not a preference. The device
               column sits closest at 1024 — the narrowest width that still
@@ -219,12 +219,12 @@ export default function Hero() {
               this clears by 127. */}
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              Digital rails
+              One account,
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
-              for{" "}
+              no{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
                   to on dark chapters. That lift exists because the primary
                   reaches only ~3.25:1 on ink, which fails AA for body copy —

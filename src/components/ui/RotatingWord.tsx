@@ -7,15 +7,16 @@ import { useReducedMotion } from "@/lib/hooks";
 
 /**
  * The last word of the headline, typed and retyped. All three finish the
- * same line — "Digital rails for ..." — and they climb rather than list:
- * the two things Pixely actually carries, and then the country it carries
- * them for. A reader who takes in only the first and last frames has read
- * "digital rails for payments" and "digital rails for Algeria", which is the
- * whole company in two glances.
+ * same line — "One account, no ..." — and the sentence has to do two jobs at
+ * once: say what is being sold and say what it replaces. The first line is
+ * the product, the rotating word is the legacy it removes, and every frame
+ * is a complete claim on its own.
  *
- * One word each, and every one of them concrete. "Data" and "the network"
- * described what a payment IS; these describe what the thing DOES, which is
- * the question anyone reads a homepage to answer.
+ * They are the manifesto's own three, less the one that cannot be used here:
+ * it says money and identity still move through paper, branches and waiting.
+ * Each maps to something real — branches to an identity proved once instead
+ * of at every counter, forms to the same, waiting to settlement that lands
+ * while the customer is still standing there.
  *
  * Lower case, and set in the italic — the same way the manifesto sets them.
  * The headline is in caps and the word would take them by inheritance, which
@@ -26,7 +27,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["payments", "identity", "Algeria"] as const;
+const WORDS = ["branches", "forms", "waiting"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
