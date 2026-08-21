@@ -628,32 +628,6 @@ html[data-cursor="on"] * {
 /* The full stop at the end of the headline, doubling as the caret for the
    word being typed in front of it. step-end rather than a fade: a terminal
    cursor is on or off, and easing it reads as a pulse instead. */
-/* It breathes rather than flicks. A hard step between two opacities is how a
-   terminal caret behaves, and it was right when the dot was a period standing
-   in for one — but everything around it eases now, and a mark that snaps on
-   and off is the one thing in the line still behaving like a machine. It
-   never goes fully out either: a dot that vanishes reads as a fault at this
-   size.
-
-   `scale`, not a transform. The dot carries a translate of its own while it
-   glides, and a keyframe writing `transform` would take that over; the
-   individual property composes with it instead. */
-@keyframes caret-blink {
-  0%,
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
-  50% {
-    opacity: 0.3;
-    scale: 0.84;
-  }
-}
-
-@utility caret-blink {
-  animation: caret-blink 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
 /* The rotating word's full stop, drawn rather than set. A period in Fraunces
    italic is small and leans with the face; this one has to close a line of
    display caps and read as a cursor from across the page, so it is a circle
@@ -668,12 +642,6 @@ html[data-cursor="on"] * {
   border-radius: 50%;
   background: currentColor;
   vertical-align: baseline;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .caret-blink {
-    animation: none;
-  }
 }
 
 /* ————————————————————————————————————————

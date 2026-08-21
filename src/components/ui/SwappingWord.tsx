@@ -90,7 +90,7 @@ export default function SwappingWord({ className }: { className?: string }) {
           }`}
         >
           {word}
-          <span aria-hidden className="caret-dot caret-blink" />
+          <span aria-hidden className="caret-dot" />
         </span>
       ))}
     </span>

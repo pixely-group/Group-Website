@@ -17,7 +17,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * not, so the rotation currently arrives where it already was. A rotation
  * earns its keep when the frames differ.
  */
-const WORDS = ["snap", "flash"] as const;
+const WORDS = ["identity", "network"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
@@ -147,11 +147,6 @@ export default function RotatingWord({ className }: { className?: string }) {
     return () => window.clearTimeout(id);
   }, [text, deleting, index, reduced]);
 
-  /* A caret blinks when it is waiting and holds steady while it is working.
-     Blinking through the typing is what made it read as a decoration rather
-     than a cursor, and it fought the letters for attention. */
-  const holding = reduced || (!deleting && text === WORDS[index]);
-
   /* The h1 carries an aria-label, so what a screen reader gets is the whole
      sentence with the first word — the typing is decoration on a line that
      already reads without it. */
@@ -168,15 +163,7 @@ export default function RotatingWord({ className }: { className?: string }) {
       {/* The full stop doubles as the caret. Drawn rather than set: a period
           in this face is small and slanted, and this mark has to end a line
           of display caps and be seen blinking from across the page. */}
-      {/* Both branches spell the classes out. Tailwind finds candidates by
-          scanning the source for whole tokens, and `caret-dot${…}` is not
-          one — it emitted no rule for it at all, and the dot rendered as an
-          empty inline span. */}
-      <span
-        ref={dotRef}
-        aria-hidden
-        className={holding ? "caret-dot caret-blink" : "caret-dot"}
-      />
+      <span ref={dotRef} aria-hidden className="caret-dot" />
     </span>
   );
 }
