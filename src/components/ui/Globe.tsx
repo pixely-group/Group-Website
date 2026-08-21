@@ -98,11 +98,13 @@ export default function Globe({ className }: { className?: string }) {
        them, so the back of the world shows through dimmed instead of mixing
        with the front.
 
-       No halo around it. A fresnel rim was tried and it filled the disc
-       rather than picking out its edge — additive blue over a dark ground
-       accumulates across the whole silhouette — and the reference has no
-       glow either: it is dots on black, and the sphere is whatever the dots
-       describe. */
+       The halo behind it is a flat card facing the camera, not a shell
+       around the sphere. A back-facing shell with a fresnel term was the
+       first attempt and it filled the whole disc: on a sphere every fragment
+       has some grazing angle to give, and additive blue over a dark ground
+       accumulates all of it. A card has no geometry to integrate — the glow
+       is a function of distance from the centre, so it can be told to peak
+       just outside the globe's edge and be nowhere else. */
     const body = new THREE.Mesh(
       new THREE.SphereGeometry(RADIUS * 0.985, 48, 32),
       new THREE.MeshBasicMaterial({
@@ -114,6 +116,40 @@ export default function Globe({ className }: { className?: string }) {
     );
     body.renderOrder = -2;
     world.add(body);
+
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.2, 3.2),
+      new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uColor: { value: new THREE.Color("#2d46ff") } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying vec2 vUv;
+          void main() {
+            /* 0 at the card's centre, 1 at its edge. The globe's silhouette
+               lands at 0.625 of that, since the card is 3.2 across and the
+               sphere is 2 — so the band is set to climb through there and
+               fall away into nothing well before the card's own edge, which
+               must never be visible. */
+            float r = length(vUv - 0.5) * 2.0;
+            float band = smoothstep(0.56, 0.655, r) * smoothstep(0.9, 0.655, r);
+            gl_FragColor = vec4(uColor, band * 0.16);
+          }
+        `,
+      }),
+    );
+    halo.renderOrder = -3;
+    scene.add(halo);
 
     /* ---- land ------------------------------------------------------- */
     const dots: number[] = [];
@@ -139,7 +175,7 @@ export default function Globe({ className }: { className?: string }) {
       transparent: true,
       depthWrite: false,
       uniforms: {
-        uSize: { value: 3.4 },
+        uSize: { value: 4.0 },
         uColor: { value: SIGNAL },
         uLift: { value: LIFT },
         uPixelRatio: { value: 1 },
@@ -168,7 +204,7 @@ export default function Globe({ className }: { className?: string }) {
           if (d > 0.5) discard;
           /* The far side is not hidden, only dimmed — a globe you can see the
              back of reads as a sphere rather than as a disc. */
-          float a = smoothstep(-0.5, 0.2, vFacing) * 0.92 + 0.08;
+          float a = smoothstep(-0.45, 0.1, vFacing) * 0.9 + 0.1;
           vec3 c = mix(uColor, uLift, smoothstep(-0.1, 0.95, vFacing));
           gl_FragColor = vec4(c, a * smoothstep(0.5, 0.34, d));
         }
@@ -333,6 +369,7 @@ export default function Globe({ className }: { className?: string }) {
          camera pulls back on the shorter axis rather than the sphere being
          scaled — a scaled sphere would take the point sizes with it. */
       camera.position.setLength(w / h < 1.1 ? 3.9 : 3.05);
+      halo.quaternion.copy(camera.quaternion);
     };
     const ro = new ResizeObserver(resize);
     ro.observe(host);
