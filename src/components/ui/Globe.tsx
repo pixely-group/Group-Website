@@ -98,34 +98,21 @@ export default function Globe({ className }: { className?: string }) {
     const SIGNAL = new THREE.Color("#2d46ff");
     const LIFT = new THREE.Color("#7290ff");
 
-    /* ---- the body ---------------------------------------------------
-       Dots alone read as a swarm rather than a sphere: there is nothing to
-       say the far ones are behind anything. A near-black shell sits between
-       them, so the back of the world shows through dimmed instead of mixing
-       with the front.
+    /* ---- the halo ---------------------------------------------------
+       No shell inside the sphere. One was tried at two opacities and both
+       were wrong in the same direction: it is a lid, and a lid is exactly
+       what the reference does not have. There the far side of the world is
+       plainly visible through the near side — the sphere is described by its
+       dots crowding towards the silhouette, not by anything filling it — so
+       the dots are the only thing here and the far ones simply sit dimmer.
 
-       The halo behind it is a flat card facing the camera, not a shell
-       around the sphere. A back-facing shell with a fresnel term was the
-       first attempt and it filled the whole disc: on a sphere every fragment
-       has some grazing angle to give, and additive blue over a dark ground
+       The halo behind it is a flat card facing the camera, not a shell around
+       the sphere. A back-facing shell with a fresnel term was the first
+       attempt and it filled the whole disc: on a sphere every fragment has
+       some grazing angle to give, and additive blue over a dark ground
        accumulates all of it. A card has no geometry to integrate — the glow
        is a function of distance from the centre, so it can be told to peak
        just outside the globe's edge and be nowhere else. */
-    const body = new THREE.Mesh(
-      new THREE.SphereGeometry(RADIUS * 0.985, 48, 32),
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color("#08080b"),
-        transparent: true,
-        /* Thin enough to see through. It is here to say the far dots are
-           behind something, not to hide them — at 0.82 it was a lid and the
-           globe read as a disc. */
-        opacity: 0.42,
-        depthWrite: false,
-      }),
-    );
-    body.renderOrder = -2;
-    world.add(body);
-
     const halo = new THREE.Mesh(
       new THREE.PlaneGeometry(2.7, 2.7),
       new THREE.ShaderMaterial({
@@ -252,7 +239,10 @@ export default function Globe({ className }: { className?: string }) {
           if (d > 0.5) discard;
           /* The far side is not hidden, only dimmed — a globe you can see the
              back of reads as a sphere rather than as a disc. */
-          float a = smoothstep(-0.85, 0.05, vFacing) * 0.78 + 0.22;
+          /* The far side keeps a third of its weight. Dimmer than the
+             near side so the sphere still has a front, present enough that
+             you are looking through a world rather than at a shell. */
+          float a = mix(0.32, 1.0, smoothstep(-0.95, 0.3, vFacing));
           vec3 c = mix(uColor, uLift, smoothstep(-0.1, 0.95, vFacing));
           gl_FragColor = vec4(c, a * smoothstep(0.5, 0.34, d));
         }
