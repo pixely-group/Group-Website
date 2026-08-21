@@ -23,8 +23,14 @@ import { useReducedMotion } from "@/lib/hooks";
  */
 const RADIUS = 1;
 /** Degrees between dots at the equator. Spacing is corrected by latitude, so
- *  this is the real spacing everywhere rather than only across the middle. */
-const STEP = 1.7;
+ *  this is the real spacing everywhere rather than only across the middle.
+ *
+ *  Finer than it looks it should be. A coastline drawn from coarse rings is
+ *  only ever as good as its sampling: at 1.7 the dots were large enough to
+ *  round off every bay, and the continents read as blobs with the right
+ *  outline. Smaller dots closer together resolve the same rings into a shape,
+ *  which is the whole of why the reference is legible. */
+const STEP = 1.05;
 /** How far the arcs stand off the surface at their highest, as a share of the
  *  radius. Enough to read as a hop rather than a scratch on the sphere. */
 const ARC_LIFT = 0.28;
@@ -121,7 +127,7 @@ export default function Globe({ className }: { className?: string }) {
     world.add(body);
 
     const halo = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.2, 3.2),
+      new THREE.PlaneGeometry(2.7, 2.7),
       new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
@@ -140,12 +146,12 @@ export default function Globe({ className }: { className?: string }) {
           varying vec2 vUv;
           void main() {
             /* 0 at the card's centre, 1 at its edge. The globe's silhouette
-               lands at 0.625 of that, since the card is 3.2 across and the
+               lands at 0.74 of that, since the card is 2.7 across and the
                sphere is 2 — so the band is set to climb through there and
                fall away into nothing well before the card's own edge, which
                must never be visible. */
             float r = length(vUv - 0.5) * 2.0;
-            float band = smoothstep(0.56, 0.655, r) * smoothstep(0.9, 0.655, r);
+            float band = smoothstep(0.66, 0.755, r) * smoothstep(0.93, 0.755, r);
             gl_FragColor = vec4(uColor, band * 0.11);
           }
         `,
@@ -217,7 +223,7 @@ export default function Globe({ className }: { className?: string }) {
       transparent: true,
       depthWrite: false,
       uniforms: {
-        uSize: { value: 4.0 },
+        uSize: { value: 2.35 },
         uColor: { value: SIGNAL },
         uLift: { value: LIFT },
         uPixelRatio: { value: 1 },
@@ -440,10 +446,21 @@ export default function Globe({ className }: { className?: string }) {
       landMat.uniforms.uPixelRatio.value = dpr;
       pulseMat.uniforms.uPixelRatio.value = dpr;
       cityMat.uniforms.uPixelRatio.value = dpr;
-      /* The globe should fill a wide box and still fit a narrow one, so the
-         camera pulls back on the shorter axis rather than the sphere being
-         scaled — a scaled sphere would take the point sizes with it. */
-      camera.position.setLength(w / h < 1.1 ? 3.9 : 3.05);
+      /* Pulled back until the whole globe fits, solved rather than picked.
+         A distance chosen by eye fits the box it was chosen in and crops the
+         sphere in every other — which is what was happening: at 3.05 the
+         frustum was 1.63 tall against a sphere 2 across, so the top and
+         bottom were simply outside it and it looked masked.
+
+         REACH is the radius that has to fit, and the halo sets it rather
+         than the sphere: the card is 2.7 across and its glow is gone by 0.93
+         of that, so 1.27 is the point past which there is nothing left to
+         cut. Solved on both axes and the further of the two wins. */
+      const REACH = 1.27;
+      const half = Math.tan(((camera.fov / 2) * Math.PI) / 180);
+      camera.position.setLength(
+        Math.max(REACH / half, REACH / (half * camera.aspect)),
+      );
       halo.quaternion.copy(camera.quaternion);
     };
     const ro = new ResizeObserver(resize);

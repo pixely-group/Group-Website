@@ -757,8 +757,11 @@ html[data-cursor="on"] * {
   margin: -0.7em 0 0 0.85em;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  /* Small, and smaller than the section's other labels: fifteen of these
+     sit on one hemisphere and Europe holds five of them within a few
+     degrees, so the type has to give the cluster room. */
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgb(236 233 225 / 0.5);
   transition: color 220ms var(--ease-out-expo);

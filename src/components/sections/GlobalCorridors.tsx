@@ -45,35 +45,39 @@ export default function GlobalCorridors() {
       className="relative overflow-hidden bg-theme px-6 py-[15vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-wrap items-end justify-between gap-8">
+        {/* The globe sits beside the line it illustrates rather than under
+            it. Stacked, the heading was read and then scrolled past before
+            the globe arrived; alongside, "Algeria, on every corridor" and the
+            corridors themselves are one thing. */}
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-16">
           <div>
             <p className="type-label section-index mb-6 text-(--muted)">
               05 — Global
             </p>
-            <h2 className="type-headline text-big max-w-[14ch] text-balance">
+            <h2 className="type-headline text-big max-w-[13ch] text-balance">
               Algeria, on every corridor.
             </h2>
+            <p className="mt-7 max-w-sm text-[0.95rem] leading-relaxed text-(--muted)">
+              Pixely is built for Algeria and connects it outward. Every
+              corridor here runs to Algiers, so value moves between it and the
+              markets Algerian businesses actually trade with.
+            </p>
+            <p
+              aria-hidden
+              className="type-label mt-8 text-[9px] text-(--faint)"
+            >
+              Drag to turn
+            </p>
           </div>
-          <p className="max-w-sm pb-2 text-[0.95rem] leading-relaxed text-(--muted)">
-            Pixely is built for Algeria and connects it outward. Every corridor
-            on this map runs to Algiers, so value moves between it and the
-            markets Algerian businesses actually trade with.
-          </p>
-        </div>
 
-        <div className="relative mt-14">
-          <Globe className="block h-[clamp(340px,52vw,600px)] w-full" />
-          <p
-            aria-hidden
-            className="type-label mt-3 text-center text-[9px] text-(--faint)"
-          >
-            Drag to turn
-          </p>
-          <p className="sr-only">
-            A globe showing twelve corridors running between Algiers and
-            financial centres worldwide, with value moving continuously along
-            each. Drag to rotate it.
-          </p>
+          <div className="relative">
+            <Globe className="block h-[clamp(280px,40vw,470px)] w-full" />
+            <p className="sr-only">
+              A globe showing fourteen corridors running between Algiers and
+              financial centres worldwide, with value moving continuously
+              along each. Drag to rotate it.
+            </p>
+          </div>
         </div>
 
         <dl className="mt-14 grid gap-px border-t border-(--line) sm:grid-cols-2 lg:grid-cols-4">
