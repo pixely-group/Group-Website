@@ -450,6 +450,7 @@ export default function Globe({ className }: { className?: string }) {
     hud.append(hudCity, hudTime, hudMeta);
     host.appendChild(hud);
 
+
     /* ---- the city's own clock ----------------------------------------
        Shown only while a city is being pointed at. Every label carrying a
        time would double the footprint of all twenty-three of them, and they
@@ -497,6 +498,8 @@ export default function Globe({ className }: { className?: string }) {
      *  below is arithmetic rather than another trip through Intl. */
     let hudOffset = 0;
     let hudSecond = -1;
+    let hudX = 0;
+    let hudY = 0;
     let hudW = 0;
     let hudH = 0;
 
@@ -515,8 +518,11 @@ export default function Globe({ className }: { className?: string }) {
       }`;
       hudSecond = -1;
       hud.dataset.on = "true";
-      /* Measured now rather than per frame: the name is the only thing that
-         changes its width, and the digits are tabular. */
+      /* Measured now rather than per frame: the plate holds still, and the
+         name is the only thing that changes its width — the digits are
+         tabular. */
+      hudX = hud.offsetLeft;
+      hudY = hud.offsetTop;
       hudW = hud.offsetWidth;
       hudH = hud.offsetHeight;
     };
@@ -810,29 +816,15 @@ export default function Globe({ className }: { className?: string }) {
 
       placedN = 0;
 
-      /* The readout is positioned and takes its place before any name does.
-         It is the thing being looked at, and a name printed across it would
-         be read as part of it. */
+      /* The plate does not move, so nothing here positions it. It only
+         claims its own footprint before any name is placed, so no label is
+         printed across it, and gets its seconds ticked. */
       if (hover >= 0) {
         tickHud();
-        const box = rect.getBoundingClientRect();
-        const mx = labelX[hover];
-        const my = labelY[hover];
-        /* Flipped when it would run off the WINDOW rather than off the
-           canvas — the canvas reaches past the right edge of the screen, so
-           measuring against its own width would let the panel off into
-           nothing. */
-        const flip = box.left + mx + 18 + hudW > window.innerWidth - 12;
-        const hx = flip ? mx - 18 - hudW : mx + 18;
-        const hy = Math.max(4, Math.min(h - hudH - 4, my - hudH / 2));
-        hud.style.setProperty("--hud-x", `${Math.round(hx)}px`);
-        hud.style.setProperty("--hud-y", `${Math.round(hy)}px`);
-        if (flip) hud.dataset.flip = "left";
-        else delete hud.dataset.flip;
-        placedBox[0] = hx - GUTTER;
-        placedBox[1] = hy - GUTTER;
-        placedBox[2] = hx + hudW + GUTTER;
-        placedBox[3] = hy + hudH + GUTTER;
+        placedBox[0] = hudX - GUTTER;
+        placedBox[1] = hudY - GUTTER;
+        placedBox[2] = hudX + hudW + GUTTER;
+        placedBox[3] = hudY + hudH + GUTTER;
         placedN = 1;
       }
       for (let k = 0; k < order.length; k++) {
