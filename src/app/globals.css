@@ -307,18 +307,12 @@
 /* Fluid display sizes */
 @utility text-hero {
   /* Width alone cannot size a full-bleed headline. On short, wide viewports
-     it overflows: the eyebrow and the first line get pushed up behind the
-     navigation and clipped. The second term is the height actually available
-     — the viewport less the ~430px the rest of the hero stack occupies, over
-     the line-heights this headline needs. Two now, not four, so it divides by
-     3 where it divided by 5; leaving it would have reserved room for two
-     lines that no longer exist and held the type down for nothing.
-
-     The width term binds instead, and it is set by the longest the second
-     line ever gets — "for the network", whose serif runs 1.14em. At 375 that
-     line needs 327px of the 329 there are, which is no margin at all, so
-     10.4vw comes down to 10. */
-  font-size: clamp(2.3rem, min(10vw, calc((100svh - 430px) / 3)), 11.5rem);
+     10.5vw overflows the screen: the eyebrow and the first line get pushed
+     up behind the navigation and clipped. The second term is the height
+     actually available — the viewport less the ~430px the rest of the hero
+     stack occupies, over the ~4 line-heights this headline needs. Measured,
+     not guessed. The clamp floor still governs small screens. */
+  font-size: clamp(2.4rem, min(10.4vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
 /* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
@@ -326,17 +320,13 @@
 @utility text-hero-aside {
   /* The binding constraint is the device column, which sits inside the 30%
      right padding — so the width term is solved against the device's left
-     edge, not against the text column.
-
-     Re-solved for the two-line headline, and the scale is set by the copy
-     rather than the other way round. At 1024 — the tightest width that still
-     gets this layout, where the device's left edge sits at 652 — a line has
-     557px of ink. That is about eleven characters, which is enough for a
-     label and not enough for a claim: every headline worth running was over
-     it. So the width term comes down to 5.5vw to buy the words the room they
-     need. The height term divides by 3 because the headline is two lines
-     now, not the four the old divisor reserved for. */
-  font-size: clamp(2.3rem, min(5.5vw, calc((100svh - 430px) / 3)), 12rem);
+     edge, not against the text column. Re-solved for the current headline:
+     "AI-powered" is the longest line and the only one that does not fit:
+     platform sets at 760, "for payments." at 756, both inside the device's
+     left edge at 817 — while "AI-powered" reached 890. It is the widest word
+     in the deck's own phrase and there is no shorter way to say it, so the
+     scale comes down to it rather than the line being reworded. */
+  font-size: clamp(2.4rem, min(7vw, calc((100svh - 430px) / 6.3)), 12rem);
 }
 
 @utility text-giant {
@@ -625,12 +615,12 @@ html[data-cursor="on"] * {
 /* The full stop at the end of the headline, doubling as the caret for the
    word being typed in front of it. step-end rather than a fade: a terminal
    cursor is on or off, and easing it reads as a pulse instead. */
-/* It breathes rather than flicks, and it does it in colour rather than in
-   opacity. Fading a mark this size to 0.3 does not read as dimming — it reads
-   as a hole, because what comes through is the starfield behind the hero
-   rather than a paler blue. The pulse travels up the same hue instead: the
-   brand blue to the lifted tint the dark chapters use, both of them solid the
-   whole way.
+/* It breathes rather than flicks. A hard step between two opacities is how a
+   terminal caret behaves, and it was right when the dot was a period standing
+   in for one — but everything around it eases now, and a mark that snaps on
+   and off is the one thing in the line still behaving like a machine. It
+   never goes fully out either: a dot that vanishes reads as a fault at this
+   size.
 
    `scale`, not a transform. The dot carries a translate of its own while it
    glides, and a keyframe writing `transform` would take that over; the
@@ -638,12 +628,12 @@ html[data-cursor="on"] * {
 @keyframes caret-blink {
   0%,
   100% {
-    background-color: var(--color-signal);
+    opacity: 1;
     scale: 1;
   }
   50% {
-    background-color: var(--color-signal-lift);
-    scale: 0.94;
+    opacity: 0.3;
+    scale: 0.84;
   }
 }
 
@@ -658,13 +648,12 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  width: 0.32em;
-  height: 0.32em;
+  /* 0.34 was called too small and 0.44 too big, so it sits between them. */
+  width: 0.38em;
+  height: 0.38em;
   margin-left: 0.08em;
   border-radius: 50%;
-  /* Named rather than currentColor, so the pulse has a colour to travel from
-     and cannot be handed a transparent one by whatever it sits inside. */
-  background: var(--color-signal);
+  background: currentColor;
   vertical-align: baseline;
 }
 

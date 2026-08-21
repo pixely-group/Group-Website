@@ -6,17 +6,11 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The last word of the headline, typed and retyped. All three finish the
- * same line — "One account, no ..." — and the sentence has to do two jobs at
- * once: say what is being sold and say what it replaces. The first line is
- * the product, the rotating word is the legacy it removes, and every frame
- * is a complete claim on its own.
- *
- * They are the manifesto's own three, less the one that cannot be used here:
- * it says money and identity still move through paper, branches and waiting.
- * Each maps to something real — branches to an identity proved once instead
- * of at every counter, forms to the same, waiting to settlement that lands
- * while the customer is still standing there.
+ * The last word of the headline, typed and retyped. All three finish the same
+ * line — "AI-powered fintech platform for ..." — and they are the manifesto's
+ * own three words, the ones it sets in the serif a section later: a payment
+ * is data, so is an identity, and both should move at the speed of the
+ * network. The hero states them; the manifesto argues them.
  *
  * Lower case, and set in the italic — the same way the manifesto sets them.
  * The headline is in caps and the word would take them by inheritance, which
@@ -27,7 +21,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["branches", "forms", "waiting"] as const;
+const WORDS = ["data", "identity", "network"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
