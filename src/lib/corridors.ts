@@ -5,32 +5,35 @@
  *  daylight saving and on different dates: the gap between Algiers and London
  *  is one hour for most of the year and zero for the rest of it. The zone name
  *  lets Intl work that out per instant; a stored number could not.
+ *
+ *  `cc` keys the outline the readout draws — two cities can share one, and
+ *  Brasilia and Sao Paulo do.
  *  Ordered roughly west to east, which is only for reading the list; the
  *  globe places them by coordinate and does not care about the order. */
 export const CENTRES = [
-  { code: "ALG", name: "Algiers", lon: 3.06, lat: 36.75, home: true, tz: "Africa/Algiers" },
-  { code: "SFO", name: "San Francisco", lon: -122.4, lat: 37.8, tz: "America/Los_Angeles" },
-  { code: "MEX", name: "Mexico City", lon: -99.13, lat: 19.43, tz: "America/Mexico_City" },
-  { code: "HAV", name: "Havana", lon: -82.38, lat: 23.13, tz: "America/Havana" },
-  { code: "BOG", name: "Bogotá", lon: -74.07, lat: 4.71, tz: "America/Bogota" },
-  { code: "NYC", name: "New York", lon: -74.0, lat: 40.7, tz: "America/New_York" },
-  { code: "CCS", name: "Caracas", lon: -66.9, lat: 10.48, tz: "America/Caracas" },
-  { code: "BSB", name: "Brasília", lon: -47.88, lat: -15.79, tz: "America/Sao_Paulo" },
-  { code: "SAO", name: "São Paulo", lon: -46.6, lat: -23.6, tz: "America/Sao_Paulo" },
-  { code: "NKC", name: "Nouakchott", lon: -15.98, lat: 18.08, tz: "Africa/Nouakchott" },
-  { code: "DUB", name: "Dublin", lon: -6.26, lat: 53.35, tz: "Europe/Dublin" },
-  { code: "LON", name: "London", lon: -0.13, lat: 51.5, tz: "Europe/London" },
-  { code: "BCN", name: "Barcelona", lon: 2.15, lat: 41.39, tz: "Europe/Madrid" },
-  { code: "FRA", name: "Frankfurt", lon: 8.68, lat: 50.1, tz: "Europe/Berlin" },
-  { code: "ROM", name: "Rome", lon: 12.5, lat: 41.9, tz: "Europe/Rome" },
-  { code: "MOW", name: "Moscow", lon: 37.62, lat: 55.75, tz: "Europe/Moscow" },
-  { code: "JNB", name: "Johannesburg", lon: 28.0, lat: -26.2, tz: "Africa/Johannesburg" },
-  { code: "BLR", name: "Bengaluru", lon: 77.6, lat: 13.0, tz: "Asia/Kolkata" },
-  { code: "SGP", name: "Singapore", lon: 103.8, lat: 1.35, tz: "Asia/Singapore" },
-  { code: "HKG", name: "Hong Kong", lon: 114.2, lat: 22.3, tz: "Asia/Hong_Kong" },
-  { code: "PEK", name: "Beijing", lon: 116.41, lat: 39.9, tz: "Asia/Shanghai" },
-  { code: "TYO", name: "Tokyo", lon: 139.7, lat: 35.7, tz: "Asia/Tokyo" },
-  { code: "SYD", name: "Sydney", lon: 151.2, lat: -33.9, tz: "Australia/Sydney" },
+  { code: "ALG", name: "Algiers", lon: 3.06, lat: 36.75, home: true, tz: "Africa/Algiers", cc: "DZ" },
+  { code: "SFO", name: "San Francisco", lon: -122.4, lat: 37.8, tz: "America/Los_Angeles", cc: "US" },
+  { code: "MEX", name: "Mexico City", lon: -99.13, lat: 19.43, tz: "America/Mexico_City", cc: "MX" },
+  { code: "HAV", name: "Havana", lon: -82.38, lat: 23.13, tz: "America/Havana", cc: "CU" },
+  { code: "BOG", name: "Bogotá", lon: -74.07, lat: 4.71, tz: "America/Bogota", cc: "CO" },
+  { code: "NYC", name: "New York", lon: -74.0, lat: 40.7, tz: "America/New_York", cc: "US" },
+  { code: "CCS", name: "Caracas", lon: -66.9, lat: 10.48, tz: "America/Caracas", cc: "VE" },
+  { code: "BSB", name: "Brasília", lon: -47.88, lat: -15.79, tz: "America/Sao_Paulo", cc: "BR" },
+  { code: "SAO", name: "São Paulo", lon: -46.6, lat: -23.6, tz: "America/Sao_Paulo", cc: "BR" },
+  { code: "NKC", name: "Nouakchott", lon: -15.98, lat: 18.08, tz: "Africa/Nouakchott", cc: "MR" },
+  { code: "DUB", name: "Dublin", lon: -6.26, lat: 53.35, tz: "Europe/Dublin", cc: "IE" },
+  { code: "LON", name: "London", lon: -0.13, lat: 51.5, tz: "Europe/London", cc: "GB" },
+  { code: "BCN", name: "Barcelona", lon: 2.15, lat: 41.39, tz: "Europe/Madrid", cc: "ES" },
+  { code: "FRA", name: "Frankfurt", lon: 8.68, lat: 50.1, tz: "Europe/Berlin", cc: "DE" },
+  { code: "ROM", name: "Rome", lon: 12.5, lat: 41.9, tz: "Europe/Rome", cc: "IT" },
+  { code: "MOW", name: "Moscow", lon: 37.62, lat: 55.75, tz: "Europe/Moscow", cc: "RU" },
+  { code: "JNB", name: "Johannesburg", lon: 28.0, lat: -26.2, tz: "Africa/Johannesburg", cc: "ZA" },
+  { code: "BLR", name: "Bengaluru", lon: 77.6, lat: 13.0, tz: "Asia/Kolkata", cc: "IN" },
+  { code: "SGP", name: "Singapore", lon: 103.8, lat: 1.35, tz: "Asia/Singapore", cc: "SG" },
+  { code: "HKG", name: "Hong Kong", lon: 114.2, lat: 22.3, tz: "Asia/Hong_Kong", cc: "HK" },
+  { code: "PEK", name: "Beijing", lon: 116.41, lat: 39.9, tz: "Asia/Shanghai", cc: "CN" },
+  { code: "TYO", name: "Tokyo", lon: 139.7, lat: 35.7, tz: "Asia/Tokyo", cc: "JP" },
+  { code: "SYD", name: "Sydney", lon: 151.2, lat: -33.9, tz: "Australia/Sydney", cc: "AU" },
 ] as const;
 
 export type Corridor = {

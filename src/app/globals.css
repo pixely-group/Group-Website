@@ -777,11 +777,11 @@ html[data-cursor="on"] * {
 }
 
 /* ---- the city readout ------------------------------------------------
-   It does not follow the city frame by frame — a panel chasing a marker
-   around a turning globe is a thing you track rather than read. It picks a
-   berth when the city is first pointed at and holds it for as long as that
-   city is held, so it is placed with respect to the city without ever
-   moving under the eye that is reading it. JS sets --hud-x/--hud-y.
+   It holds one corner of the frame and stays there. A panel that moves is
+   a thing you track; a plate that stays put is a thing you read, and the
+   marker's own ring already says which city is being read.
+
+   Two halves: the clock on the left, the country on the right.
 
    The panel itself is an instrument — a dark pane with a hairline in the
    brand blue, a lit rail down the edge it grows from, and ticks at the
@@ -792,12 +792,16 @@ html[data-cursor="on"] * {
    what the reader drags. */
 .globe-hud {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 14px;
+  left: 14px;
   z-index: 20;
-  /* Wider than it is tall. At 9.5rem the three lines made it near enough a
-     square, which reads as a badge; a readout should be a strip. */
-  min-width: 13.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  /* Wider than it is tall, and wider again now the country sits beside the
+     clock. At 9.5rem the three lines made a square, which reads as a badge;
+     a readout should be a strip. */
+  min-width: 17.5rem;
   padding: 0.7rem 0.95rem 0.65rem;
   pointer-events: none;
   opacity: 0;
@@ -809,7 +813,6 @@ html[data-cursor="on"] * {
     0 18px 40px -18px rgb(0 0 0 / 0.9),
     0 0 26px -8px rgb(45 70 255 / 0.5);
   clip-path: inset(0 100% 0 0);
-  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px));
   transition:
     opacity 180ms var(--ease-swift),
     clip-path 320ms var(--ease-out-expo);
@@ -827,7 +830,7 @@ html[data-cursor="on"] * {
   top: -1px;
   bottom: -1px;
   left: -1px;
-  width: 3px;
+  width: 5px;
   background: var(--color-signal);
   box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
 }
@@ -888,6 +891,35 @@ html[data-cursor="on"] * {
 .globe-hud__sec {
   font-size: 0.6875rem;
   color: rgb(236 233 225 / 0.45);
+}
+
+.globe-hud__read {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The country the city is in, fitted to its own box — so Singapore reads
+   as clearly as Russia, which at ninety pixels is the only thing worth
+   optimising for. The city sits on it as a single mark. */
+.globe-hud__map {
+  flex: 0 0 auto;
+  width: 3.4rem;
+  height: 3.4rem;
+  overflow: visible;
+}
+
+.globe-hud__shape {
+  fill: rgb(45 70 255 / 0.28);
+  stroke: var(--color-signal-lift);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.globe-hud__pin {
+  fill: var(--color-bone);
+  stroke: var(--color-signal);
+  stroke-width: 1;
 }
 
 .globe-hud__meta {

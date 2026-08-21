@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import { gsap } from "@/lib/gsap";
+import { COUNTRIES } from "@/lib/countries";
 import { CENTRES, CORRIDORS } from "@/lib/corridors";
 import { isLandOrShore } from "@/lib/worldmap";
 import { useReducedMotion } from "@/lib/hooks";
@@ -447,8 +448,80 @@ export default function Globe({ className }: { className?: string }) {
     hudTime.append(hudHM, hudSec);
     const hudMeta = document.createElement("p");
     hudMeta.className = "globe-hud__meta";
-    hud.append(hudCity, hudTime, hudMeta);
+    const hudRead = document.createElement("div");
+    hudRead.className = "globe-hud__read";
+    hudRead.append(hudCity, hudTime, hudMeta);
+
+    const NS = "http://www.w3.org/2000/svg";
+    const hudMap = document.createElementNS(NS, "svg");
+    hudMap.setAttribute("class", "globe-hud__map");
+    hudMap.setAttribute("viewBox", "0 0 100 100");
+    hudMap.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    const hudShape = document.createElementNS(NS, "path");
+    hudShape.setAttribute("class", "globe-hud__shape");
+    const hudPin = document.createElementNS(NS, "circle");
+    hudPin.setAttribute("class", "globe-hud__pin");
+    hudPin.setAttribute("r", "3");
+    hudMap.append(hudShape, hudPin);
+
+    hud.append(hudRead, hudMap);
     host.appendChild(hud);
+
+    /* ---- the country ---------------------------------------------------
+       The outline is fitted to its own box rather than drawn at a fixed
+       scale, so Singapore fills the plate as readably as Russia does — at
+       this size the shape is the whole of the information, and its true
+       area is not recoverable from ninety pixels anyway.
+
+       Longitude is scaled by the cosine of the country's middle latitude
+       before fitting. Without it every shape is stretched sideways by the
+       amount the latitude lies about, and Russia comes out a smear.
+
+       Cut once per country and kept: hovering back and forth between two
+       cities should not re-project a hundred points each way. */
+    const shapes = new Map<string, { d: string; pin: (a: number, b: number) => [number, number] }>();
+    const outlineFor = (cc: string) => {
+      const held = shapes.get(cc);
+      if (held) return held;
+      const rings = COUNTRIES[cc];
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -Infinity;
+      let y1 = -Infinity;
+      for (const r of rings)
+        for (const [lon, lat] of r) {
+          if (lon < x0) x0 = lon;
+          if (lon > x1) x1 = lon;
+          if (lat < y0) y0 = lat;
+          if (lat > y1) y1 = lat;
+        }
+      const k = Math.max(0.2, Math.cos((((y0 + y1) / 2) * Math.PI) / 180));
+      const spanX = Math.max(1e-6, (x1 - x0) * k);
+      const spanY = Math.max(1e-6, y1 - y0);
+      const PAD = 8;
+      const scale = Math.min((100 - PAD * 2) / spanX, (100 - PAD * 2) / spanY);
+      const offX = (100 - spanX * scale) / 2;
+      const offY = (100 - spanY * scale) / 2;
+      const pin = (lon: number, lat: number): [number, number] => [
+        offX + (lon - x0) * k * scale,
+        /* Latitude increases northward and SVG y increases downward. */
+        offY + (y1 - lat) * scale,
+      ];
+      const d = rings
+        .map(
+          (r) =>
+            r
+              .map((pt, n) => {
+                const [px, py] = pin(pt[0], pt[1]);
+                return `${n ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`;
+              })
+              .join("") + "Z",
+        )
+        .join("");
+      const cut = { d, pin };
+      shapes.set(cc, cut);
+      return cut;
+    };
 
 
     /* ---- the city's own clock ----------------------------------------
@@ -512,6 +585,11 @@ export default function Globe({ className }: { className?: string }) {
       const utc = `UTC${hudOffset < 0 ? "\u2212" : "+"}${pad(
         Math.floor(Math.abs(hudOffset) / 60),
       )}:${pad(Math.abs(hudOffset) % 60)}`;
+      const cut = outlineFor(CENTRES[i].cc);
+      hudShape.setAttribute("d", cut.d);
+      const [px, py] = cut.pin(CENTRES[i].lon, CENTRES[i].lat);
+      hudPin.setAttribute("cx", px.toFixed(1));
+      hudPin.setAttribute("cy", py.toFixed(1));
       hudCity.textContent = CENTRES[i].name;
       hudMeta.textContent = `${utc} \u00b7 ${
         gap === 0 ? "YOUR TIME" : `${hm(gap)} ${gap > 0 ? "AHEAD" : "BEHIND"}`
@@ -521,111 +599,12 @@ export default function Globe({ className }: { className?: string }) {
       /* Measured now rather than per frame: the plate holds its berth for
          the whole hover, and the name is the only thing that changes its
          width — the digits are tabular. */
+      hudX = hud.offsetLeft;
+      hudY = hud.offsetTop;
       hudW = hud.offsetWidth;
       hudH = hud.offsetHeight;
-      berth(i);
-      hud.style.setProperty("--hud-x", `${hudX}px`);
-      hud.style.setProperty("--hud-y", `${hudY}px`);
     };
 
-    /**
-     * Where the plate sits for this city.
-     *
-     * Six berths round the edge of the frame, and the one nearest the city
-     * wins — so the readout is found near the thing it is describing rather
-     * than always in the same corner. Three things rule a berth out:
-     *
-     *  - it would fall outside the window. The frame is wider than the
-     *    screen and taller than the fold, so several berths are off it at
-     *    any given moment, and which ones depends on the scroll.
-     *  - it would cover something the section marked as not-to-cover. The
-     *    headline crosses the left of the frame, and a plate parked on it
-     *    looks like a mistake.
-     *  - it is nearer the marker than KEEP_OFF. Landing on the city is what
-     *    this design is trying not to do.
-     */
-    const INSET = 14;
-    const KEEP_OFF = 70;
-    const berth = (i: number) => {
-      const cw = renderer.domElement.clientWidth;
-      const ch = renderer.domElement.clientHeight;
-      const box = renderer.domElement.getBoundingClientRect();
-      const mx = labelX[i];
-      const my = labelY[i];
-
-      /* Anything the section says to keep clear of, in frame coordinates. */
-      const avoid: number[][] = [];
-      host
-        .closest("section")
-        ?.querySelectorAll<HTMLElement>("[data-globe-avoid]")
-        .forEach((el) => {
-          const r = el.getBoundingClientRect();
-          if (r.width && r.height)
-            avoid.push([
-              r.left - box.left,
-              r.top - box.top,
-              r.right - box.left,
-              r.bottom - box.top,
-            ]);
-        });
-
-      /* Berths are set against the frame, then pulled in to the window
-         where the frame runs past it. Without this the right-hand three
-         anchor to a canvas edge that is itself off-screen, so they are
-         always rejected and the plate only ever uses the left. */
-      const right = Math.min(
-        cw - hudW - INSET,
-        window.innerWidth - 12 - hudW - box.left,
-      );
-      const top = Math.max(INSET, 88 - box.top);
-      const bottom = Math.min(
-        ch - hudH - INSET,
-        window.innerHeight - 12 - hudH - box.top,
-      );
-      const middle = (ch - hudH) / 2;
-      const slots = [
-        [INSET, top],
-        [right, top],
-        [INSET, middle],
-        [right, middle],
-        [INSET, bottom],
-        [right, bottom],
-      ];
-
-      let best = -1;
-      let bestD = Infinity;
-      for (let s = 0; s < slots.length; s++) {
-        const [x, y] = slots[s];
-        /* On screen, allowing for the navigation overhead. */
-        const vx = box.left + x;
-        const vy = box.top + y;
-        if (vx < 12 || vx + hudW > window.innerWidth - 12) continue;
-        if (vy < 88 || vy + hudH > window.innerHeight - 12) continue;
-        /* Clear of the headline and anything else spoken for. */
-        if (
-          avoid.some(
-            (a) => x < a[2] && a[0] < x + hudW && y < a[3] && a[1] < y + hudH,
-          )
-        )
-          continue;
-        /* Clear of the city itself. */
-        const nx = Math.max(x, Math.min(x + hudW, mx));
-        const ny = Math.max(y, Math.min(y + hudH, my));
-        if (Math.hypot(mx - nx, my - ny) < KEEP_OFF) continue;
-        const d = Math.hypot(mx - (x + hudW / 2), my - (y + hudH / 2));
-        if (d < bestD) {
-          bestD = d;
-          best = s;
-        }
-      }
-
-      /* Every berth ruled out — a very short window, or a city sitting on
-         the only one left. The top-left corner is the safest thing there
-         is, so it is what the plate falls back to. */
-      const [x, y] = best >= 0 ? slots[best] : [INSET, top];
-      hudX = Math.round(x);
-      hudY = Math.round(y);
-    };
 
     const closeHud = () => {
       delete hud.dataset.on;
