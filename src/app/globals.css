@@ -776,6 +776,26 @@ html[data-cursor="on"] * {
   color: var(--color-bone);
 }
 
+/* The hovered city's own clock, and how far it is from the reader's own
+   clock. Hidden until the city is pointed at: a time under all twenty-three
+   names would double the room every one of them needs, and over Europe they
+   are already competing for it.
+
+   Not uppercased with the name — "14:32 · +2H" is a shout, and the H is
+   doing less work than the digits are. */
+.globe-label__time {
+  display: none;
+  margin-top: 0.35em;
+  font-size: 0.95em;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--color-signal-lift);
+}
+
+.globe-label[data-on] .globe-label__time {
+  display: block;
+}
+
 /* Lit by the pointer being on the letter's ink, not in its box — which is a
    question :hover cannot answer, since a box is not a shape and the Y is
    mostly hole. WordmarkTrace reads the alpha under the pointer and sets this.

@@ -103,9 +103,23 @@ export const WORLD: Ring[] = [
     [-45.0, 60.0], [-20.0, 70.0], [-20.0, 82.0], [-45.0, 83.0], [-60.0, 80.0],
     [-55.0, 70.0],
   ],
-  // Great Britain and Ireland
-  [[-5.0, 50.0], [-3.0, 53.0], [-3.0, 58.0], [-5.0, 58.0], [-6.0, 55.0]],
-  [[-10.0, 51.5], [-6.0, 52.0], [-6.0, 55.2], [-10.0, 54.5]],
+  // Great Britain. Drawn properly, because the five-point sliver that used to
+  // stand here ran from Cornwall to Cape Wrath without ever crossing the
+  // Greenwich meridian — so the whole of the south-east was missing and London
+  // sat a degree out in the North Sea. South coast east to Dover, up through
+  // East Anglia and the Wash, round Scotland, back down the Welsh side.
+  [
+    [-5.7, 50.07], [-4.2, 50.35], [-2.4, 50.6], [-0.8, 50.77], [1.4, 51.1],
+    [1.0, 51.6], [1.75, 52.5], [0.3, 52.9], [0.1, 53.6], [-1.4, 55.0],
+    [-2.5, 56.0], [-2.1, 57.2], [-3.0, 58.6], [-5.2, 58.3], [-5.6, 57.0],
+    [-4.8, 55.7], [-3.6, 54.9], [-3.1, 54.1], [-4.7, 53.3], [-4.3, 52.2],
+    [-5.3, 51.7], [-3.5, 51.4],
+  ],
+  // Ireland, with the east coast east of Dublin rather than through it.
+  [
+    [-10.0, 51.6], [-8.3, 51.5], [-6.2, 52.2], [-5.9, 53.4], [-6.0, 54.1],
+    [-5.5, 54.7], [-7.3, 55.4], [-8.5, 54.3], [-10.2, 53.6],
+  ],
   // Japan
   [
     [130.0, 31.0], [135.0, 34.0], [140.0, 36.0], [142.0, 40.0], [141.0, 45.0],
@@ -116,6 +130,72 @@ export const WORLD: Ring[] = [
   // Indonesia, as one coarse arc
   [[95.0, 5.0], [105.0, -6.0], [115.0, -8.5], [130.0, -8.0], [140.0, -8.0]],
 ];
+
+/**
+ * How far outside the drawn coastline still counts as shore, in degrees.
+ *
+ * The rings are coarse on purpose, and a coastal city is by definition within
+ * a rounding error of the line — San Francisco, Tokyo, Sydney, Hong Kong and
+ * Sao Paulo all sat within a quarter of a degree of it, on the wrong side, and
+ * so had open water drawn underneath them. Widening the coast by a third of a
+ * degree puts land under all of them at once, which no amount of extra dots
+ * could do: density does not change which side of a line a point is on.
+ *
+ * Kept well under the dot pitch (1.05 degrees) so it reads as the coastline
+ * being generous rather than the continents being fat.
+ */
+export const COAST_TOL = 0.35;
+
+/** Ring bounding boxes, so the distance test can skip rings it cannot be near
+ *  instead of walking every segment on Earth for every point of open ocean. */
+const BOUNDS = WORLD.map((ring) => {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const [x, y] of ring) {
+    if (x < x0) x0 = x;
+    if (y < y0) y0 = y;
+    if (x > x1) x1 = x;
+    if (y > y1) y1 = y;
+  }
+  return [x0, y0, x1, y1] as const;
+});
+
+/** Distance from a point to the nearest coastline segment, in degrees, with
+ *  longitude scaled by the latitude's cosine so the measure stays even. */
+export function distanceToCoast(lon: number, lat: number) {
+  const k = Math.cos((lat * Math.PI) / 180);
+  let best = Infinity;
+  for (let r = 0; r < WORLD.length; r++) {
+    const [x0, y0, x1, y1] = BOUNDS[r];
+    const pad = best === Infinity ? COAST_TOL : best;
+    if (lat < y0 - pad || lat > y1 + pad) continue;
+    if (k > 0.01 && (lon < x0 - pad / k || lon > x1 + pad / k)) continue;
+    const ring = WORLD[r];
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const ax = (ring[j][0] - lon) * k;
+      const ay = ring[j][1] - lat;
+      const bx = (ring[i][0] - lon) * k;
+      const by = ring[i][1] - lat;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len = dx * dx + dy * dy;
+      let t = len ? (-ax * dx - ay * dy) / len : 0;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const cx = ax + t * dx;
+      const cy = ay + t * dy;
+      const d = Math.sqrt(cx * cx + cy * cy);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/** Land, plus the shore either side of it. What the globe draws dots from. */
+export function isLandOrShore(lon: number, lat: number, tol = COAST_TOL) {
+  return isLand(lon, lat) || distanceToCoast(lon, lat) <= tol;
+}
 
 /**
  * Whether a longitude/latitude falls on land, by ray-casting the rings above.

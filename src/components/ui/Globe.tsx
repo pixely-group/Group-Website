@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 import { gsap } from "@/lib/gsap";
 import { CENTRES, CORRIDORS } from "@/lib/corridors";
-import { isLand } from "@/lib/worldmap";
+import { isLandOrShore } from "@/lib/worldmap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
@@ -95,8 +95,16 @@ export default function Globe({ className }: { className?: string }) {
     world.rotation.z = -18 * DEG;
     scene.add(world);
 
+    /* The network — cities, corridors, packets, atmosphere — stays the
+       brand's electric blue. */
     const SIGNAL = new THREE.Color("#2d46ff");
     const LIFT = new THREE.Color("#7290ff");
+    /* The land is a cooler, more azure blue: far enough round the wheel to
+       separate the ground from the traffic running over it, close enough to
+       still read as one palette. Same two-tone treatment as before — deep at
+       the limb, lit where it faces the camera — just on its own hue. */
+    const LAND_DEEP = new THREE.Color("#1d55c8");
+    const LAND_LIT = new THREE.Color("#59a6ff");
 
     /* ---- the halo ---------------------------------------------------
        No shell inside the sphere. One was tried at two opacities and both
@@ -120,7 +128,7 @@ export default function Globe({ className }: { className?: string }) {
         depthWrite: false,
         depthTest: false,
         blending: THREE.AdditiveBlending,
-        uniforms: { uColor: { value: new THREE.Color("#2d46ff") } },
+        uniforms: { uColor: { value: SIGNAL } },
         vertexShader: `
           varying vec2 vUv;
           void main() {
@@ -195,7 +203,7 @@ export default function Globe({ className }: { className?: string }) {
       const span = Math.max(0.12, Math.cos(lat * DEG));
       const lonStep = STEP / span;
       for (let lon = -180; lon < 180; lon += lonStep) {
-        if (!isLand(lon, lat)) continue;
+        if (!isLandOrShore(lon, lat)) continue;
         const p = onSphere(lon, lat);
         dots.push(p.x, p.y, p.z);
       }
@@ -211,8 +219,8 @@ export default function Globe({ className }: { className?: string }) {
       depthWrite: false,
       uniforms: {
         uSize: { value: 2.35 },
-        uColor: { value: SIGNAL },
-        uLift: { value: LIFT },
+        uColor: { value: LAND_DEEP },
+        uLift: { value: LAND_LIT },
         uPixelRatio: { value: 1 },
       },
       vertexShader: `
@@ -414,14 +422,86 @@ export default function Globe({ className }: { className?: string }) {
     host.appendChild(overlay);
 
     const cityLocal = CENTRES.map((c) => onSphere(c.lon, c.lat, RADIUS * 1.004));
+    const clocks: HTMLSpanElement[] = [];
     const labels = CENTRES.map((c) => {
       const el = document.createElement("span");
       el.className = "globe-label";
       if ("home" in c && c.home) el.dataset.home = "true";
-      el.textContent = c.name;
+      const name = document.createElement("span");
+      name.textContent = c.name;
+      const clock = document.createElement("span");
+      clock.className = "globe-label__time";
+      el.append(name, clock);
+      clocks.push(clock);
       overlay.appendChild(el);
       return el;
     });
+
+    /* ---- the city's own clock ----------------------------------------
+       Shown only while a city is being pointed at. Every label carrying a
+       time would double the footprint of all twenty-three of them, and they
+       already have to compete for room over Europe.
+
+       Both numbers are read back out of Intl for the current instant rather
+       than tabulated. Daylight saving is then right by construction, in both
+       places at once and on their own separate dates — which is the whole of
+       why the gap has to be computed and cannot be stored. */
+    const zoneOffset = (tz: string, at: Date) => {
+      const p = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+        .formatToParts(at)
+        .reduce<Record<string, string>>((a, x) => {
+          a[x.type] = x.value;
+          return a;
+        }, {});
+      const asUTC = Date.UTC(
+        +p.year,
+        +p.month - 1,
+        +p.day,
+        +p.hour % 24,
+        +p.minute,
+        +p.second,
+      );
+      return Math.round((asUTC - at.getTime()) / 60000);
+    };
+
+    const timeFmt = new Map<string, Intl.DateTimeFormat>();
+    const clockText = (tz: string, at: Date) => {
+      let f = timeFmt.get(tz);
+      if (!f) {
+        f = new Intl.DateTimeFormat("en-GB", {
+          timeZone: tz,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+        timeFmt.set(tz, f);
+      }
+      /* getTimezoneOffset counts minutes BEHIND UTC, so adding it subtracts
+         the visitor's own offset and what is left is the gap they feel. */
+      const gap = zoneOffset(tz, at) + at.getTimezoneOffset();
+      const h = Math.floor(Math.abs(gap) / 60);
+      const m = Math.abs(gap) % 60;
+      const sign = gap > 0 ? "+" : gap < 0 ? "\u2212" : "\u00b1";
+      const rel = `${sign}${h}${m ? ":" + String(m).padStart(2, "0") : ""}h`;
+      return `${f.format(at)} \u00b7 ${gap === 0 ? "your time" : rel}`;
+    };
+
+    let clockAt = 0;
+    const setClock = (i: number) => {
+      if (i < 0) return;
+      const at = new Date();
+      clockAt = at.getTime();
+      clocks[i].textContent = clockText(CENTRES[i].tz, at);
+    };
 
     /* ---- size -------------------------------------------------------- */
     const resize = () => {
@@ -578,6 +658,7 @@ export default function Globe({ className }: { className?: string }) {
           labels.forEach((el, n) =>
             el.toggleAttribute("data-on", n === i),
           );
+          setClock(i);
           renderer.domElement.dataset.cursor = i >= 0 ? "link" : "";
         }
         return;
@@ -676,10 +757,15 @@ export default function Globe({ className }: { className?: string }) {
           labelTarget[i] = 0;
           continue;
         }
+        /* The hovered label carries a second line, so its cached width and
+           height are both wrong for it. One live read per frame, and only
+           while something is hovered. */
+        const lw = i === hover ? labels[i].offsetWidth : labelW[i];
+        const lh = i === hover ? labels[i].offsetHeight : labelH;
         const l = labelX[i] + labelMl - GUTTER;
         const t = labelY[i] + labelMt - GUTTER;
-        const r = l + labelW[i] + GUTTER * 2;
-        const b = t + labelH + GUTTER * 2;
+        const r = l + lw + GUTTER * 2;
+        const b = t + lh + GUTTER * 2;
         let clear = true;
         for (let p = 0; p < placedN; p++) {
           const o = p * 4;
@@ -703,6 +789,10 @@ export default function Globe({ className }: { className?: string }) {
           placedN++;
         }
       }
+
+      /* A hover held across a minute boundary would otherwise sit there
+         showing the minute it started on. */
+      if (hover >= 0 && Date.now() - clockAt > 15000) setClock(hover);
 
       /* The pointed-at name arrives at once rather than easing in. It has
          already been given first place above, so it is always placed; but if
