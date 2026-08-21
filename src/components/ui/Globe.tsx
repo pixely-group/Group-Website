@@ -114,7 +114,7 @@ export default function Globe({ className }: { className?: string }) {
        is a function of distance from the centre, so it can be told to peak
        just outside the globe's edge and be nowhere else. */
     const halo = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.7, 2.7),
+      new THREE.PlaneGeometry(2.4, 2.4),
       new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
@@ -133,12 +133,12 @@ export default function Globe({ className }: { className?: string }) {
           varying vec2 vUv;
           void main() {
             /* 0 at the card's centre, 1 at its edge. The globe's silhouette
-               lands at 0.74 of that, since the card is 2.7 across and the
+               lands at 0.833 of that, since the card is 2.4 across and the
                sphere is 2 — so the band is set to climb through there and
                fall away into nothing well before the card's own edge, which
                must never be visible. */
             float r = length(vUv - 0.5) * 2.0;
-            float band = smoothstep(0.66, 0.755, r) * smoothstep(0.93, 0.755, r);
+            float band = smoothstep(0.76, 0.845, r) * smoothstep(0.98, 0.845, r);
             gl_FragColor = vec4(uColor, band * 0.11);
           }
         `,
@@ -443,10 +443,12 @@ export default function Globe({ className }: { className?: string }) {
          bottom were simply outside it and it looked masked.
 
          REACH is the radius that has to fit, and the halo sets it rather
-         than the sphere: the card is 2.7 across and its glow is gone by 0.93
-         of that, so 1.27 is the point past which there is nothing left to
-         cut. Solved on both axes and the further of the two wins. */
-      const REACH = 1.27;
+         than the sphere: the card is 2.4 across and its glow is gone by 0.98
+         of that, so 1.19 is the point past which there is nothing left to
+         cut. Every tenth here is globe — at 1.19 the sphere fills 84% of the
+         frame's shorter axis where at 1.27 it filled 79. Solved on both axes
+         and the further of the two wins. */
+      const REACH = 1.19;
       const half = Math.tan(((camera.fov / 2) * Math.PI) / 180);
       camera.position.setLength(
         Math.max(REACH / half, REACH / (half * camera.aspect)),

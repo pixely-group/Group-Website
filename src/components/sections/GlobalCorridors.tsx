@@ -45,20 +45,25 @@ export default function GlobalCorridors() {
       className="relative overflow-hidden bg-theme px-6 py-[15vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        {/* Two thirds of the width for the globe, inside the container
-            rather than past it, and the words over the left third.
+        {/* The globe is sized by the box's HEIGHT, not its width: the
+            camera pulls back until the sphere fits the shorter axis, so a
+            wide flat box leaves it small with empty space either side. That
+            is why two thirds of the width still looked small — at 795x469 the
+            globe could only ever be 370 across. The box is much taller now
+            and reaches left under the heading, which is the overlap that was
+            asked for.
 
             The words take no pointer events; each block of text takes its own
             back. A full-width layer over the globe is a full-width lid — it
             swallowed every drag, which is how the last one broke — so the
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
-        <div className="relative min-h-[clamp(320px,36vw,500px)]">
-          <div className="absolute inset-y-0 right-0 w-2/3">
+        <div className="relative min-h-[clamp(420px,54vw,740px)]">
+          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[86%] lg:w-[82%]">
             <Globe className="h-full w-full" />
           </div>
 
-          <div className="pointer-events-none relative z-10 flex min-h-[clamp(320px,36vw,500px)] max-w-md flex-col justify-center">
+          <div className="pointer-events-none relative z-10 flex min-h-[clamp(420px,54vw,740px)] max-w-md flex-col justify-center">
             <p className="type-label section-index pointer-events-auto mb-6 w-max text-(--muted)">
               05 — Global
             </p>
@@ -73,7 +78,7 @@ export default function GlobalCorridors() {
         </div>
 
         {/* Under the globe, where it was. */}
-        <div className="ml-auto w-2/3">
+        <div className="ml-auto w-[92%] sm:w-[86%] lg:w-[82%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
