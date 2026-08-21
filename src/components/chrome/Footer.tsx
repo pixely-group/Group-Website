@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import WordmarkDecode from "@/components/ui/WordmarkDecode";
+import WordmarkTrace from "@/components/ui/WordmarkTrace";
 
 /* The Product column carries the six core services the deck documents — the
    same six Metrics lists — rather than the multi-currency treasury lineup the
@@ -163,12 +163,12 @@ export default function Footer() {
           </nav>
         </div>
 
-        {/* Wordmark as a rule across the base of the page. Each letter decodes
+        {/* Wordmark as a rule across the base of the page. Each letter traces
             under the pointer — and only when the pointer is on the letter
-            itself rather than in its box, which WordmarkDecode settles by
+            itself rather than in its box, which WordmarkTrace settles by
             reading the alpha under the cursor. */}
         <div aria-hidden className="mt-20 overflow-hidden">
-          <WordmarkDecode text="Pixely" />
+          <WordmarkTrace text="Pixely" />
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">

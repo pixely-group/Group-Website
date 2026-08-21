@@ -3,15 +3,15 @@
 import { useEffect, useRef } from "react";
 
 import FitText from "@/components/ui/FitText";
-import { useFinePointer, useReducedMotion } from "@/lib/hooks";
+import { useFinePointer } from "@/lib/hooks";
 
 /**
- * The footer wordmark, decoded letter by letter.
+ * The footer wordmark, traced letter by letter.
  *
- * Two problems, and they pull against each other. The effect wants live text,
- * because decoding means putting different characters in the same place. The
- * pointer wants geometry, because a letter's box is not its shape — the Y is
- * mostly a hole, and hovering the hole was setting it off.
+ * All this does is say which letter the pointer is actually on; the effect
+ * itself is CSS, hung off `.is-lit`. Keeping the two apart is the point — the
+ * letter stays live text, so the outline the trace draws is the font's own
+ * glyph rather than an approximation of it.
  *
  * Nothing in the browser answers "is the pointer on the ink" for live text.
  * SVG text hit-tests by glyph cell; a clip-path made of text hit-tests as a
@@ -26,23 +26,13 @@ import { useFinePointer, useReducedMotion } from "@/lib/hooks";
  * accumulate along the line until the later letters tested against the wrong
  * shape.
  */
-const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#*+=/\\<>";
-/** How many characters a letter turns over before it resolves, and how long
- *  each is held. Counted rather than timed: a slow frame should cost the
- *  decode its pace, not its existence. Driven off elapsed time, one throttled
- *  tick can arrive past the whole budget and resolve the letter without ever
- *  having shown a single other glyph — which is exactly what a backgrounded
- *  pane does to it. Twelve at 38ms is the same ~460ms when frames are cheap. */
-const STEPS = 12;
-const TURNOVER = 38;
 /** Alpha above which a pixel counts as ink. Low, because the glyph edges are
  *  anti-aliased and the edge should feel live rather than walled. */
 const INK = 40;
 
-export default function WordmarkDecode({ text }: { text: string }) {
+export default function WordmarkTrace({ text }: { text: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fine = useFinePointer();
-  const reduced = useReducedMotion();
 
   useEffect(() => {
     const host = hostRef.current;
@@ -119,42 +109,20 @@ export default function WordmarkDecode({ text }: { text: string }) {
       });
     };
 
-    /* One run per letter, so two letters can be resolving at once and a
-       letter re-entered mid-run restarts rather than stacking. */
-    const runs = new Map<number, number>();
-    const decode = (i: number) => {
-      const el = letters[i];
-      if (!el) return;
-      const real = el.dataset.wmLetter ?? "";
-      window.clearInterval(runs.get(i));
-      if (reduced) {
-        el.classList.add("is-lit");
-        return;
-      }
-      el.classList.add("is-lit");
-      let left = STEPS;
-      const id = window.setInterval(() => {
-        if (left-- <= 0) {
-          window.clearInterval(id);
-          runs.delete(i);
-          el.textContent = real;
-          el.dataset.ch = real;
-          return;
-        }
-        const ch = SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
-        el.textContent = ch;
-        el.dataset.ch = ch;
-      }, TURNOVER);
-      runs.set(i, id);
-    };
-
     let lit = -1;
     const onMove = (e: PointerEvent) => {
       const i = inkAt(e.clientX, e.clientY);
       if (i === lit) return;
       if (lit >= 0) letters[lit]?.classList.remove("is-lit");
       lit = i;
-      if (i >= 0) decode(i);
+      /* Removed and re-added rather than toggled, so re-entering a letter
+         restarts the trace instead of leaving it finished. */
+      if (i >= 0) {
+        const el = letters[i];
+        el.classList.remove("is-lit");
+        void el.offsetWidth;
+        el.classList.add("is-lit");
+      }
     };
     const onLeave = () => {
       if (lit >= 0) letters[lit]?.classList.remove("is-lit");
@@ -173,13 +141,9 @@ export default function WordmarkDecode({ text }: { text: string }) {
       ro.disconnect();
       host.removeEventListener("pointermove", onMove);
       host.removeEventListener("pointerleave", onLeave);
-      runs.forEach((id, i) => {
-        window.clearInterval(id);
-        const el = letters[i];
-        if (el) el.textContent = el.dataset.wmLetter ?? "";
-      });
+      letters.forEach((el) => el.classList.remove("is-lit"));
     };
-  }, [text, fine, reduced]);
+  }, [text, fine]);
 
   return (
     <div ref={hostRef}>

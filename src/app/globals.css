@@ -743,85 +743,79 @@ html[data-cursor="on"] * {
 
 /* Lit by the pointer being on the letter's ink, not in its box — which is a
    question :hover cannot answer, since a box is not a shape and the Y is
-   mostly hole. WordmarkDecode reads the alpha under the pointer and sets
-   this. */
+   mostly hole. WordmarkTrace reads the alpha under the pointer and sets this.
+
+   The letter hollows out and redraws itself. `-webkit-text-stroke` is what
+   makes that honest: the outline is the font's own glyph, not a path traced
+   off a canvas or an approximation fitted to it, so it sits exactly where the
+   solid letter sat. The stroke is set in em so it holds its weight at any
+   size the wordmark is fitted to.
+
+   Then a band of the solid letter travels down through the hollow one, which
+   is the scan. Both are clip-paths on the same glyph rather than anything
+   drawn, so nothing here can drift out of register with the text. */
 .wordmark-letter.is-lit {
   opacity: 1;
-  color: var(--color-bone);
-  animation: wordmark-shudder 260ms steps(2, jump-none) infinite;
+  color: transparent;
+  -webkit-text-stroke: 0.011em var(--color-signal);
+  animation: wordmark-draw 620ms var(--ease-out-expo) both;
 }
 
+/* The scan: the same character, solid, showing through a narrow window that
+   runs the height of the letter and repeats. */
 .wordmark-letter.is-lit::before {
-  opacity: 0.85;
-  color: var(--color-signal);
-  animation: wordmark-tear-a 420ms steps(3, jump-none) infinite;
+  content: attr(data-ch);
+  opacity: 1;
+  color: var(--color-bone);
+  -webkit-text-stroke: 0;
+  animation: wordmark-scan 1.6s cubic-bezier(0.45, 0, 0.15, 1) infinite;
 }
 
+/* And a second, thinner one in the brand blue, a beat behind — enough to read
+   as a machine passing over the letter twice rather than a light sweeping it
+   once. */
 .wordmark-letter.is-lit::after {
-  opacity: 0.7;
-  color: #ff4d3d;
-  animation: wordmark-tear-b 330ms steps(3, jump-none) infinite reverse;
+  content: attr(data-ch);
+  opacity: 0.9;
+  color: var(--color-signal-lift);
+  -webkit-text-stroke: 0;
+  animation: wordmark-scan-b 1.6s cubic-bezier(0.45, 0, 0.15, 1) infinite;
 }
 
-@keyframes wordmark-shudder {
+/* Drawn from the baseline up: the stroke arrives rather than appearing. */
+@keyframes wordmark-draw {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes wordmark-scan {
   0% {
-    transform: translate(0, 0);
+    clip-path: inset(-10% 0 100% 0);
   }
-  33% {
-    transform: translate(0.014em, -0.008em);
-  }
-  66% {
-    transform: translate(-0.012em, 0.01em);
-  }
+  70%,
   100% {
-    transform: translate(0.006em, 0.004em);
+    clip-path: inset(100% 0 -10% 0);
   }
 }
 
-@keyframes wordmark-tear-a {
-  0% {
-    clip-path: inset(4% 0 78% 0);
-    transform: translate(-0.05em, 0);
+@keyframes wordmark-scan-b {
+  0%,
+  12% {
+    clip-path: inset(-10% 0 100% 0);
   }
-  25% {
-    clip-path: inset(42% 0 38% 0);
-    transform: translate(0.06em, -0.012em);
-  }
-  50% {
-    clip-path: inset(72% 0 6% 0);
-    transform: translate(-0.035em, 0.01em);
-  }
-  75% {
-    clip-path: inset(18% 0 62% 0);
-    transform: translate(0.045em, 0.006em);
-  }
+  82%,
   100% {
-    clip-path: inset(4% 0 78% 0);
-    transform: translate(-0.05em, 0);
+    clip-path: inset(100% 0 -10% 0);
   }
 }
 
-@keyframes wordmark-tear-b {
-  0% {
-    clip-path: inset(58% 0 24% 0);
-    transform: translate(0.05em, 0.008em);
-  }
-  30% {
-    clip-path: inset(10% 0 70% 0);
-    transform: translate(-0.06em, 0);
-  }
-  60% {
-    clip-path: inset(80% 0 2% 0);
-    transform: translate(0.04em, -0.01em);
-  }
-  100% {
-    clip-path: inset(58% 0 24% 0);
-    transform: translate(0.05em, 0.008em);
-  }
-}
-
-/* A glitch is motion, so under this setting it does not run at all — the
-   letter still lights and pixelates, which is the affordance. */
+/* The trace is motion, so under this setting it does not run at all. The
+   letter still hollows to its outline, which is the affordance; it simply
+   arrives whole instead of being drawn, and nothing scans across it. */
 @media (prefers-reduced-motion: reduce) {
   .wordmark-letter {
     transition: none;
