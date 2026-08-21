@@ -238,20 +238,44 @@ export default function Navigation() {
       }
     };
 
-    const st = ScrollTrigger.create({
-      trigger: document.documentElement,
-      start: "top top",
-      end: "bottom bottom",
-      onUpdate: pick,
-      onRefresh: pick,
-    });
+    /* Listened for rather than scrubbed. This ran on a ScrollTrigger over the
+       document, and a trigger has to measure where the document ends — it had
+       measured 17192 against a page that scrolls to 20795, so updates stopped
+       3.6k pixels early and every one of them was in the footer. That is why
+       Contact never lit: `pick` would have chosen it, and simply was not being
+       called down there.
+
+       Nothing here needs a trigger. There is no scrub, no pin and no start
+       point, only a question asked on each frame that scrolls — which is the
+       same shape the theme sampler above already uses, and has no measurement
+       of its own to go stale. */
+    let frame = 0;
+    let fallback = 0;
+    const onScroll = () => {
+      if (!frame) {
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          pick();
+        });
+      }
+      /* rAF can be throttled to a couple of frames a second in a hidden or
+         backgrounded pane, which would leave the marker sitting on whichever
+         section the reader last saw. Same guard the sampler above keeps. */
+      window.clearTimeout(fallback);
+      fallback = window.setTimeout(pick, 160);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     /* Deferred rather than called here: setting state straight from an effect
        body commits a render for it. */
     const raf = requestAnimationFrame(pick);
 
     return () => {
       cancelAnimationFrame(raf);
-      st.kill();
+      if (frame) cancelAnimationFrame(frame);
+      window.clearTimeout(fallback);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, []);
 
