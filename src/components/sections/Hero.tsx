@@ -208,7 +208,7 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — AI fintech for data, identity and the network"
+          aria-label="Pixely — digital rails for payments, identity and Algeria"
         >
           {/* Two lines is a width budget, not a preference. The device
               column sits closest at 1024 — the narrowest width that still
@@ -219,7 +219,7 @@ export default function Hero() {
               this clears by 127. */}
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              AI fintech
+              Digital rails
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">

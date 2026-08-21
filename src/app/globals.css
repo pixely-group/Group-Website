@@ -328,13 +328,14 @@
      right padding — so the width term is solved against the device's left
      edge, not against the text column.
 
-     Re-solved for the two-line headline. The longest line is no longer the
-     first: "AI fintech" sets at 430, while "for the network" reaches 505 and
-     carries the serif at 1.14em on top. The tightest width that still gets
-     this layout is 1024, where the device's left edge sits at 652 — so that
-     line has 557px before it, and 6.2vw is what keeps it there with 60 to
-     spare. The height term divides by 3 for the same reason as above. */
-  font-size: clamp(2.3rem, min(6.2vw, calc((100svh - 430px) / 3)), 12rem);
+     Re-solved for the two-line headline. "Digital rails" is the longest
+     line — 571px of ink against "for payments" at 488 — and the tightest
+     width that still gets this layout is 1024, where the device's left edge
+     sits at 652. 6vw leaves that line ending at 592, which is 60px clear of
+     the device; 6.2 left only 41 and read as touching it. The height term
+     divides by 3 because the headline is two lines now, not the four the
+     old divisor reserved for. */
+  font-size: clamp(2.3rem, min(6vw, calc((100svh - 430px) / 3)), 12rem);
 }
 
 @utility text-giant {

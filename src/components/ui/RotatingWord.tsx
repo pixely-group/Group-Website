@@ -6,11 +6,16 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The last word of the headline, typed and retyped. All three finish the same
- * line — "AI-powered fintech platform for ..." — and they are the manifesto's
- * own three words, the ones it sets in the serif a section later: a payment
- * is data, so is an identity, and both should move at the speed of the
- * network. The hero states them; the manifesto argues them.
+ * The last word of the headline, typed and retyped. All three finish the
+ * same line — "Digital rails for ..." — and they climb rather than list:
+ * the two things Pixely actually carries, and then the country it carries
+ * them for. A reader who takes in only the first and last frames has read
+ * "digital rails for payments" and "digital rails for Algeria", which is the
+ * whole company in two glances.
+ *
+ * One word each, and every one of them concrete. "Data" and "the network"
+ * described what a payment IS; these describe what the thing DOES, which is
+ * the question anyone reads a homepage to answer.
  *
  * Lower case, and set in the italic — the same way the manifesto sets them.
  * The headline is in caps and the word would take them by inheritance, which
@@ -21,7 +26,7 @@ import { useReducedMotion } from "@/lib/hooks";
  * of the device column, and the budget is whatever the longest Archivo line
  * above sets. At the longest word this ends around 150px short of it.
  */
-const WORDS = ["data", "identity", "the network"] as const;
+const WORDS = ["payments", "identity", "Algeria"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
