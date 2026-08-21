@@ -7,21 +7,16 @@ import { useReducedMotion } from "@/lib/hooks";
 
 /**
  * The last word of the headline, typed and retyped. All three finish the same
- * line — "AI-powered fintech platform for ..." — and they are the manifesto's
- * own three words, the ones it sets in the serif a section later: a payment
- * is data, so is an identity, and both should move at the speed of the
- * network. The hero states them; the manifesto argues them.
+ * line — "Money should move like ..." — and all three have to survive that
+ * verb. "Light" is the one the line was written around and stays first;
+ * "data" is the manifesto's own claim a section later, that a payment is data
+ * and so is an identity; "software" is the same thought said plainly.
  *
- * Lower case, and set in the italic — the same way the manifesto sets them.
- * The headline is in caps and the word would take them by inheritance, which
- * is what `normal-case` at the call site is for: the words carry whatever
- * case is written here, and nothing else decides it for them.
- *
- * Length is a hard constraint, not a preference: the line has to stay clear
- * of the device column, and the budget is whatever the longest Archivo line
- * above sets. At the longest word this ends around 150px short of it.
+ * The earlier trio, identity and network among them, belonged to a line that
+ * read "... for X" and do not survive "move like". If these want changing,
+ * that is the only test they have to pass.
  */
-const WORDS = ["data", "identity", "network"] as const;
+const WORDS = ["light", "data", "software"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
