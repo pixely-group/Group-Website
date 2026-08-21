@@ -732,6 +732,47 @@ html[data-cursor="on"] * {
     color 220ms var(--ease-out-expo);
 }
 
+/* ————————————————————————————————————————
+   The globe's city names.
+
+   HTML over the canvas, positioned each frame from the city's real position
+   on the sphere — so they turn with it and go round the back with it. The
+   layer takes no pointer events: the canvas underneath has to keep receiving
+   the drag, and which city is under the cursor is answered by projecting the
+   cities rather than by hit-testing these.
+   ———————————————————————————————————————— */
+.globe-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.globe-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* The transform places it; this shifts it clear of its own marker without
+     the placement having to know about it. */
+  margin: -0.7em 0 0 0.85em;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(236 233 225 / 0.5);
+  transition: color 220ms var(--ease-out-expo);
+  will-change: transform, opacity;
+}
+
+.globe-label[data-home] {
+  color: var(--color-signal-lift);
+}
+
+.globe-label[data-on] {
+  color: var(--color-bone);
+}
+
 /* Lit by the pointer being on the letter's ink, not in its box — which is a
    question :hover cannot answer, since a box is not a shape and the Y is
    mostly hole. WordmarkTrace reads the alpha under the pointer and sets this.

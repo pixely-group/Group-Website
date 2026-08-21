@@ -348,6 +348,10 @@ export default function Globe({ className }: { className?: string }) {
     const cityGeo = new THREE.BufferGeometry();
     cityGeo.setAttribute("position", new THREE.Float32BufferAttribute(cityPos, 3));
     cityGeo.setAttribute("aHome", new THREE.Float32BufferAttribute(cityHome, 1));
+    cityGeo.setAttribute(
+      "aIndex",
+      new THREE.Float32BufferAttribute(CENTRES.map((_, i) => i), 1),
+    );
     const cityMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -355,13 +359,17 @@ export default function Globe({ className }: { className?: string }) {
         uColor: { value: LIFT },
         uPixelRatio: { value: 1 },
         uTime: { value: 0 },
+        uHover: { value: -1 },
       },
       vertexShader: `
         attribute float aHome;
+        attribute float aIndex;
+        uniform float uHover;
         uniform float uPixelRatio;
         uniform float uTime;
         varying float vFacing;
         varying float vHome;
+        varying float vLit;
         void main() {
           vHome = aHome;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
@@ -370,7 +378,10 @@ export default function Globe({ className }: { className?: string }) {
              corridor runs to, so it should be findable while the globe
              turns. */
           float beat = 1.0 + aHome * 0.22 * sin(uTime * 2.4);
-          gl_PointSize = (aHome > 0.5 ? 15.0 : 9.0) * beat * uPixelRatio;
+          float lit = step(abs(aIndex - uHover), 0.5);
+          vLit = lit;
+          gl_PointSize =
+            (aHome > 0.5 ? 15.0 : 9.0) * beat * (1.0 + lit * 0.55) * uPixelRatio;
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -378,21 +389,43 @@ export default function Globe({ className }: { className?: string }) {
         uniform vec3 uColor;
         varying float vFacing;
         varying float vHome;
+        varying float vLit;
         void main() {
           float d = length(gl_PointCoord - 0.5) * 2.0;
           if (d > 1.0) discard;
           /* A ring, not a disc — a filled dot at this size reads as a blob
              on top of the land rather than as a place on it. */
           float ring = smoothstep(0.52, 0.68, d) * smoothstep(1.0, 0.86, d);
-          float core = smoothstep(0.34, 0.16, d) * (0.35 + vHome * 0.5);
+          float core = smoothstep(0.34, 0.16, d) * (0.35 + vHome * 0.5 + vLit * 0.5);
           float front = smoothstep(-0.05, 0.2, vFacing);
-          float a = (ring + core) * front;
+          float a = (ring + core) * front * (1.0 + vLit * 0.4);
           if (a < 0.01) discard;
           gl_FragColor = vec4(uColor, a);
         }
       `,
     });
     world.add(new THREE.Points(cityGeo, cityMat));
+
+    /* ---- names ------------------------------------------------------
+       HTML over the canvas rather than sprites in it: the type is the site's
+       own at the site's own weight, it stays crisp at any pixel ratio, and it
+       can be read by anything that reads the page. Projected each frame from
+       the city's real position, so the names turn with the globe and go
+       round the back with it. */
+    const overlay = document.createElement("div");
+    overlay.className = "globe-labels";
+    overlay.setAttribute("aria-hidden", "true");
+    host.appendChild(overlay);
+
+    const cityLocal = CENTRES.map((c) => onSphere(c.lon, c.lat, RADIUS * 1.004));
+    const labels = CENTRES.map((c) => {
+      const el = document.createElement("span");
+      el.className = "globe-label";
+      if ("home" in c && c.home) el.dataset.home = "true";
+      el.textContent = c.name;
+      overlay.appendChild(el);
+      return el;
+    });
 
     /* ---- size -------------------------------------------------------- */
     const resize = () => {
@@ -437,6 +470,34 @@ export default function Globe({ className }: { className?: string }) {
        hands the globe back to its own drift instead of stopping it dead. */
     let idle = 0;
 
+    /* Which city the pointer is near, in screen space — the markers are a
+       few pixels of a rotating sphere, so this asks where they ended up
+       rather than trying to intersect them. */
+    let hover = -1;
+    const projected = new THREE.Vector3();
+    const camDir = new THREE.Vector3();
+    const nearestCity = (clientX: number, clientY: number) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      const x = clientX - r.left;
+      const y = clientY - r.top;
+      let best = -1;
+      let bestD = 26 * 26;
+      camDir.copy(camera.position).normalize();
+      for (let i = 0; i < cityLocal.length; i++) {
+        projected.copy(cityLocal[i]).applyMatrix4(world.matrixWorld);
+        if (projected.clone().normalize().dot(camDir) < 0.02) continue;
+        projected.project(camera);
+        const px = (projected.x * 0.5 + 0.5) * r.width;
+        const py = (-projected.y * 0.5 + 0.5) * r.height;
+        const d = (px - x) ** 2 + (py - y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      return best;
+    };
+
     const onDown = (e: PointerEvent) => {
       dragging = true;
       lastX = e.clientX;
@@ -445,7 +506,18 @@ export default function Globe({ className }: { className?: string }) {
       renderer.domElement.style.cursor = "grabbing";
     };
     const onMove = (e: PointerEvent) => {
-      if (!dragging) return;
+      if (!dragging) {
+        const i = nearestCity(e.clientX, e.clientY);
+        if (i !== hover) {
+          hover = i;
+          cityMat.uniforms.uHover.value = i;
+          labels.forEach((el, n) =>
+            el.toggleAttribute("data-on", n === i),
+          );
+          renderer.domElement.dataset.cursor = i >= 0 ? "link" : "";
+        }
+        return;
+      }
       const dx = e.clientX - lastX;
       lastX = e.clientX;
       velocity.y = dx * 0.005;
@@ -496,6 +568,26 @@ export default function Globe({ className }: { className?: string }) {
       }
       pulseGeo.attributes.position.needsUpdate = true;
 
+      const rect = renderer.domElement;
+      const w = rect.clientWidth;
+      const h = rect.clientHeight;
+      camDir.copy(camera.position).normalize();
+      for (let i = 0; i < labels.length; i++) {
+        projected.copy(cityLocal[i]).applyMatrix4(world.matrixWorld);
+        /* How squarely the city faces the camera. Names fade out well before
+           the edge rather than at it, or they would flip from one side of the
+           globe to the other in a single frame as the city crosses. */
+        const facing = projected.clone().normalize().dot(camDir);
+        projected.project(camera);
+        const el = labels[i];
+        const o = Math.max(0, Math.min(1, (facing - 0.12) / 0.3));
+        el.style.opacity = String(o);
+        if (o <= 0.001) continue;
+        el.style.transform = `translate(${(projected.x * 0.5 + 0.5) * w}px, ${
+          (-projected.y * 0.5 + 0.5) * h
+        }px)`;
+      }
+
       renderer.render(scene, camera);
     };
     gsap.ticker.add(draw);
@@ -503,6 +595,7 @@ export default function Globe({ className }: { className?: string }) {
     return () => {
       gsap.ticker.remove(draw);
       ro.disconnect();
+      overlay.remove();
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerup", onUp);
@@ -517,5 +610,5 @@ export default function Globe({ className }: { className?: string }) {
     };
   }, [reduced]);
 
-  return <div ref={hostRef} className={className} />;
+  return <div ref={hostRef} className={`relative ${className ?? ""}`} />;
 }
