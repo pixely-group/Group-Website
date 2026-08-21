@@ -6,18 +6,20 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The last word of the headline, typed and retyped. Both finish the same
- * line — "We make money move in a ..." — and only the word itself moves:
- * "in a" is set once in the display face and stays there, so the typing has
- * one short word to do rather than a whole adverbial, and the caret works
- * across a few characters instead of nine.
+ * The last word of the headline, typed and retyped. All three finish the
+ * same line — "Build what's next with ..." — and only the word itself moves:
+ * "next with" is set once in the display face and stays there, so the typing
+ * has one short word to do and the caret works across a few characters.
  *
- * The count is not fixed at three; the cycle is however many are listed. Two
- * is a holding pair — both say speed and neither says anything the other does
- * not, so the rotation currently arrives where it already was. A rotation
- * earns its keep when the frames differ.
+ * "With" is what makes these three work where the last set did not: it takes
+ * a bare noun of any kind, so identity, data and trust all follow it without
+ * an article and without straining. Each is also a thing the company hands
+ * you rather than a thing it does, which is why the line reads as an
+ * invitation instead of a boast.
+ *
+ * The count is not fixed; the cycle is however many are listed here.
  */
-const WORDS = ["identity", "network"] as const;
+const WORDS = ["identity", "data", "trust"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an

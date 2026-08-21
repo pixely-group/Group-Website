@@ -313,12 +313,15 @@
      stack occupies, over the ~4 line-heights this headline needs. Measured,
      not guessed.
 
-     The width term is set by "money move", which is the longest line in the
-     headline and wider than the "AI-powered" this was last solved against.
-     At 375 there are 327px and it needed 345 of them, so it wrapped; 9.2vw
-     leaves it 22 to spare. The floor comes down with it, or the floor would
-     simply put the overflow back. */
-  font-size: clamp(2.2rem, min(9.2vw, calc((100svh - 430px) / 5)), 11.5rem);
+     The width term is set by the longest line in the headline, which is now
+     "next with identity" — the rotating word runs 1.14em on top of it, so it
+     is far wider than the fixed line above. At 375 there are 327px of room
+     and it wants 376 of them; 7.4vw brings it to 303 with 14 to spare. The
+     floor comes down with it, or the floor would simply put the overflow
+     back — and a wrap here is not cosmetic, because each line is revealed
+     from behind its own mask and a second line inside one breaks the
+     stagger. */
+  font-size: clamp(1.7rem, min(7.4vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
 /* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
@@ -333,13 +336,16 @@
      in the deck's own phrase and there is no shorter way to say it, so the
      scale comes down to it rather than the line being reworded.
 
-     Re-solved for "money move", which is longer than that was. The binding
-     case is a wide AND tall viewport, where the height term stops holding the
-     type down and the width term is all that is left: at 1304x998 it reached
-     90.2px and ran that line 20px underneath the device. 6.1vw keeps it 74px
-     clear there, and changes nothing at 1024, where the height term still
-     binds first. */
-  font-size: clamp(2.2rem, min(6.1vw, calc((100svh - 430px) / 6.3)), 12rem);
+     Re-solved for "next with identity", which is longer again — 867px of
+     ink at 79.5px type, where "money move" wanted 798. The binding case is a
+     wide AND tall viewport, where the height term stops holding the type down
+     and the width term is all that is left: at 1304x998 that line ran 101px
+     underneath the device. 4.95vw keeps it 70 clear there and 59 at 1024,
+     where the width term now binds first as well.
+
+     The break is what costs it. "Build what's / next with X" allows 65px;
+     "Build what's next / with X" only 56; three lines would allow 83. */
+  font-size: clamp(1.7rem, min(4.95vw, calc((100svh - 430px) / 6.3)), 12rem);
 }
 
 @utility text-giant {

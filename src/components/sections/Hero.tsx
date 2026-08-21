@@ -208,25 +208,16 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — we make money move in a snap"
+          aria-label="Pixely — build what’s next with identity, data and trust"
         >
-          {/* The line this site opened with, before the rebrand took it away.
-              The rotating word stands where the static one did; the blue full
-              stop after it was always here, and is where the caret came
-              from. */}
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              We make
-            </span>
-          </span>
-          <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
-            <span data-hero-line className="block">
-              money move
+              Build what’s
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
-              in a{" "}
+              next with{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
                   to on dark chapters. That lift exists because the primary
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
