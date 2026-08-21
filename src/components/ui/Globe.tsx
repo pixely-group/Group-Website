@@ -704,6 +704,12 @@ export default function Globe({ className }: { className?: string }) {
         }
       }
 
+      /* The pointed-at name arrives at once rather than easing in. It has
+         already been given first place above, so it is always placed; but if
+         it had been standing down a moment ago it would otherwise fade up
+         over a dozen frames, and hover has to answer immediately. */
+      if (hover >= 0) labelFade[hover] = 1;
+
       for (let i = 0; i < labels.length; i++) {
         const el = labels[i];
         labelFade[i] += (labelTarget[i] - labelFade[i]) * 0.16;

@@ -40,8 +40,13 @@ export const WORLD: Ring[] = [
     [41.0, 45.0], [37.5, 44.5], [33.5, 45.3], [29.7, 45.2], [28.0, 43.4],
     [26.5, 41.4], [23.5, 40.0], [23.0, 37.0], [20.0, 39.5], [18.5, 42.5],
     [13.5, 45.5], [12.3, 45.4], [15.0, 41.9], [18.5, 40.1], [15.6, 38.0],
-    [12.5, 38.0], [10.3, 42.9], [8.8, 44.4], [6.5, 43.1], [3.0, 43.0],
-    [0.7, 41.0], [-0.3, 39.5], [-2.1, 36.8], [-6.3, 36.0], [-8.9, 37.0],
+    [12.5, 38.0], [10.3, 42.9], [8.8, 44.4], [6.5, 43.1],
+    // Catalonia, resolved: the coast ran straight from [3, 43] to [0.7, 41],
+    // a line that passes well inland of Barcelona and left the city two and a
+    // half degrees out to sea. Cap de Creus, the bend below Barcelona, and
+    // the Ebro delta put the shore back where the city actually is.
+    [3.3, 42.4], [2.4, 41.3], [0.9, 40.7],
+    [-0.3, 39.5], [-2.1, 36.8], [-6.3, 36.0], [-8.9, 37.0],
   ],
   // Asia
   [
