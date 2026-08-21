@@ -6,17 +6,18 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The end of the headline, typed and retyped. Both finish the same line —
- * "We make money move ..." — and the count is not fixed at three: the cycle
- * is however many are listed here.
+ * The last word of the headline, typed and retyped. Both finish the same
+ * line — "We make money move in a ..." — and only the word itself moves:
+ * "in a" is set once in the display face and stays there, so the typing has
+ * one short word to do rather than a whole adverbial, and the caret works
+ * across a few characters instead of nine.
  *
- * Phrases rather than single words, which the line asks for: "move" needs an
- * adverbial to land on and "snap" cannot carry one alone. These two are a
- * holding pair, both saying speed and neither saying anything the other does
- * not — a rotation earns its keep when the frames differ, so this is worth
- * coming back to.
+ * The count is not fixed at three; the cycle is however many are listed. Two
+ * is a holding pair — both say speed and neither says anything the other does
+ * not, so the rotation currently arrives where it already was. A rotation
+ * earns its keep when the frames differ.
  */
-const WORDS = ["in a snap", "in a flash"] as const;
+const WORDS = ["snap", "flash"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an

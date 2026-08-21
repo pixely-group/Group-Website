@@ -311,8 +311,14 @@
      up behind the navigation and clipped. The second term is the height
      actually available — the viewport less the ~430px the rest of the hero
      stack occupies, over the ~4 line-heights this headline needs. Measured,
-     not guessed. The clamp floor still governs small screens. */
-  font-size: clamp(2.4rem, min(10.4vw, calc((100svh - 430px) / 5)), 11.5rem);
+     not guessed.
+
+     The width term is set by "money move", which is the longest line in the
+     headline and wider than the "AI-powered" this was last solved against.
+     At 375 there are 327px and it needed 345 of them, so it wrapped; 9.2vw
+     leaves it 22 to spare. The floor comes down with it, or the floor would
+     simply put the overflow back. */
+  font-size: clamp(2.2rem, min(9.2vw, calc((100svh - 430px) / 5)), 11.5rem);
 }
 /* The headline with the device beside it. Wrapping here would not merely look
    wrong: each line is revealed from behind its own mask, and a second line
@@ -325,8 +331,15 @@
      platform sets at 760, "for payments." at 756, both inside the device's
      left edge at 817 — while "AI-powered" reached 890. It is the widest word
      in the deck's own phrase and there is no shorter way to say it, so the
-     scale comes down to it rather than the line being reworded. */
-  font-size: clamp(2.4rem, min(7vw, calc((100svh - 430px) / 6.3)), 12rem);
+     scale comes down to it rather than the line being reworded.
+
+     Re-solved for "money move", which is longer than that was. The binding
+     case is a wide AND tall viewport, where the height term stops holding the
+     type down and the width term is all that is left: at 1304x998 it reached
+     90.2px and ran that line 20px underneath the device. 6.1vw keeps it 74px
+     clear there, and changes nothing at 1024, where the height term still
+     binds first. */
+  font-size: clamp(2.2rem, min(6.1vw, calc((100svh - 430px) / 6.3)), 12rem);
 }
 
 @utility text-giant {
