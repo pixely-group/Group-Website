@@ -47,38 +47,38 @@ export default function GlobalCorridors() {
       <div className="mx-auto max-w-7xl">
         {/* The globe is sized by the box's HEIGHT, not its width: the
             camera pulls back until the sphere fits the shorter axis, so a
-            wide flat box leaves it small with empty space either side. That
-            is why two thirds of the width still looked small — at 795x469 the
-            globe could only ever be 370 across. The box is much taller now
-            and reaches left under the heading, which is the overlap that was
-            asked for.
+            wide flat box leaves it small with empty space either side and a
+            taller one makes it bigger without widening anything. Height is
+            the dial; the width only decides how far left it reaches under the
+            heading, which it is allowed to do.
 
             The words take no pointer events; each block of text takes its own
             back. A full-width layer over the globe is a full-width lid — it
             swallowed every drag, which is how the last one broke — so the
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
-        <div className="relative min-h-[clamp(420px,54vw,740px)]">
-          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[86%] lg:w-[82%]">
+        <div className="relative min-h-[clamp(380px,44vw,600px)]">
+          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:w-[72%]">
             <Globe className="h-full w-full" />
           </div>
 
-          <div className="pointer-events-none relative z-10 flex min-h-[clamp(420px,54vw,740px)] max-w-md flex-col justify-center">
+          <div className="pointer-events-none relative z-10 flex min-h-[clamp(380px,44vw,600px)] max-w-md flex-col justify-center">
             <p className="type-label section-index pointer-events-auto mb-6 w-max text-(--muted)">
               05 — Global
             </p>
-            <h2 className="type-headline text-big pointer-events-auto max-w-[11ch] text-balance">
+            <h2 className="type-headline text-big pointer-events-auto max-w-[14ch] text-balance">
               Algeria, on every corridor.
             </h2>
-            <p className="pointer-events-auto mt-7 max-w-xs text-[0.95rem] leading-relaxed text-(--muted)">
+            <p className="pointer-events-auto mt-7 max-w-sm text-[0.95rem] leading-relaxed text-(--muted)">
               Pixely is built for Algeria and connects it outward. Every
-              corridor here runs to Algiers.
+              corridor here runs to Algiers, so value moves between it and the
+              markets Algerian businesses actually trade with.
             </p>
           </div>
         </div>
 
         {/* Under the globe, where it was. */}
-        <div className="ml-auto w-[92%] sm:w-[86%] lg:w-[82%]">
+        <div className="ml-auto w-[92%] sm:w-[80%] lg:w-[72%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
