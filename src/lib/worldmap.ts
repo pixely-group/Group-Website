@@ -96,3 +96,28 @@ export const WORLD: Ring[] = [
   // Indonesia, as one coarse arc
   [[95.0, 5.0], [105.0, -6.0], [115.0, -8.5], [130.0, -8.0], [140.0, -8.0]],
 ];
+
+/**
+ * Whether a longitude/latitude falls on land, by ray-casting the rings above.
+ *
+ * Lives here rather than beside whichever thing is drawing: the flat map tested
+ * a pixel grid with it and the globe tests a sphere with it, and there is no
+ * reason for the two to carry their own copy of the same crossing count.
+ */
+export function isLand(lon: number, lat: number) {
+  for (const ring of WORLD) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (
+        yi > lat !== yj > lat &&
+        lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi
+      ) {
+        inside = !inside;
+      }
+    }
+    if (inside) return true;
+  }
+  return false;
+}
