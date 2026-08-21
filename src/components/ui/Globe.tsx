@@ -485,6 +485,53 @@ export default function Globe({ className }: { className?: string }) {
     let hover = -1;
     const projected = new THREE.Vector3();
     const camDir = new THREE.Vector3();
+    const nrm = new THREE.Vector3();
+
+    /* ---- name layout -------------------------------------------------
+       The names are laid out, not merely projected. Twenty-three cities on
+       one sphere puts five of them inside a few degrees over Europe, and two
+       names stacked on each other are worth less than one of them alone. So
+       each frame the visible names are offered a place in priority order and
+       any that would land on a name already placed stands down until it has
+       room again.
+
+       Boxes are measured once and cached. Reading offsetWidth here would be
+       twenty-three forced layouts every frame, and the text never changes, so
+       neither does the width. */
+    const labelW = new Float32Array(CENTRES.length);
+    const labelX = new Float32Array(CENTRES.length);
+    const labelY = new Float32Array(CENTRES.length);
+    const labelFacing = new Float32Array(CENTRES.length);
+    const labelOpacity = new Float32Array(CENTRES.length);
+    const labelTarget = new Float32Array(CENTRES.length);
+    /* Eased rather than switched, so a name that loses its place fades out of
+       the cluster instead of blinking off it. */
+    const labelFade = new Float32Array(CENTRES.length).fill(1);
+    const placedBox = new Float32Array(CENTRES.length * 4);
+    const cityIsHome = CENTRES.map((c) => "home" in c && !!c.home);
+    const order = CENTRES.map((_, i) => i);
+    let placedN = 0;
+    let labelH = 0;
+    let labelMl = 0;
+    let labelMt = 0;
+    let measured = false;
+    /** Breathing room, so names clear each other rather than only just miss. */
+    const GUTTER = 3;
+
+    const measureLabels = () => {
+      if (!labels[0]?.offsetWidth) return false;
+      const cs = getComputedStyle(labels[0]);
+      labelMl = parseFloat(cs.marginLeft) || 0;
+      labelMt = parseFloat(cs.marginTop) || 0;
+      labelH = labels[0].offsetHeight;
+      for (let i = 0; i < labels.length; i++) labelW[i] = labels[i].offsetWidth;
+      return true;
+    };
+    /* Measured again once the real face has loaded, or every width is the
+       fallback's and the whole layout is spaced for the wrong font. */
+    document.fonts?.ready.then(() => {
+      measured = false;
+    });
     const nearestCity = (clientX: number, clientY: number) => {
       const r = renderer.domElement.getBoundingClientRect();
       const x = clientX - r.left;
@@ -593,20 +640,79 @@ export default function Globe({ className }: { className?: string }) {
       const w = rect.clientWidth;
       const h = rect.clientHeight;
       camDir.copy(camera.position).normalize();
+      if (!measured) measured = measureLabels();
+
       for (let i = 0; i < labels.length; i++) {
         projected.copy(cityLocal[i]).applyMatrix4(world.matrixWorld);
         /* How squarely the city faces the camera. Names fade out well before
            the edge rather than at it, or they would flip from one side of the
            globe to the other in a single frame as the city crosses. */
-        const facing = projected.clone().normalize().dot(camDir);
+        labelFacing[i] = nrm.copy(projected).normalize().dot(camDir);
         projected.project(camera);
+        labelOpacity[i] = Math.max(
+          0,
+          Math.min(1, (labelFacing[i] - 0.12) / 0.3),
+        );
+        labelX[i] = (projected.x * 0.5 + 0.5) * w;
+        labelY[i] = (-projected.y * 0.5 + 0.5) * h;
+      }
+
+      /* The pointed-at name first, so a city can never be hovered and have no
+         name; then Algiers, because it is the one the section is about; then
+         whichever faces the camera most squarely. That last key is continuous
+         as the globe turns, so the order shifts by degrees rather than
+         swapping on a tie and flickering. */
+      order.sort((a, b) => {
+        if (a === hover) return -1;
+        if (b === hover) return 1;
+        if (cityIsHome[a] !== cityIsHome[b]) return cityIsHome[a] ? -1 : 1;
+        return labelFacing[b] - labelFacing[a];
+      });
+
+      placedN = 0;
+      for (let k = 0; k < order.length; k++) {
+        const i = order[k];
+        if (labelOpacity[i] <= 0.001) {
+          labelTarget[i] = 0;
+          continue;
+        }
+        const l = labelX[i] + labelMl - GUTTER;
+        const t = labelY[i] + labelMt - GUTTER;
+        const r = l + labelW[i] + GUTTER * 2;
+        const b = t + labelH + GUTTER * 2;
+        let clear = true;
+        for (let p = 0; p < placedN; p++) {
+          const o = p * 4;
+          if (
+            l < placedBox[o + 2] &&
+            placedBox[o] < r &&
+            t < placedBox[o + 3] &&
+            placedBox[o + 1] < b
+          ) {
+            clear = false;
+            break;
+          }
+        }
+        labelTarget[i] = clear ? 1 : 0;
+        if (clear) {
+          const o = placedN * 4;
+          placedBox[o] = l;
+          placedBox[o + 1] = t;
+          placedBox[o + 2] = r;
+          placedBox[o + 3] = b;
+          placedN++;
+        }
+      }
+
+      for (let i = 0; i < labels.length; i++) {
         const el = labels[i];
-        const o = Math.max(0, Math.min(1, (facing - 0.12) / 0.3));
+        labelFade[i] += (labelTarget[i] - labelFade[i]) * 0.16;
+        const o = labelOpacity[i] * labelFade[i];
         el.style.opacity = String(o);
+        /* Still positioned while it is fading out, or it would fade in place
+           on the far side of the globe from where it actually is. */
         if (o <= 0.001) continue;
-        el.style.transform = `translate(${(projected.x * 0.5 + 0.5) * w}px, ${
-          (-projected.y * 0.5 + 0.5) * h
-        }px)`;
+        el.style.transform = `translate(${labelX[i]}px, ${labelY[i]}px)`;
       }
 
       renderer.render(scene, camera);
