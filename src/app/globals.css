@@ -776,24 +776,135 @@ html[data-cursor="on"] * {
   color: var(--color-bone);
 }
 
-/* The hovered city's own clock, and how far it is from the reader's own
-   clock. Hidden until the city is pointed at: a time under all twenty-three
-   names would double the room every one of them needs, and over Europe they
-   are already competing for it.
+/* ---- the city readout ------------------------------------------------
+   A tooltip had the time at seven pixels, which is a footnote, not a clock.
+   This is an instrument instead: the panel is a dark pane over the globe
+   with a hairline in the brand blue, corner ticks at each edge, and a rail
+   down the leading side. It prints itself on — a left-to-right wipe, the
+   way a readout fills — and the corner ticks arrive just behind it.
 
-   Not uppercased with the name — "14:32 · +2H" is a shout, and the H is
-   doing less work than the digits are. */
-.globe-label__time {
-  display: none;
-  margin-top: 0.35em;
-  font-size: 0.95em;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--color-signal-lift);
+   pointer-events stay off it: it sits over the canvas and the canvas is
+   what the reader drags. */
+.globe-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  min-width: 8.5rem;
+  padding: 0.6rem 0.8rem 0.55rem;
+  pointer-events: none;
+  opacity: 0;
+  border: 1px solid rgb(45 70 255 / 0.5);
+  border-radius: 3px;
+  background: rgb(10 10 11 / 0.74);
+  backdrop-filter: blur(10px) saturate(1.25);
+  box-shadow:
+    0 18px 40px -18px rgb(0 0 0 / 0.9),
+    0 0 26px -8px rgb(45 70 255 / 0.5);
+  clip-path: inset(0 100% 0 0);
+  transform: translate(var(--hud-x, 0), var(--hud-y, 0));
+  transition:
+    opacity 180ms var(--ease-swift),
+    clip-path 300ms var(--ease-out-expo);
 }
 
-.globe-label[data-on] .globe-label__time {
-  display: block;
+/* Flipped to the reader's side of the marker, the wipe has to run the other
+   way — a readout fills from its own anchor outward, not always rightward. */
+.globe-hud[data-flip="left"] {
+  clip-path: inset(0 0 0 100%);
+}
+
+.globe-hud[data-on] {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+}
+
+/* The rail: the edge the panel grows from, and the only solid mark on it. */
+.globe-hud::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -1px;
+  width: 2px;
+  background: var(--color-signal);
+  box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
+}
+
+.globe-hud[data-flip="left"]::before {
+  left: auto;
+  right: -1px;
+}
+
+/* Corner ticks. One element, four corners: a conic gradient painted only
+   into the corner squares by a border-box mask would be clever and
+   unreadable, so it is four small boxes in a gradient instead. */
+.globe-hud::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 0 0 /
+      7px 1px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 0 0 /
+      1px 7px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 100% 0 /
+      7px 1px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 100% 0 /
+      1px 7px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 0 100% /
+      7px 1px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 0 100% /
+      1px 7px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 100%
+      100% / 7px 1px no-repeat,
+    linear-gradient(var(--color-signal-lift), var(--color-signal-lift)) 100%
+      100% / 1px 7px no-repeat;
+  transition: opacity 220ms var(--ease-out-expo) 120ms;
+}
+
+.globe-hud[data-on]::after {
+  opacity: 0.85;
+}
+
+.globe-hud__city {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-signal-glow);
+}
+
+/* The clock. Tabular, so the seconds tick without the panel breathing. */
+.globe-hud__time {
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.0625rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--color-bone);
+}
+
+/* Seconds sit a step down, so the hour and minute read first and the tick
+   is felt rather than followed. */
+.globe-hud__sec {
+  font-size: 0.6875rem;
+  color: rgb(236 233 225 / 0.45);
+}
+
+.globe-hud__meta {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgb(45 70 255 / 0.3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.5rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--color-signal-lift);
 }
 
 /* Lit by the pointer being on the letter's ink, not in its box — which is a

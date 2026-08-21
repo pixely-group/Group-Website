@@ -422,20 +422,33 @@ export default function Globe({ className }: { className?: string }) {
     host.appendChild(overlay);
 
     const cityLocal = CENTRES.map((c) => onSphere(c.lon, c.lat, RADIUS * 1.004));
-    const clocks: HTMLSpanElement[] = [];
     const labels = CENTRES.map((c) => {
       const el = document.createElement("span");
       el.className = "globe-label";
       if ("home" in c && c.home) el.dataset.home = "true";
-      const name = document.createElement("span");
-      name.textContent = c.name;
-      const clock = document.createElement("span");
-      clock.className = "globe-label__time";
-      el.append(name, clock);
-      clocks.push(clock);
+      el.textContent = c.name;
       overlay.appendChild(el);
       return el;
     });
+
+    /* ---- the readout -------------------------------------------------
+       Outside the labels overlay, which clips, so a panel near the rim is
+       flipped rather than cut. */
+    const hud = document.createElement("div");
+    hud.className = "globe-hud";
+    hud.setAttribute("aria-hidden", "true");
+    const hudCity = document.createElement("p");
+    hudCity.className = "globe-hud__city";
+    const hudTime = document.createElement("p");
+    hudTime.className = "globe-hud__time";
+    const hudHM = document.createElement("span");
+    const hudSec = document.createElement("span");
+    hudSec.className = "globe-hud__sec";
+    hudTime.append(hudHM, hudSec);
+    const hudMeta = document.createElement("p");
+    hudMeta.className = "globe-hud__meta";
+    hud.append(hudCity, hudTime, hudMeta);
+    host.appendChild(hud);
 
     /* ---- the city's own clock ----------------------------------------
        Shown only while a city is being pointed at. Every label carrying a
@@ -473,34 +486,53 @@ export default function Globe({ className }: { className?: string }) {
       return Math.round((asUTC - at.getTime()) / 60000);
     };
 
-    const timeFmt = new Map<string, Intl.DateTimeFormat>();
-    const clockText = (tz: string, at: Date) => {
-      let f = timeFmt.get(tz);
-      if (!f) {
-        f = new Intl.DateTimeFormat("en-GB", {
-          timeZone: tz,
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
-        timeFmt.set(tz, f);
-      }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const hm = (mins: number) =>
+      `${Math.floor(Math.abs(mins) / 60)}${
+        Math.abs(mins) % 60 ? "H" + pad(Math.abs(mins) % 60) : "H"
+      }`;
+
+    /** Minutes the hovered city is ahead of UTC. Read once per hover: it
+     *  cannot change while the pointer sits still, so the per-frame tick
+     *  below is arithmetic rather than another trip through Intl. */
+    let hudOffset = 0;
+    let hudSecond = -1;
+    let hudW = 0;
+    let hudH = 0;
+
+    const openHud = (i: number) => {
+      const at = new Date();
+      hudOffset = zoneOffset(CENTRES[i].tz, at);
       /* getTimezoneOffset counts minutes BEHIND UTC, so adding it subtracts
-         the visitor's own offset and what is left is the gap they feel. */
-      const gap = zoneOffset(tz, at) + at.getTimezoneOffset();
-      const h = Math.floor(Math.abs(gap) / 60);
-      const m = Math.abs(gap) % 60;
-      const sign = gap > 0 ? "+" : gap < 0 ? "\u2212" : "\u00b1";
-      const rel = `${sign}${h}${m ? ":" + String(m).padStart(2, "0") : ""}h`;
-      return `${f.format(at)} \u00b7 ${gap === 0 ? "your time" : rel}`;
+         the reader's own offset and what is left is the gap they feel. */
+      const gap = hudOffset + at.getTimezoneOffset();
+      const utc = `UTC${hudOffset < 0 ? "\u2212" : "+"}${pad(
+        Math.floor(Math.abs(hudOffset) / 60),
+      )}:${pad(Math.abs(hudOffset) % 60)}`;
+      hudCity.textContent = CENTRES[i].name;
+      hudMeta.textContent = `${utc} \u00b7 ${
+        gap === 0 ? "YOUR TIME" : `${hm(gap)} ${gap > 0 ? "AHEAD" : "BEHIND"}`
+      }`;
+      hudSecond = -1;
+      hud.dataset.on = "true";
+      /* Measured now rather than per frame: the name is the only thing that
+         changes its width, and the digits are tabular. */
+      hudW = hud.offsetWidth;
+      hudH = hud.offsetHeight;
     };
 
-    let clockAt = 0;
-    const setClock = (i: number) => {
-      if (i < 0) return;
-      const at = new Date();
-      clockAt = at.getTime();
-      clocks[i].textContent = clockText(CENTRES[i].tz, at);
+    const closeHud = () => {
+      delete hud.dataset.on;
+    };
+
+    /** The city's wall clock, from the offset rather than the formatter. */
+    const tickHud = () => {
+      const t = new Date(Date.now() + hudOffset * 60000);
+      const sec = t.getUTCSeconds();
+      if (sec === hudSecond) return;
+      hudSecond = sec;
+      hudHM.textContent = `${pad(t.getUTCHours())}:${pad(t.getUTCMinutes())}`;
+      hudSec.textContent = `:${pad(sec)}`;
     };
 
     /* ---- size -------------------------------------------------------- */
@@ -563,6 +595,8 @@ export default function Globe({ className }: { className?: string }) {
        few pixels of a rotating sphere, so this asks where they ended up
        rather than trying to intersect them. */
     let hover = -1;
+    let downX = 0;
+    let downY = 0;
     const projected = new THREE.Vector3();
     const camDir = new THREE.Vector3();
     const nrm = new THREE.Vector3();
@@ -634,9 +668,21 @@ export default function Globe({ className }: { className?: string }) {
       return best;
     };
 
+    const clearHover = () => {
+      if (hover < 0) return;
+      hover = -1;
+      cityMat.uniforms.uHover.value = -1;
+      labels.forEach((el) => el.removeAttribute("data-on"));
+      renderer.domElement.dataset.cursor = "";
+      closeHud();
+    };
+
     const onDown = (e: PointerEvent) => {
+      clearHover();
       dragging = true;
       lastX = e.clientX;
+      downX = e.clientX;
+      downY = e.clientY;
       idle = 0;
       /* Capture is a nicety — it keeps the drag alive if the pointer
          leaves the canvas — and it throws if the id is not a live pointer.
@@ -658,7 +704,8 @@ export default function Globe({ className }: { className?: string }) {
           labels.forEach((el, n) =>
             el.toggleAttribute("data-on", n === i),
           );
-          setClock(i);
+          if (i >= 0) openHud(i);
+          else closeHud();
           renderer.domElement.dataset.cursor = i >= 0 ? "link" : "";
         }
         return;
@@ -677,11 +724,25 @@ export default function Globe({ className }: { className?: string }) {
         /* nothing to release */
       }
       renderer.domElement.style.cursor = "ew-resize";
+
+      /* A tap opens the readout. Touch has no hover, so without this the
+         clock is simply unreachable on a phone — the globe turns under the
+         finger and never says anything. Six pixels of slack separates a tap
+         from the beginning of a drag. */
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
+      const i = nearestCity(e.clientX, e.clientY);
+      if (i < 0) return;
+      hover = i;
+      cityMat.uniforms.uHover.value = i;
+      labels.forEach((el, n) => el.toggleAttribute("data-on", n === i));
+      renderer.domElement.dataset.cursor = "link";
+      openHud(i);
     };
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointermove", onMove);
     renderer.domElement.addEventListener("pointerup", onUp);
     renderer.domElement.addEventListener("pointercancel", onUp);
+    renderer.domElement.addEventListener("pointerleave", clearHover);
 
     /* ---- the loop ---------------------------------------------------- */
     const pulseVec = new THREE.Vector3();
@@ -738,34 +799,54 @@ export default function Globe({ className }: { className?: string }) {
         labelY[i] = (-projected.y * 0.5 + 0.5) * h;
       }
 
-      /* The pointed-at name first, so a city can never be hovered and have no
-         name; then Algiers, because it is the one the section is about; then
-         whichever faces the camera most squarely. That last key is continuous
-         as the globe turns, so the order shifts by degrees rather than
-         swapping on a tie and flickering. */
+      /* Algiers first, because it is the one the section is about; then
+         whichever faces the camera most squarely. That key is continuous as
+         the globe turns, so the order shifts by degrees rather than swapping
+         on a tie and flickering. */
       order.sort((a, b) => {
-        if (a === hover) return -1;
-        if (b === hover) return 1;
         if (cityIsHome[a] !== cityIsHome[b]) return cityIsHome[a] ? -1 : 1;
         return labelFacing[b] - labelFacing[a];
       });
 
       placedN = 0;
+
+      /* The readout is positioned and takes its place before any name does.
+         It is the thing being looked at, and a name printed across it would
+         be read as part of it. */
+      if (hover >= 0) {
+        tickHud();
+        const box = rect.getBoundingClientRect();
+        const mx = labelX[hover];
+        const my = labelY[hover];
+        /* Flipped when it would run off the WINDOW rather than off the
+           canvas — the canvas reaches past the right edge of the screen, so
+           measuring against its own width would let the panel off into
+           nothing. */
+        const flip = box.left + mx + 18 + hudW > window.innerWidth - 12;
+        const hx = flip ? mx - 18 - hudW : mx + 18;
+        const hy = Math.max(4, Math.min(h - hudH - 4, my - hudH / 2));
+        hud.style.setProperty("--hud-x", `${Math.round(hx)}px`);
+        hud.style.setProperty("--hud-y", `${Math.round(hy)}px`);
+        if (flip) hud.dataset.flip = "left";
+        else delete hud.dataset.flip;
+        placedBox[0] = hx - GUTTER;
+        placedBox[1] = hy - GUTTER;
+        placedBox[2] = hx + hudW + GUTTER;
+        placedBox[3] = hy + hudH + GUTTER;
+        placedN = 1;
+      }
       for (let k = 0; k < order.length; k++) {
         const i = order[k];
-        if (labelOpacity[i] <= 0.001) {
+        /* The hovered city's name is in the readout, so its label steps
+           aside instead of repeating it a centimetre away. */
+        if (i === hover || labelOpacity[i] <= 0.001) {
           labelTarget[i] = 0;
           continue;
         }
-        /* The hovered label carries a second line, so its cached width and
-           height are both wrong for it. One live read per frame, and only
-           while something is hovered. */
-        const lw = i === hover ? labels[i].offsetWidth : labelW[i];
-        const lh = i === hover ? labels[i].offsetHeight : labelH;
         const l = labelX[i] + labelMl - GUTTER;
         const t = labelY[i] + labelMt - GUTTER;
-        const r = l + lw + GUTTER * 2;
-        const b = t + lh + GUTTER * 2;
+        const r = l + labelW[i] + GUTTER * 2;
+        const b = t + labelH + GUTTER * 2;
         let clear = true;
         for (let p = 0; p < placedN; p++) {
           const o = p * 4;
@@ -790,16 +871,6 @@ export default function Globe({ className }: { className?: string }) {
         }
       }
 
-      /* A hover held across a minute boundary would otherwise sit there
-         showing the minute it started on. */
-      if (hover >= 0 && Date.now() - clockAt > 15000) setClock(hover);
-
-      /* The pointed-at name arrives at once rather than easing in. It has
-         already been given first place above, so it is always placed; but if
-         it had been standing down a moment ago it would otherwise fade up
-         over a dozen frames, and hover has to answer immediately. */
-      if (hover >= 0) labelFade[hover] = 1;
-
       for (let i = 0; i < labels.length; i++) {
         const el = labels[i];
         labelFade[i] += (labelTarget[i] - labelFade[i]) * 0.16;
@@ -819,10 +890,12 @@ export default function Globe({ className }: { className?: string }) {
       gsap.ticker.remove(draw);
       ro.disconnect();
       overlay.remove();
+      hud.remove();
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerup", onUp);
       renderer.domElement.removeEventListener("pointercancel", onUp);
+      renderer.domElement.removeEventListener("pointerleave", clearHover);
       scene.traverse((o) => {
         const m = o as THREE.Points;
         m.geometry?.dispose?.();
