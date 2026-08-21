@@ -26,6 +26,12 @@ import { useFinePointer } from "@/lib/hooks";
  * accumulate along the line until the later letters tested against the wrong
  * shape.
  */
+/** How far off a stroke the pointer may be and still count, in CSS pixels.
+ *  A stroke of this wordmark is a few pixels wide at most sizes, and asking
+ *  the reader to land on it exactly is a different thing from asking them not
+ *  to trigger it from inside a counter — the hole in a Y is an order of
+ *  magnitude wider than this, so it stays a hole. */
+const FORGIVE = 4;
 /** Alpha above which a pixel counts as ink. Low, because the glyph edges are
  *  anti-aliased and the edge should feel live rather than walled. */
 const INK = 40;
@@ -42,6 +48,10 @@ export default function WordmarkTrace({ text }: { text: string }) {
     let line: HTMLElement | null = null;
     let field: HTMLCanvasElement | null = null;
     let ctx: CanvasRenderingContext2D | null = null;
+    /* The alpha channel, lifted out once. Read per move instead and every
+       pointer event costs a getImageData, which is far too expensive to then
+       do it twenty times along a path. */
+    let alpha: Uint8ClampedArray | null = null;
     let dpr = 1;
 
     /* Redrawn whenever the wordmark is re-fitted. FitText sets the font size
@@ -87,6 +97,7 @@ export default function WordmarkTrace({ text }: { text: string }) {
         const r = el.getBoundingClientRect();
         ctx.fillText(el.dataset.wmLetter ?? "", r.left - box.left, baseline);
       }
+      alpha = ctx.getImageData(0, 0, field.width, field.height).data;
     };
 
     /** Which letter the pointer is actually touching, or -1.
@@ -96,22 +107,76 @@ export default function WordmarkTrace({ text }: { text: string }) {
      *  remembered from when it was drawn. It is 20,000px down the page: cache
      *  the origin at build time and every lookup lands off the canvas, which
      *  is exactly what it did. */
-    const inkAt = (clientX: number, clientY: number) => {
-      if (!ctx || !field || !line) return -1;
-      const box = line.getBoundingClientRect();
-      const x = Math.floor((clientX - box.left) * dpr);
-      const y = Math.floor((clientY - box.top) * dpr);
-      if (x < 0 || y < 0 || x >= field.width || y >= field.height) return -1;
-      if (ctx.getImageData(x, y, 1, 1).data[3] <= INK) return -1;
-      return letters.findIndex((el) => {
-        const r = el.getBoundingClientRect();
-        return clientX >= r.left && clientX < r.right;
+    const at = (px: number, py: number) => {
+      if (!alpha || !field) return 0;
+      if (px < 0 || py < 0 || px >= field.width || py >= field.height) return 0;
+      return alpha[(py * field.width + px) * 4 + 3];
+    };
+
+    /** Ink under this point, or within FORGIVE of it. */
+    const inkNear = (px: number, py: number) => {
+      if (at(px, py) > INK) return true;
+      const r = Math.round(FORGIVE * dpr);
+      return (
+        at(px + r, py) > INK ||
+        at(px - r, py) > INK ||
+        at(px, py + r) > INK ||
+        at(px, py - r) > INK
+      );
+    };
+
+    const letterAt = (clientX: number) =>
+      letters.findIndex((el) => {
+        const b = el.getBoundingClientRect();
+        return clientX >= b.left && clientX < b.right;
       });
+
+    /* A pointer does not travel, it teleports: pointermove reports where the
+       cursor is now, and between two reports it can have crossed the whole
+       letter. Testing only the latest point means a quick sweep steps clean
+       over a stroke three pixels wide and nothing lights — which is what
+       "doesn't work every time" was.
+
+       So the segment since the last report is walked, from the cursor
+       backwards, and the first ink along it wins. Backwards because if the
+       sweep crossed two letters, the one it is on now is the one meant. */
+    const inkAlong = (
+      toX: number,
+      toY: number,
+      fromX: number,
+      fromY: number,
+    ) => {
+      if (!line || !field) return -1;
+      const box = line.getBoundingClientRect();
+      const x1 = Math.round((toX - box.left) * dpr);
+      const y1 = Math.round((toY - box.top) * dpr);
+      const x0 = Math.round((fromX - box.left) * dpr);
+      const y0 = Math.round((fromY - box.top) * dpr);
+      const span = Math.hypot(x1 - x0, y1 - y0);
+      const steps = Math.min(32, Math.max(1, Math.round(span / (2 * dpr))));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const px = Math.round(x1 + (x0 - x1) * t);
+        const py = Math.round(y1 + (y0 - y1) * t);
+        if (!inkNear(px, py)) continue;
+        const hit = letterAt(box.left + px / dpr);
+        if (hit >= 0) return hit;
+      }
+      return -1;
     };
 
     let lit = -1;
+    let fromX: number | null = null;
+    let fromY: number | null = null;
     const onMove = (e: PointerEvent) => {
-      const i = inkAt(e.clientX, e.clientY);
+      const i = inkAlong(
+        e.clientX,
+        e.clientY,
+        fromX ?? e.clientX,
+        fromY ?? e.clientY,
+      );
+      fromX = e.clientX;
+      fromY = e.clientY;
       if (i === lit) return;
       if (lit >= 0) letters[lit]?.classList.remove("is-lit");
       lit = i;
@@ -127,6 +192,8 @@ export default function WordmarkTrace({ text }: { text: string }) {
     const onLeave = () => {
       if (lit >= 0) letters[lit]?.classList.remove("is-lit");
       lit = -1;
+      fromX = null;
+      fromY = null;
     };
 
     const raf = requestAnimationFrame(build);
