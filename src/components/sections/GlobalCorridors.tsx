@@ -57,8 +57,8 @@ export default function GlobalCorridors() {
             swallowed every drag, which is how the last one broke — so the
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
-        <div className="relative min-h-[clamp(400px,48vw,650px)]">
-          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:-right-[4%] lg:w-[74%]">
+        <div className="relative min-h-[clamp(450px,54vw,730px)]">
+          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:-right-[8%] lg:w-[64%]">
             <Globe className="h-full w-full" />
           </div>
 
@@ -74,7 +74,7 @@ export default function GlobalCorridors() {
               the paragraph carry their own measures, exactly the ones they
               had before the globe arrived, and nothing above them overrides
               it. */}
-          <div className="pointer-events-none relative z-10 flex min-h-[clamp(400px,48vw,650px)] flex-col justify-center">
+          <div className="pointer-events-none relative z-10 flex min-h-[clamp(450px,54vw,730px)] flex-col justify-center">
             <p className="type-label section-index mb-6 w-max text-(--muted)">
               05 — Global
             </p>
@@ -90,7 +90,7 @@ export default function GlobalCorridors() {
         </div>
 
         {/* Under the globe, where it was. */}
-        <div className="ml-auto w-[92%] sm:w-[80%] lg:-mr-[4%] lg:w-[74%]">
+        <div className="ml-auto w-[92%] sm:w-[80%] lg:-mr-[8%] lg:w-[64%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
