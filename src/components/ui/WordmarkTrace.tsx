@@ -84,19 +84,50 @@ export default function WordmarkTrace({ text }: { text: string }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, box.width, box.height);
       ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-      /* Canvas takes the keyword but not the percentage. 125% is `expanded`;
-         anything else falls back to normal, which only widens the shape a
-         little and never changes where the holes are. */
+      /* Canvas takes the keyword but not the percentage, and the keyword is
+         not the same width — `expanded` got within about 75% of the real
+         advance and no closer, so every glyph came out narrower than the one
+         on screen and a band down the right of each letter was dead. */
       if ("fontStretch" in ctx && cs.fontStretch === "125%") {
         (ctx as CanvasRenderingContext2D & { fontStretch: string }).fontStretch =
           "expanded";
       }
+      if ("letterSpacing" in ctx) {
+        (ctx as CanvasRenderingContext2D & { letterSpacing: string })
+          .letterSpacing = cs.letterSpacing;
+      }
       ctx.textBaseline = "alphabetic";
       ctx.fillStyle = "#fff";
+      /* So each glyph is stretched to the advance its own box reports. The
+         stems come out a shade lighter than a true wdth axis would draw them,
+         which costs nothing here: this canvas is never seen, and what it has
+         to get right is the silhouette — where the strokes are and where the
+         holes are. */
+      /* What is on screen, not what is in the markup. type-display sets
+         text-transform: uppercase, so the wordmark reads PIXELY while its
+         text nodes still say Pixely — and the canvas was drawing a lowercase
+         l against an L on screen. Different glyph, different width: that
+         letter's box is 187px and the l it was testing against is a stem
+         barely half of it, which is why parts of some letters answered and
+         parts of others did not. */
+      const cased = (ch: string) =>
+        cs.textTransform === "uppercase"
+          ? ch.toUpperCase()
+          : cs.textTransform === "lowercase"
+            ? ch.toLowerCase()
+            : ch;
+
       for (const el of letters) {
         const r = el.getBoundingClientRect();
-        ctx.fillText(el.dataset.wmLetter ?? "", r.left - box.left, baseline);
+        const ch = cased(el.dataset.wmLetter ?? "");
+        const advance = ctx.measureText(ch).width;
+        if (!advance) continue;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.translate(r.left - box.left, 0);
+        ctx.scale(r.width / advance, 1);
+        ctx.fillText(ch, 0, baseline);
       }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       alpha = ctx.getImageData(0, 0, field.width, field.height).data;
     };
 
