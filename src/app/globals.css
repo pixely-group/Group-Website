@@ -777,10 +777,11 @@ html[data-cursor="on"] * {
 }
 
 /* ---- the city readout ------------------------------------------------
-   It does not follow the city. It holds one corner of the frame and stays
-   there, which is what makes it readable: a panel chasing a marker around
-   a turning globe is a thing you track, and a plate that stays put is a
-   thing you read.
+   It does not follow the city frame by frame — a panel chasing a marker
+   around a turning globe is a thing you track rather than read. It picks a
+   berth when the city is first pointed at and holds it for as long as that
+   city is held, so it is placed with respect to the city without ever
+   moving under the eye that is reading it. JS sets --hud-x/--hud-y.
 
    The panel itself is an instrument — a dark pane with a hairline in the
    brand blue, a lit rail down the edge it grows from, and ticks at the
@@ -791,11 +792,13 @@ html[data-cursor="on"] * {
    what the reader drags. */
 .globe-hud {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 0;
+  left: 0;
   z-index: 20;
-  min-width: 9.5rem;
-  padding: 0.7rem 0.9rem 0.65rem;
+  /* Wider than it is tall. At 9.5rem the three lines made it near enough a
+     square, which reads as a badge; a readout should be a strip. */
+  min-width: 13.25rem;
+  padding: 0.7rem 0.95rem 0.65rem;
   pointer-events: none;
   opacity: 0;
   border: 1px solid rgb(45 70 255 / 0.5);
@@ -806,6 +809,7 @@ html[data-cursor="on"] * {
     0 18px 40px -18px rgb(0 0 0 / 0.9),
     0 0 26px -8px rgb(45 70 255 / 0.5);
   clip-path: inset(0 100% 0 0);
+  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px));
   transition:
     opacity 180ms var(--ease-swift),
     clip-path 320ms var(--ease-out-expo);
@@ -823,7 +827,7 @@ html[data-cursor="on"] * {
   top: -1px;
   bottom: -1px;
   left: -1px;
-  width: 2px;
+  width: 3px;
   background: var(--color-signal);
   box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
 }

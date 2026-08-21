@@ -518,13 +518,113 @@ export default function Globe({ className }: { className?: string }) {
       }`;
       hudSecond = -1;
       hud.dataset.on = "true";
-      /* Measured now rather than per frame: the plate holds still, and the
-         name is the only thing that changes its width — the digits are
-         tabular. */
-      hudX = hud.offsetLeft;
-      hudY = hud.offsetTop;
+      /* Measured now rather than per frame: the plate holds its berth for
+         the whole hover, and the name is the only thing that changes its
+         width — the digits are tabular. */
       hudW = hud.offsetWidth;
       hudH = hud.offsetHeight;
+      berth(i);
+      hud.style.setProperty("--hud-x", `${hudX}px`);
+      hud.style.setProperty("--hud-y", `${hudY}px`);
+    };
+
+    /**
+     * Where the plate sits for this city.
+     *
+     * Six berths round the edge of the frame, and the one nearest the city
+     * wins — so the readout is found near the thing it is describing rather
+     * than always in the same corner. Three things rule a berth out:
+     *
+     *  - it would fall outside the window. The frame is wider than the
+     *    screen and taller than the fold, so several berths are off it at
+     *    any given moment, and which ones depends on the scroll.
+     *  - it would cover something the section marked as not-to-cover. The
+     *    headline crosses the left of the frame, and a plate parked on it
+     *    looks like a mistake.
+     *  - it is nearer the marker than KEEP_OFF. Landing on the city is what
+     *    this design is trying not to do.
+     */
+    const INSET = 14;
+    const KEEP_OFF = 70;
+    const berth = (i: number) => {
+      const cw = renderer.domElement.clientWidth;
+      const ch = renderer.domElement.clientHeight;
+      const box = renderer.domElement.getBoundingClientRect();
+      const mx = labelX[i];
+      const my = labelY[i];
+
+      /* Anything the section says to keep clear of, in frame coordinates. */
+      const avoid: number[][] = [];
+      host
+        .closest("section")
+        ?.querySelectorAll<HTMLElement>("[data-globe-avoid]")
+        .forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.height)
+            avoid.push([
+              r.left - box.left,
+              r.top - box.top,
+              r.right - box.left,
+              r.bottom - box.top,
+            ]);
+        });
+
+      /* Berths are set against the frame, then pulled in to the window
+         where the frame runs past it. Without this the right-hand three
+         anchor to a canvas edge that is itself off-screen, so they are
+         always rejected and the plate only ever uses the left. */
+      const right = Math.min(
+        cw - hudW - INSET,
+        window.innerWidth - 12 - hudW - box.left,
+      );
+      const top = Math.max(INSET, 88 - box.top);
+      const bottom = Math.min(
+        ch - hudH - INSET,
+        window.innerHeight - 12 - hudH - box.top,
+      );
+      const middle = (ch - hudH) / 2;
+      const slots = [
+        [INSET, top],
+        [right, top],
+        [INSET, middle],
+        [right, middle],
+        [INSET, bottom],
+        [right, bottom],
+      ];
+
+      let best = -1;
+      let bestD = Infinity;
+      for (let s = 0; s < slots.length; s++) {
+        const [x, y] = slots[s];
+        /* On screen, allowing for the navigation overhead. */
+        const vx = box.left + x;
+        const vy = box.top + y;
+        if (vx < 12 || vx + hudW > window.innerWidth - 12) continue;
+        if (vy < 88 || vy + hudH > window.innerHeight - 12) continue;
+        /* Clear of the headline and anything else spoken for. */
+        if (
+          avoid.some(
+            (a) => x < a[2] && a[0] < x + hudW && y < a[3] && a[1] < y + hudH,
+          )
+        )
+          continue;
+        /* Clear of the city itself. */
+        const nx = Math.max(x, Math.min(x + hudW, mx));
+        const ny = Math.max(y, Math.min(y + hudH, my));
+        if (Math.hypot(mx - nx, my - ny) < KEEP_OFF) continue;
+        const d = Math.hypot(mx - (x + hudW / 2), my - (y + hudH / 2));
+        if (d < bestD) {
+          bestD = d;
+          best = s;
+        }
+      }
+
+      /* Every berth ruled out — a very short window, or a city sitting on
+         the only one left. The top-left corner is the safest thing there
+         is, so it is what the plate falls back to. */
+      const [x, y] = best >= 0 ? slots[best] : [INSET, top];
+      hudX = Math.round(x);
+      hudY = Math.round(y);
     };
 
     const closeHud = () => {

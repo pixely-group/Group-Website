@@ -78,7 +78,10 @@ export default function GlobalCorridors() {
             <p className="type-label section-index mb-6 w-max text-(--muted)">
               05 — Global
             </p>
-            <h2 className="type-headline text-big max-w-[14ch] text-balance">
+            <h2
+              data-globe-avoid
+              className="type-headline text-big max-w-[14ch] text-balance"
+            >
               Algeria, on every corridor.
             </h2>
             <p className="mt-7 max-w-sm text-[0.95rem] leading-relaxed text-(--muted)">
