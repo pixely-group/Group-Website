@@ -732,54 +732,22 @@ html[data-cursor="on"] * {
     color 220ms var(--ease-out-expo);
 }
 
-.wordmark-letter::before,
-.wordmark-letter::after {
-  content: attr(data-ch);
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* Lit by the pointer being on the letter's ink, not in its box — which is a
    question :hover cannot answer, since a box is not a shape and the Y is
    mostly hole. WordmarkTrace reads the alpha under the pointer and sets this.
 
-   The letter hollows out and redraws itself. `-webkit-text-stroke` is what
-   makes that honest: the outline is the font's own glyph, not a path traced
-   off a canvas or an approximation fitted to it, so it sits exactly where the
-   solid letter sat. The stroke is set in em so it holds its weight at any
-   size the wordmark is fitted to.
+   The letter drops its fill and its outline draws up from the baseline, and
+   that is the whole of it — nothing runs inside the shape afterwards.
 
-   Then a band of the solid letter travels down through the hollow one, which
-   is the scan. Both are clip-paths on the same glyph rather than anything
-   drawn, so nothing here can drift out of register with the text. */
+   `-webkit-text-stroke` is what makes the outline honest: it is the font's
+   own glyph, not a path traced off a canvas or an approximation fitted to
+   it, so it sits exactly where the solid letter sat. Set in em, so it holds
+   its weight at whatever size the wordmark is fitted to. */
 .wordmark-letter.is-lit {
   opacity: 1;
   color: transparent;
   -webkit-text-stroke: 0.011em var(--color-signal);
   animation: wordmark-draw 620ms var(--ease-out-expo) both;
-}
-
-/* The scan: the same character, solid, showing through a narrow window that
-   runs the height of the letter and repeats. */
-.wordmark-letter.is-lit::before {
-  content: attr(data-ch);
-  opacity: 1;
-  color: var(--color-bone);
-  -webkit-text-stroke: 0;
-  animation: wordmark-scan 1.6s cubic-bezier(0.45, 0, 0.15, 1) infinite;
-}
-
-/* And a second, thinner one in the brand blue, a beat behind — enough to read
-   as a machine passing over the letter twice rather than a light sweeping it
-   once. */
-.wordmark-letter.is-lit::after {
-  content: attr(data-ch);
-  opacity: 0.9;
-  color: var(--color-signal-lift);
-  -webkit-text-stroke: 0;
-  animation: wordmark-scan-b 1.6s cubic-bezier(0.45, 0, 0.15, 1) infinite;
 }
 
 /* Drawn from the baseline up: the stroke arrives rather than appearing. */
@@ -792,43 +760,15 @@ html[data-cursor="on"] * {
   }
 }
 
-@keyframes wordmark-scan {
-  0% {
-    clip-path: inset(-10% 0 100% 0);
-  }
-  70%,
-  100% {
-    clip-path: inset(100% 0 -10% 0);
-  }
-}
-
-@keyframes wordmark-scan-b {
-  0%,
-  12% {
-    clip-path: inset(-10% 0 100% 0);
-  }
-  82%,
-  100% {
-    clip-path: inset(100% 0 -10% 0);
-  }
-}
-
-/* The trace is motion, so under this setting it does not run at all. The
-   letter still hollows to its outline, which is the affordance; it simply
-   arrives whole instead of being drawn, and nothing scans across it. */
+/* The draw is motion, so under this setting it does not run. The letter still
+   hollows to its outline, which is the affordance; it simply arrives whole
+   rather than being drawn up. */
 @media (prefers-reduced-motion: reduce) {
   .wordmark-letter {
     transition: none;
   }
 
-  .wordmark-letter.is-lit,
-  .wordmark-letter.is-lit::before,
-  .wordmark-letter.is-lit::after {
+  .wordmark-letter.is-lit {
     animation: none;
-  }
-
-  .wordmark-letter.is-lit::before,
-  .wordmark-letter.is-lit::after {
-    opacity: 0;
   }
 }
