@@ -57,12 +57,19 @@ export default function GlobalCorridors() {
             swallowed every drag, which is how the last one broke — so the
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
-        <div className="relative min-h-[clamp(380px,44vw,600px)]">
-          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:w-[72%]">
+        <div className="relative min-h-[clamp(400px,48vw,650px)]">
+          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:w-[74%]">
             <Globe className="h-full w-full" />
           </div>
 
-          <div className="pointer-events-none relative z-10 flex min-h-[clamp(380px,44vw,600px)] max-w-md flex-col justify-center">
+          {/* No width cap on the column. `max-w-md` is a fixed 28rem while
+              the heading's measure is 14ch of a font that grows with the
+              viewport — so past a certain width the cap won and broke the
+              line into "on / every" instead of "on every". The heading and
+              the paragraph carry their own measures, exactly the ones they
+              had before the globe arrived, and nothing above them overrides
+              it. */}
+          <div className="pointer-events-none relative z-10 flex min-h-[clamp(400px,48vw,650px)] flex-col justify-center">
             <p className="type-label section-index pointer-events-auto mb-6 w-max text-(--muted)">
               05 — Global
             </p>
@@ -78,7 +85,7 @@ export default function GlobalCorridors() {
         </div>
 
         {/* Under the globe, where it was. */}
-        <div className="ml-auto w-[92%] sm:w-[80%] lg:w-[72%]">
+        <div className="ml-auto w-[92%] sm:w-[80%] lg:w-[74%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
