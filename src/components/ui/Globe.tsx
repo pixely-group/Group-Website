@@ -81,7 +81,7 @@ export default function Globe({ className }: { className?: string }) {
     renderer.setClearAlpha(0);
     host.appendChild(renderer.domElement);
     renderer.domElement.style.cssText =
-      "display:block;width:100%;height:100%;touch-action:pan-y;cursor:grab";
+      "display:block;width:100%;height:100%;touch-action:pan-y;cursor:ew-resize";
 
     /* Everything hangs off this, so one rotation turns the land, the cities
        and the corridors together and nothing can drift out of register. */
@@ -110,7 +110,10 @@ export default function Globe({ className }: { className?: string }) {
       new THREE.MeshBasicMaterial({
         color: new THREE.Color("#08080b"),
         transparent: true,
-        opacity: 0.82,
+        /* Thin enough to see through. It is here to say the far dots are
+           behind something, not to hide them — at 0.82 it was a lid and the
+           globe read as a disc. */
+        opacity: 0.42,
         depthWrite: false,
       }),
     );
@@ -143,13 +146,52 @@ export default function Globe({ className }: { className?: string }) {
                must never be visible. */
             float r = length(vUv - 0.5) * 2.0;
             float band = smoothstep(0.56, 0.655, r) * smoothstep(0.9, 0.655, r);
-            gl_FragColor = vec4(uColor, band * 0.16);
+            gl_FragColor = vec4(uColor, band * 0.11);
           }
         `,
       }),
     );
     halo.renderOrder = -3;
     scene.add(halo);
+
+    /* And an atmosphere on the sphere itself. The card behind gives the bloom
+       standing off the edge; this gives the edge its own light, which is the
+       part that made it read as a body rather than a plate of dots.
+
+       A back-facing shell, so the fresnel is strongest exactly at the
+       silhouette. The exponent is what keeps it there: at 3.5 it reached most
+       of the way to the middle and the whole disc lit up. */
+    const atmosphere = new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS * 1.055, 48, 32),
+      new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uColor: { value: new THREE.Color("#3f5bff") } },
+        vertexShader: `
+          varying vec3 vN;
+          varying vec3 vV;
+          void main() {
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vN = normalize(mat3(modelViewMatrix) * position);
+            vV = normalize(-mv.xyz);
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying vec3 vN;
+          varying vec3 vV;
+          void main() {
+            float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 6.0);
+            gl_FragColor = vec4(uColor, f * 0.75);
+          }
+        `,
+      }),
+    );
+    atmosphere.renderOrder = -1;
+    world.add(atmosphere);
 
     /* ---- land ------------------------------------------------------- */
     const dots: number[] = [];
@@ -204,7 +246,7 @@ export default function Globe({ className }: { className?: string }) {
           if (d > 0.5) discard;
           /* The far side is not hidden, only dimmed — a globe you can see the
              back of reads as a sphere rather than as a disc. */
-          float a = smoothstep(-0.45, 0.1, vFacing) * 0.9 + 0.1;
+          float a = smoothstep(-0.85, 0.05, vFacing) * 0.78 + 0.22;
           vec3 c = mix(uColor, uLift, smoothstep(-0.1, 0.95, vFacing));
           gl_FragColor = vec4(c, a * smoothstep(0.5, 0.34, d));
         }
@@ -382,11 +424,15 @@ export default function Globe({ className }: { className?: string }) {
        position rather than written down, so moving the home city moves the
        opening view with it. */
     const home = onSphere(CENTRES[0].lon, CENTRES[0].lat);
-    const spin = { y: -Math.atan2(home.x, home.z), x: 0.12 };
-    const velocity = { y: 0, x: 0 };
+    const spin = { y: -Math.atan2(home.x, home.z) };
+    const velocity = { y: 0 };
+    /* Fixed. A globe that can be tipped as well as turned can be left at an
+       angle nobody chose, and there is no reading of this section that wants
+       the pole pointing at you — so the tilt is the map's, set once, and the
+       drag only turns it. */
+    const TILT = 0.12;
     let dragging = false;
     let lastX = 0;
-    let lastY = 0;
     /* Held while the pointer is down and for a moment after, so letting go
        hands the globe back to its own drift instead of stopping it dead. */
     let idle = 0;
@@ -394,7 +440,6 @@ export default function Globe({ className }: { className?: string }) {
     const onDown = (e: PointerEvent) => {
       dragging = true;
       lastX = e.clientX;
-      lastY = e.clientY;
       idle = 0;
       renderer.domElement.setPointerCapture(e.pointerId);
       renderer.domElement.style.cursor = "grabbing";
@@ -402,19 +447,15 @@ export default function Globe({ className }: { className?: string }) {
     const onMove = (e: PointerEvent) => {
       if (!dragging) return;
       const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
       lastX = e.clientX;
-      lastY = e.clientY;
       velocity.y = dx * 0.005;
-      velocity.x = dy * 0.005;
       spin.y += velocity.y;
-      spin.x += velocity.x;
     };
     const onUp = (e: PointerEvent) => {
       dragging = false;
       idle = 0;
       renderer.domElement.releasePointerCapture?.(e.pointerId);
-      renderer.domElement.style.cursor = "grab";
+      renderer.domElement.style.cursor = "ew-resize";
     };
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointermove", onMove);
@@ -432,17 +473,12 @@ export default function Globe({ className }: { className?: string }) {
         /* Inertia first, then the drift — so a flick carries and settles
            into the same slow turn it started from. */
         velocity.y *= 0.94;
-        velocity.x *= 0.9;
         spin.y += velocity.y;
-        spin.x += velocity.x;
         idle = Math.min(1, idle + dt * 1.2);
         if (!reduced) spin.y += 0.028 * dt * idle;
       }
-      /* Tipping is bounded; turning is not. You can send it all the way
-         round, but not over the pole and upside down. */
-      spin.x = Math.max(-0.5, Math.min(0.5, spin.x));
       world.rotation.y = spin.y;
-      world.rotation.x = spin.x;
+      world.rotation.x = TILT;
 
       cityMat.uniforms.uTime.value = elapsed;
 
