@@ -6,17 +6,17 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The last word of the headline, typed and retyped. All three finish the same
- * line — "Money should move like ..." — and all three have to survive that
- * verb. "Light" is the one the line was written around and stays first;
- * "data" is the manifesto's own claim a section later, that a payment is data
- * and so is an identity; "software" is the same thought said plainly.
+ * The end of the headline, typed and retyped. All three finish the same
+ * line — "We make money move ..." — and each names a different axis: how
+ * fast, what it costs, how far.
  *
- * The earlier trio, identity and network among them, belonged to a line that
- * read "... for X" and do not survive "move like". If these want changing,
- * that is the only test they have to pass.
+ * Phrases now rather than single words, which the line asks for: the verb
+ * needs an adverbial to land on, and "snap", "free" and "boundaries" cannot
+ * carry one on their own. Length varies more than it did — 279px against 484
+ * — so the third line's rag moves as it cycles, which the fixed lines above
+ * absorb.
  */
-const WORDS = ["light", "data", "software"] as const;
+const WORDS = ["like a snap", "for free", "with no boundaries"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an

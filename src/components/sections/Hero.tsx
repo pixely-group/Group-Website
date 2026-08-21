@@ -208,7 +208,7 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — money should move like light"
+          aria-label="Pixely — we make money move like a snap, for free, with no boundaries"
         >
           {/* The line this site opened with, before the rebrand took it away.
               The rotating word stands where the static one did; the blue full
@@ -216,17 +216,16 @@ export default function Hero() {
               from. */}
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              Money
+              We make
             </span>
           </span>
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              should move
+              money move
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
-              like{" "}
               {/* The brand blue itself, not the lifted tint --accent resolves
                   to on dark chapters. That lift exists because the primary
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
