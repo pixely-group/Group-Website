@@ -58,7 +58,7 @@ export default function GlobalCorridors() {
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
         <div className="relative min-h-[clamp(450px,54vw,730px)]">
-          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:-right-[8%] lg:w-[64%]">
+          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:-right-[6%] lg:w-[64%]">
             <Globe className="h-full w-full" />
           </div>
 
@@ -90,7 +90,7 @@ export default function GlobalCorridors() {
         </div>
 
         {/* Under the globe, where it was. */}
-        <div className="ml-auto w-[92%] sm:w-[80%] lg:-mr-[8%] lg:w-[64%]">
+        <div className="ml-auto w-[92%] sm:w-[80%] lg:-mr-[6%] lg:w-[64%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
