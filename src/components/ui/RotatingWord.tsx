@@ -6,17 +6,17 @@ import { gsap } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
 /**
- * The end of the headline, typed and retyped. All three finish the same
- * line — "We make money move ..." — and each names a different axis: how
- * fast, what it costs, how far.
+ * The end of the headline, typed and retyped. Both finish the same line —
+ * "We make money move ..." — and the count is not fixed at three: the cycle
+ * is however many are listed here.
  *
- * Phrases now rather than single words, which the line asks for: the verb
- * needs an adverbial to land on, and "snap", "free" and "boundaries" cannot
- * carry one on their own. Length varies more than it did — 279px against 484
- * — so the third line's rag moves as it cycles, which the fixed lines above
- * absorb.
+ * Phrases rather than single words, which the line asks for: "move" needs an
+ * adverbial to land on and "snap" cannot carry one alone. These two are a
+ * holding pair, both saying speed and neither saying anything the other does
+ * not — a rotation earns its keep when the frames differ, so this is worth
+ * coming back to.
  */
-const WORDS = ["like a snap", "for free", "with no boundaries"] as const;
+const WORDS = ["in a snap", "in a flash"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
