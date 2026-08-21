@@ -45,41 +45,44 @@ export default function GlobalCorridors() {
       className="relative overflow-hidden bg-theme px-6 py-[15vh] text-theme sm:px-10 lg:px-14"
     >
       <div className="mx-auto max-w-7xl">
-        {/* The globe is the section, and the words sit on it. Two columns
-            put a ceiling on how large it could be — it had to end where the
-            text began — so it is a layer instead, taking most of the width
-            and running past the container on the right. The heading is over
-            it and they are allowed to overlap.
+        {/* Two thirds of the width for the globe, inside the container
+            rather than past it, and the words over the left third.
 
-            The text keeps its pointer events, so it can still be selected;
-            the globe is dragged anywhere the words are not, which is most of
-            it. */}
-        <div className="relative min-h-[clamp(380px,46vw,640px)]">
-          <div className="absolute inset-y-0 right-[-14%] w-[86%] sm:right-[-10%] sm:w-[78%] lg:right-[-8%] lg:w-[68%]">
+            The words take no pointer events; each block of text takes its own
+            back. A full-width layer over the globe is a full-width lid — it
+            swallowed every drag, which is how the last one broke — so the
+            layer is transparent to the pointer and only the type itself is
+            not. Drag works everywhere except on the words. */}
+        <div className="relative min-h-[clamp(320px,36vw,500px)]">
+          <div className="absolute inset-y-0 right-0 w-2/3">
             <Globe className="h-full w-full" />
           </div>
 
-          <div className="relative z-10 flex h-full flex-col justify-center">
-            <p className="type-label section-index mb-6 text-(--muted)">
+          <div className="pointer-events-none relative z-10 flex min-h-[clamp(320px,36vw,500px)] max-w-md flex-col justify-center">
+            <p className="type-label section-index pointer-events-auto mb-6 w-max text-(--muted)">
               05 — Global
             </p>
-            <h2 className="type-headline text-big max-w-[11ch] text-balance">
+            <h2 className="type-headline text-big pointer-events-auto max-w-[11ch] text-balance">
               Algeria, on every corridor.
             </h2>
-            <p className="mt-7 max-w-xs text-[0.95rem] leading-relaxed text-(--muted)">
+            <p className="pointer-events-auto mt-7 max-w-xs text-[0.95rem] leading-relaxed text-(--muted)">
               Pixely is built for Algeria and connects it outward. Every
               corridor here runs to Algiers.
             </p>
-            <p aria-hidden className="type-label mt-8 text-[9px] text-(--faint)">
-              Drag to turn
-            </p>
-            <p className="sr-only">
-              A globe showing fourteen corridors running between Algiers and
-              financial centres worldwide, with value moving continuously
-              along each. Drag to rotate it.
-            </p>
           </div>
         </div>
+
+        {/* Under the globe, where it was. */}
+        <div className="ml-auto w-2/3">
+          <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
+            Drag to turn
+          </p>
+        </div>
+        <p className="sr-only">
+          A globe showing fourteen corridors running between Algiers and
+          financial centres worldwide, with value moving continuously along
+          each. Drag to rotate it.
+        </p>
 
         <dl className="mt-14 grid gap-px border-t border-(--line) sm:grid-cols-2 lg:grid-cols-4">
           {/* The deck publishes no figures and this is a real company, so

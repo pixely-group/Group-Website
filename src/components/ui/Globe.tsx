@@ -509,7 +509,15 @@ export default function Globe({ className }: { className?: string }) {
       dragging = true;
       lastX = e.clientX;
       idle = 0;
-      renderer.domElement.setPointerCapture(e.pointerId);
+      /* Capture is a nicety — it keeps the drag alive if the pointer
+         leaves the canvas — and it throws if the id is not a live pointer.
+         Guarded so a throw cannot skip the line after it and leave the globe
+         being dragged while still showing the idle cursor. */
+      try {
+        renderer.domElement.setPointerCapture(e.pointerId);
+      } catch {
+        /* no capture, drag still works */
+      }
       renderer.domElement.style.cursor = "grabbing";
     };
     const onMove = (e: PointerEvent) => {
@@ -533,7 +541,11 @@ export default function Globe({ className }: { className?: string }) {
     const onUp = (e: PointerEvent) => {
       dragging = false;
       idle = 0;
-      renderer.domElement.releasePointerCapture?.(e.pointerId);
+      try {
+        renderer.domElement.releasePointerCapture?.(e.pointerId);
+      } catch {
+        /* nothing to release */
+      }
       renderer.domElement.style.cursor = "ew-resize";
     };
     renderer.domElement.addEventListener("pointerdown", onDown);
