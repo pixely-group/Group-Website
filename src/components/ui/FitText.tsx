@@ -62,7 +62,15 @@ export default function FitText({
           ? children
               .split("")
               .map((ch, i) => (
-                <span key={`${ch}-${i}`} className={letterClassName} data-ch={ch}>
+                <span
+                  key={`${ch}-${i}`}
+                  className={letterClassName}
+                  data-ch={ch}
+                  /* The character it really is. `data-ch` follows whatever is
+                     on show, which a decode changes every few frames; this one
+                     is what it resolves back to. */
+                  data-wm-letter={ch}
+                >
                   {ch}
                 </span>
               ))

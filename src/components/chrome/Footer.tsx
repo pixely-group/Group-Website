@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import FitText from "@/components/ui/FitText";
+import WordmarkDecode from "@/components/ui/WordmarkDecode";
 
 /* The Product column carries the six core services the deck documents — the
    same six Metrics lists — rather than the multi-currency treasury lineup the
@@ -163,28 +163,12 @@ export default function Footer() {
           </nav>
         </div>
 
-        {/* Wordmark as a rule across the base of the page. Each letter lights
-            and pixelates under the pointer — the filter is defined once here
-            rather than per letter, since they all reference the same one. */}
+        {/* Wordmark as a rule across the base of the page. Each letter decodes
+            under the pointer — and only when the pointer is on the letter
+            itself rather than in its box, which WordmarkDecode settles by
+            reading the alpha under the cursor. */}
         <div aria-hidden className="mt-20 overflow-hidden">
-          <svg width="0" height="0" className="absolute" aria-hidden focusable="false">
-            <filter id="pixelate-letter" x="0" y="0" width="100%" height="100%">
-              {/* One opaque pixel, composited to a cell, tiled into a grid,
-                  then used to sample the letter — which is what leaves the
-                  glyph as blocks rather than merely blurring it. */}
-              <feFlood x="2" y="2" height="1" width="1" />
-              <feComposite width="7" height="7" />
-              <feTile result="grid" />
-              <feComposite in="SourceGraphic" in2="grid" operator="in" />
-              <feMorphology operator="dilate" radius="3.5" />
-            </filter>
-          </svg>
-          <FitText
-            className="type-display leading-[0.78] select-none"
-            letterClassName="wordmark-letter"
-          >
-            Pixely
-          </FitText>
+          <WordmarkDecode text="Pixely" />
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">

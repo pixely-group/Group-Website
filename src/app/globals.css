@@ -741,20 +741,23 @@ html[data-cursor="on"] * {
   pointer-events: none;
 }
 
-.wordmark-letter:hover {
+/* Lit by the pointer being on the letter's ink, not in its box — which is a
+   question :hover cannot answer, since a box is not a shape and the Y is
+   mostly hole. WordmarkDecode reads the alpha under the pointer and sets
+   this. */
+.wordmark-letter.is-lit {
   opacity: 1;
   color: var(--color-bone);
-  filter: url(#pixelate-letter);
   animation: wordmark-shudder 260ms steps(2, jump-none) infinite;
 }
 
-.wordmark-letter:hover::before {
+.wordmark-letter.is-lit::before {
   opacity: 0.85;
   color: var(--color-signal);
   animation: wordmark-tear-a 420ms steps(3, jump-none) infinite;
 }
 
-.wordmark-letter:hover::after {
+.wordmark-letter.is-lit::after {
   opacity: 0.7;
   color: #ff4d3d;
   animation: wordmark-tear-b 330ms steps(3, jump-none) infinite reverse;
@@ -824,14 +827,14 @@ html[data-cursor="on"] * {
     transition: none;
   }
 
-  .wordmark-letter:hover,
-  .wordmark-letter:hover::before,
-  .wordmark-letter:hover::after {
+  .wordmark-letter.is-lit,
+  .wordmark-letter.is-lit::before,
+  .wordmark-letter.is-lit::after {
     animation: none;
   }
 
-  .wordmark-letter:hover::before,
-  .wordmark-letter:hover::after {
+  .wordmark-letter.is-lit::before,
+  .wordmark-letter.is-lit::after {
     opacity: 0;
   }
 }
