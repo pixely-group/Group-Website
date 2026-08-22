@@ -179,13 +179,25 @@ export default function TravellingDevice() {
   if (!enabled) return null;
 
   return (
-    /* Matches the column the hero held it in, so it starts exactly where it
-       always sat. Under the navigation, which it passes beneath on its way
-       off the top. */
-    <div className="pointer-events-none fixed top-[88px] right-[12.4%] bottom-[192px] z-30 hidden items-center lg:flex">
+    /* Matches the column the hero held it in. Under the navigation, which it
+       passes beneath on its way off the top.
+
+       The band is what the device is centred in, so where the band sits is
+       where the device sits. It began at 88, which left the phone 48px under
+       the bar and 209 above the fold — top-heavy, and close enough to the bar
+       to read as hanging off it. 128 puts 88 under the bar instead.
+
+       Moving it down alone was not enough, because there is something under
+       it: the trust line sits at 810 and the phone ended at 835, cutting the
+       first word off each of its three rows. The room between the bar and
+       that line is 752 and the phone was 690 of it, so the gap above could
+       only ever be bought from the phone's own height. Hence the cap: 648
+       leaves the phone ending at 794, sixteen clear of the line, and costs it
+       six per cent of its height to sit forty lower. */
+    <div className="pointer-events-none fixed top-[128px] right-[12.4%] bottom-[192px] z-30 hidden items-center lg:flex">
       <div
         ref={holderRef}
-        className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[690px]"
+        className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[648px]"
         /* The device hangs in an out-of-flow child, so this box has nothing to
            take its width from and collapses to zero — which silently breaks
            the centring, since that is solved from this box's midpoint. */

@@ -743,6 +743,24 @@ export default function WalletScreen({
       style={{ background: c.BG, fontFamily: font }}
     >
       {showcase === "cards" && <CardsScreen c={c} pushIn={pushIn} />}
+
+      {/* The tab, and under a pushed screen it stops answering the pointer.
+          It is still painted — a pushed screen is opaque and covers it — but
+          painted over and untouchable are not the same thing here, and the
+          difference is where the back button went.
+
+          The phone sits inside a preserve-3d subtree, and in one the browser's
+          hit-testing does not follow paint order: the pushed screen comes
+          later in the DOM and paints on top, and the tab underneath still
+          answered for the same pixel. The back button is 36px in the pushed
+          header, the avatar is 44px in the tab header, and they sit on the
+          same corner — so a click on Back landed on the avatar behind it and
+          the screen never went anywhere. elementsFromPoint listed the button
+          on top while elementFromPoint returned the avatar, which is the two
+          orders disagreeing in one call. A z-index on the pushed screen does
+          not settle it; taking the layer underneath out of the hit test
+          does. */}
+      <div className={view.name === "none" ? undefined : "pointer-events-none"}>
       {!showcase && tab === "home" && (
         /* Keyed on the direction, so returning to this screen replays the
            animation rather than the element being reused untouched. */
@@ -818,6 +836,7 @@ export default function WalletScreen({
 
       {!showcase && tab === "search" && <SearchScreen c={c} onOpen={openTx} />}
       {!showcase && tab === "activity" && <ActivityScreen c={c} onOpen={openTx} />}
+      </div>
 
       {/* Pushed over whichever tab is showing, under the tab bar. */}
       {view.name === "send" && <SendScreen onBack={home} c={c} />}

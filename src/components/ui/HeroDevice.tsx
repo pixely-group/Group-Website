@@ -200,7 +200,21 @@ export default function HeroDevice({
             height: BODY_H,
             transform: `scale(${scale})`,
             transformOrigin: "top left",
-            transformStyle: "preserve-3d",
+            /* Flat, and it matters. This was preserve-3d from when the body
+               was pushed forward on its own Z to cap the side rails; the
+               rails are gone, the push is gone, and nothing under here has a
+               transform of its own any more. What it left behind was a
+               screen whose pixels did not answer where they were drawn.
+
+               Kept in 3D, every element in the phone is hit-tested in the
+               parent's space instead of on one flattened plane, and the
+               error grows across the yaw: Send answered over its whole face,
+               Receive over a third of it, and Top Up over none of it at all
+               — the outlines of all three sat exactly on what was painted,
+               so it was the hit test that was wrong and not the drawing.
+               Flattened, the screen composites as one plane, the rotation is
+               applied to that plane, and all three answer everywhere. */
+            transformStyle: "flat",
           }}
         >
           {/* The body. No longer pushed forward: it used to sit at the front
