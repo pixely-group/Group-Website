@@ -18,6 +18,9 @@ type Props = {
   /** The bar's condense progress, frozen at the moment the menu opened, so
    *  the close button lands on the toggle it replaces. */
   navP: number;
+  /** The treatment the menu itself takes — the opposite of the chapter it
+   *  opened over, so it always arrives as a change of ground. */
+  scheme: "ink" | "bone";
   /** The chapter the page is currently in, from the same scrollspy that
    *  marks the bar. The menu covers the bar, so without this the reader
    *  loses all sense of where they are the moment they open it. */
@@ -30,6 +33,7 @@ export default function MobileMenu({
   onClose,
   onNavigate,
   navP,
+  scheme,
   activeHref,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -150,8 +154,10 @@ export default function MobileMenu({
       aria-modal="true"
       aria-label="Site menu"
       aria-hidden={!open}
-      data-theme="ink"
-      className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink pb-10 text-bone opacity-0 lg:hidden"
+      data-theme={scheme}
+      className={`invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto pb-10 opacity-0 lg:hidden ${
+        scheme === "bone" ? "bg-bone text-ink" : "bg-ink text-bone"
+      }`}
       style={{ pointerEvents: "none" }}
     >
       {/* Holds the bar's height open and nothing else.
@@ -220,18 +226,27 @@ export default function MobileMenu({
             which read as places on the page rather than things to press.
             Same pairing the bar and the hero make: one invitation, one way
             back in. */}
+        {/* Stacked and matched. Side by side they sized themselves to their
+            own words, so "Get started" was half again the width of "Login"
+            and the pair read as one control and an afterthought. A column of
+            two equal blocks reads as two ways in. */}
         <div
           data-menu-meta
-          className="mt-9 flex flex-wrap items-center gap-3"
+          className="mt-9 flex max-w-sm flex-col items-stretch gap-3"
           inert={!open || undefined}
         >
-          <MagneticButton href="#start" onClick={onNavigate("#start")}>
+          <MagneticButton
+            href="#start"
+            onClick={onNavigate("#start")}
+            className="w-full justify-center"
+          >
             Get started
           </MagneticButton>
           <MagneticButton
             href={LOGIN_HREF}
             onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}
             variant="outline"
+            className="w-full justify-center"
           >
             Login
           </MagneticButton>

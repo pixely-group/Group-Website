@@ -452,9 +452,12 @@ export default function Navigation() {
     setMenuOpen((v) => !v);
   }, []);
 
-  /* While the menu is open the bar stands on a solid ink panel, so it reads
-     as a dark chapter whatever it was crossing over a moment ago. */
-  const barScheme = menuOpen ? "ink" : scheme;
+  /* The menu arrives as the opposite ground to the chapter it opened over:
+     dark section, light menu. It is the loudest thing the site does, and it
+     only works if it is always a change. The bar stands on that panel, so it
+     takes the same treatment while the menu is open. */
+  const menuScheme = scheme === "bone" ? "ink" : "bone";
+  const barScheme = menuOpen ? menuScheme : scheme;
   const glass = barScheme === "bone" ? "bg-bone/72" : "bg-ink/64";
 
   return (
@@ -622,6 +625,7 @@ export default function Navigation() {
         onClose={() => setMenuOpen(false)}
         onNavigate={scrollTo}
         navP={menuNavP}
+        scheme={menuScheme}
         activeHref={activeHref}
       />
     </>
