@@ -692,8 +692,16 @@ export default function SecurityArchitecture() {
           </p>
         </div>
 
-        {/* — The authorisation under trace, and the run to replay */}
-        <div className="mt-14 flex flex-wrap items-end justify-between gap-x-10 gap-y-6 border-t border-(--line) pt-6">
+        {/* — The authorisation under trace, and the run to replay
+              
+              Spacing here follows one rule, which the rest of this section
+              now also keeps: things that belong to each other sit one step
+              apart, things that are merely next to each other sit four. The
+              readout and the control are two separate objects, so gap-y-10
+              rather than the 6 it had — wrapped onto one column they were
+              close enough to read as one block, and the control looked like
+              a third line of the authorisation. */}
+        <div className="mt-14 flex flex-wrap items-end justify-between gap-x-10 gap-y-10 border-t border-(--line) pt-6">
           <div>
             <p className="type-label text-(--faint)">Authorisation 8F2C·41D9</p>
             <p className="type-mono mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -769,13 +777,13 @@ export default function SecurityArchitecture() {
 
         {/* — The drawing. Wide, the register hangs on it at the same
             fractions that place the plates; narrow, it follows underneath. */}
-        {/* Almost nothing below lg. Wide, the register hangs beside the
-            drawing and the space above it is the section breathing; narrow,
-            the replay control is the thing directly above, and the drawing
-            already carries its own margin — 26 units of blank above the
-            first plate's tip so the request has somewhere to come in from,
-            which is 26px of gap before any margin is added to it. */}
-        <div data-stack className="relative mt-1 lg:mt-12">
+        {/* One step below lg, four above it. The control drives this
+            drawing, so narrow they are one object and sit together; wide,
+            the register hangs beside the drawing instead and the space above
+            it is the section breathing. The drawing also carries 26 units of
+            blank above the first plate's tip, so the gap on screen is that
+            plus this. */}
+        <div data-stack className="relative mt-2 lg:mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
             data-drawing
@@ -1047,11 +1055,28 @@ export default function SecurityArchitecture() {
                         </span>
                         {layer.name}
                       </h3>
-                      {/* Always rendered so it can fade in — a mounting
+                    </div>
+                    {/* The verdict sits on the note's line, not the title's.
+                        It is what the layer did, and the note is what the
+                        layer is for — they belong on the same level. On the
+                        title's line it also had to share a narrow row with
+                        the name, which on a phone left the two of them at
+                        opposite edges with nothing in between. */}
+                    <div className="mt-1.5 flow-root lg:mt-1">
+                      {/* Floated rather than set beside the note in a row.
+                          Side by side, the verdict takes 170px of a 311px
+                          line on a phone and the note is left writing in a
+                          125px column — four words tall and hyphenated.
+                          Floated, the note's first line sits level with the
+                          verdict and the rest of it runs underneath, which
+                          is the whole point of a float and the only way both
+                          get the width they need.
+
+                          Always rendered so it can fade in — a mounting
                           element has nothing to transition from. */}
                       <span
                         aria-hidden={!stamped}
-                        className={`type-label shrink-0 text-[0.65rem] transition-all duration-500 ${
+                        className={`type-label float-right ml-4 text-[0.65rem] transition-all duration-500 ${
                           stamped
                             ? "translate-x-0 opacity-100"
                             : "-translate-x-1 opacity-0"
@@ -1063,10 +1088,10 @@ export default function SecurityArchitecture() {
                         {refusedHere ? layer.fail : layer.pass} ·{" "}
                         {layer.ms.toFixed(1)} ms
                       </span>
+                      <p className="text-[0.9rem] leading-relaxed text-(--muted)">
+                        {layer.note}
+                      </p>
                     </div>
-                    <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted) lg:mt-1">
-                      {layer.note}
-                    </p>
                     <p className="type-label mt-3 text-(--faint) lg:mt-2">
                       {layer.spec}
                     </p>
