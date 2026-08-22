@@ -93,7 +93,7 @@ export const CENTRES = [
     lat: 51.5,
     tz: "Europe/London",
     cc: "GB",
-    country: "UK",
+    country: "United Kingdom",
   },
   {
     code: "MAD",

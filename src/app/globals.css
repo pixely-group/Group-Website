@@ -167,6 +167,13 @@
    for the crossing: chasing a token that is itself moving, it advances by
    its curve's slope rather than its duration, and arrived a third of the
    way behind the rest of the bar. */
+/* Switched, not crossed. Used at both ends of the menu, where the change
+   happens under something covering the bar and easing through the mid-tones
+   would be the one moment the bar cannot be read. */
+.nav-ground[data-instant] {
+  --nav-cross: 1ms;
+}
+
 .nav-ground[data-crossing] [data-nav-link],
 .nav-ground[data-crossing] [data-nav-link] a {
   transition-duration: 0s;
@@ -811,8 +818,11 @@ html[data-cursor="on"] * {
   /* Fixed, not minimum. On min-width the plate sized itself to whichever
      name it happened to be showing, and "Johannesburg — South Africa" came
      out 27px wider than everything else; a readout that changes shape city
-     to city is not a uniform box. Set to hold the longest line there is. */
-  width: 19.5rem;
+     to city is not a uniform box. Set to hold the longest line with room to
+     spare — "Johannesburg — South Africa" is the worst case at 190px, and at
+     19.5rem it cleared the column by five, which is one font-metric change
+     away from wrapping. At 20.5rem it clears by twenty-one. */
+  width: 20.5rem;
   padding: 0.7rem 0.95rem 0.65rem;
   pointer-events: none;
   opacity: 0;

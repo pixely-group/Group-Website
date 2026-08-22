@@ -48,6 +48,19 @@ export default function MobileMenu({
     const links = panel.querySelectorAll("[data-menu-link]");
     const meta = panel.querySelectorAll("[data-menu-meta]");
 
+    /* Shut, the panel is not fully collapsed — it keeps a lip exactly the
+       height of the bar. The bar takes the menu's treatment the instant the
+       menu opens, so if the panel started at zero height it would be a bone
+       bar over a still-dark page for the first third of a second, which is
+       the bar appearing to vanish and come back. With the lip, the ground
+       under the bar is the menu's from the very first frame. */
+    const lip = Math.ceil(
+      panel
+        .querySelector("[data-menu-lip]")
+        ?.getBoundingClientRect().height ?? 72,
+    );
+    const shut = `inset(0% 0% calc(100% - ${lip}px) 0%)`;
+
     if (open) {
       lenis?.stop();
       panel.style.visibility = "visible";
@@ -61,7 +74,7 @@ export default function MobileMenu({
           .set(panel, { opacity: 1 })
           .fromTo(
             panel,
-            { clipPath: "inset(0% 0% 100% 0%)" },
+            { clipPath: shut },
             {
               clipPath: "inset(0% 0% 0% 0%)",
               duration: 0.7,
@@ -100,7 +113,7 @@ export default function MobileMenu({
            it should go back up off it. Same curve, a touch quicker, because
            leaving should never feel as deliberate as arriving. */
         gsap.to(panel, {
-          clipPath: "inset(0% 0% 100% 0%)",
+          clipPath: shut,
           duration: 0.55,
           ease: "expo.inOut",
           onComplete: () => {
@@ -170,6 +183,7 @@ export default function MobileMenu({
           only the space it stands in. */}
       <div
         aria-hidden
+        data-menu-lip
         className={NAV_INSETS}
         style={
           {
@@ -232,7 +246,7 @@ export default function MobileMenu({
             two equal blocks reads as two ways in. */}
         <div
           data-menu-meta
-          className="mt-9 flex max-w-sm flex-col items-stretch gap-3"
+          className="mt-9 flex max-w-[13.5rem] flex-col items-stretch gap-3"
           inert={!open || undefined}
         >
           <MagneticButton

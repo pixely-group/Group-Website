@@ -131,6 +131,60 @@ export default function Navigation() {
   const [crossing, setCrossing] = useState(false);
   const schemeRef = useRef<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
+  /* Whether the bar is standing on the menu rather than on the page.
+     Not the same as menuOpen at the closing end: the panel collapses to a
+     lip the height of this bar and only disappears when that is done, so
+     until then the ground under the bar is still the menu's. Dropping the
+     treatment the moment the click lands is a light bar over a light panel
+     for half a second — the bar appearing to vanish and come back. */
+  const [overMenu, setOverMenu] = useState(false);
+  /* The bar's ground crosses over 560ms as chapters pass under it. These two
+     changes are not that: they happen while something is covering the bar,
+     and easing through the mid-tones is exactly the moment it is unreadable.
+     Both ends are switched, not crossed. */
+  const [instant, setInstant] = useState(false);
+
+  const menuTimers = useRef<number[]>([]);
+  useEffect(
+    () => () => {
+      menuTimers.current.forEach(window.clearTimeout);
+      menuTimers.current = [];
+    },
+    [],
+  );
+
+  /* One place the menu is opened or shut from, because the bar's treatment
+     has to be sequenced against it and three call sites doing that
+     separately is three chances to get the order wrong. */
+  const setMenu = useCallback((next: boolean) => {
+    /* Anything still pending from the last toggle is about to be wrong.
+       Closing schedules the bar's return for 560ms out; reopen inside that
+       window and the timer still fires, dropping the bar back to the page's
+       treatment while the menu is up — a light bar on a light panel, which
+       is the very fault this sequencing exists to prevent. */
+    menuTimers.current.forEach(window.clearTimeout);
+    menuTimers.current = [];
+    const later = (fn: () => void, ms: number) =>
+      menuTimers.current.push(window.setTimeout(fn, ms));
+    const switchNow = () => {
+      setInstant(true);
+      later(() => setInstant(false), 140);
+    };
+    setMenuOpen(next);
+    if (next) {
+      /* The panel already covers the bar on its first frame, so the bar can
+         take the menu's ground straight away. */
+      switchNow();
+      setOverMenu(true);
+    } else {
+      /* Coming back, the panel covers the bar until the very last frame:
+         the wipe collapses upward into a lip this bar's height. */
+      later(() => {
+        switchNow();
+        setOverMenu(false);
+      }, 560);
+    }
+  }, []);
 
   /* The panel is lg:hidden, so widening past lg takes it away without
      telling React. The bar would be left riding at menu z-index in the
@@ -139,11 +193,11 @@ export default function Navigation() {
   useEffect(() => {
     if (!menuOpen) return;
     const wide = window.matchMedia("(min-width: 1024px)");
-    const shut = () => wide.matches && setMenuOpen(false);
+    const shut = () => wide.matches && setMenu(false);
     shut();
     wide.addEventListener("change", shut);
     return () => wide.removeEventListener("change", shut);
-  }, [menuOpen]);
+  }, [menuOpen, setMenu]);
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const navP = useRef(0);
@@ -357,7 +411,7 @@ export default function Navigation() {
     // swallowing the click and going nowhere.
     if (!el) return;
     e.preventDefault();
-    setMenuOpen(false);
+    setMenu(false);
     setActiveHref(href);
     if (lenis) {
       // The menu stops Lenis while it is open so the page behind cannot
@@ -449,15 +503,15 @@ export default function Navigation() {
 
   const toggleMenu = useCallback(() => {
     setMenuNavP(navP.current);
-    setMenuOpen((v) => !v);
-  }, []);
+    setMenu(!menuOpen);
+  }, [menuOpen, setMenu]);
 
   /* The menu arrives as the opposite ground to the chapter it opened over:
      dark section, light menu. It is the loudest thing the site does, and it
      only works if it is always a change. The bar stands on that panel, so it
      takes the same treatment while the menu is open. */
   const menuScheme = scheme === "bone" ? "ink" : "bone";
-  const barScheme = menuOpen ? menuScheme : scheme;
+  const barScheme = overMenu ? menuScheme : scheme;
   const glass = barScheme === "bone" ? "bg-bone/72" : "bg-ink/64";
 
   return (
@@ -469,8 +523,9 @@ export default function Navigation() {
         ref={headerRef}
         data-theme={barScheme}
         data-crossing={crossing || undefined}
+        data-instant={instant || undefined}
         className={`nav-ground fixed inset-x-0 top-0 ${
-          menuOpen ? "z-(--z-nav-over-menu)" : "z-(--z-nav)"
+          menuOpen || overMenu ? "z-(--z-nav-over-menu)" : "z-(--z-nav)"
         }`}
         style={{ "--nav-p": 0 } as React.CSSProperties}
       >
@@ -622,7 +677,7 @@ export default function Navigation() {
       </header>
       <MobileMenu
         open={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={() => setMenu(false)}
         onNavigate={scrollTo}
         navP={menuNavP}
         scheme={menuScheme}
