@@ -15,9 +15,14 @@ const BEGIN = 0.14;
 /** How far below the seam the device parks. Its lower half lands over the
  *  copy that follows, which is where the fade earns its keep. */
 const DROP = 120;
-/** Scale on arrival, and what it grows to as the reader keeps going. */
+/** Scale on arrival, and what it grows to as the reader keeps going.
+ *  CLOSE was 1.16 against a 690pt device, which put the wallet on screen at
+ *  800. Capping the hero at 648 to clear the trust line took that to 752
+ *  without anyone asking it to, so this is not only a zoom but a repair:
+ *  1.30 puts the wallet at 842, which is more than it ever was and still
+ *  inside a 1004pt viewport with the whole phone showing. */
 const LANDED = 0.86;
-const CLOSE = 1.16;
+const CLOSE = 1.3;
 /** Scroll past the stop over which that growth happens. Short on purpose:
  *  the device is anchored to the page by then, so every pixel spent growing
  *  is also a pixel of it travelling up the screen. Stretch this and it

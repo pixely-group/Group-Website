@@ -512,8 +512,41 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
   );
 }
 
-const CARD_H = 176;
+/* A card is 85.60 x 53.98mm — 1.586 wide to tall. Held to that exactly, the
+   stack's 362pt width gives 228 down, which was too much of the screen: the
+   fan ran past where the copy comes over it and the front card's balance
+   went with it. 200 is the compromise, 1.81:1 — a little wider than life,
+   and still far off the 2.06 it started at, which read as a banner rather
+   than a card. To have both, the stack would have to sit narrower than the
+   margins it shares with everything else on the screen. */
+const CARD_H = 200;
 const CARD_STEP = 86;
+
+/** The EMV contactless indicator, as it is printed on a card: four arcs
+ *  about one centre, opening right, the innermost a short stub and each one
+ *  three points further out. It was three arcs of equal radius set three
+ *  points apart — three parallel bows, not a signal leaving a point.
+ *
+ *  Struck rather than drawn by hand: each arc is the same 100-degree sweep
+ *  about (3,12), so the endpoints are r·cos50 across and r·sin50 up and
+ *  down, and the four stay concentric by construction. */
+const NFC_R = [2.2, 5.2, 8.2, 11.2];
+function Contactless({ opacity = 0.55, size = 20 }: { opacity?: number; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden
+         style={{ transition: "opacity 260ms ease" }}>
+      {NFC_R.map((r) => (
+        <path
+          key={r}
+          d={`M${(3 + r * 0.643).toFixed(2)} ${(12 - r * 0.766).toFixed(2)}a${r} ${r} 0 0 1 0 ${(r * 1.532).toFixed(2)}`}
+          stroke={`rgba(236,233,225,${opacity})`}
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+      ))}
+    </svg>
+  );
+}
 
 const CARDS = [
   { id: "primary", name: "Pixely Visa", num: "4021", bal: "412 800,00", cur: "DZD",
@@ -526,12 +559,46 @@ const CARDS = [
 
 /** The wallet as the device shows it once it has turned to face the reader. */
 function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
+  /* The stack answers to the finger now. Tapping a card brings it to the
+     front of the fan and the others close up behind it, which is the one
+     gesture a wallet has; and the controls underneath follow whichever card
+     is at the front, so the two halves of the screen are about the same
+     card rather than about nothing in particular. */
+  const [front, setFront] = useState(CARDS.length - 1);
+  const [frozen, setFrozen] = useState<Record<string, boolean>>({});
+  const [nfcOff, setNfcOff] = useState<Record<string, boolean>>({});
+
+  /* Slots are places in the fan, not cards. The front card takes the last
+     slot, where its whole face shows, and the rest keep their order above
+     it. The list is never reordered — only each card's slot changes, so a
+     card travels to its new place instead of appearing in it. */
+  const order = CARDS.map((_, i) => i).filter((i) => i !== front).concat(front);
+  const held = CARDS[front];
+  const isFrozen = !!frozen[held.id];
+  const nfcOn = !nfcOff[held.id];
+
+  const rows = [
+    {
+      label: "Freeze card",
+      value: isFrozen ? "On" : "Off",
+      d: "M12 3v18M3 12h18M6 6l12 12M18 6 6 18",
+      press: () => setFrozen((f) => ({ ...f, [held.id]: !f[held.id] })),
+    },
+    { label: "Spending limit", value: "250 000 DZD", d: "M4 18V8m5 10V5m5 13v-7m5 7V9" },
+    {
+      label: "Contactless",
+      value: nfcOn ? "On" : "Off",
+      d: "M6 8a8 8 0 0 1 0 8M10 5a13 13 0 0 1 0 14",
+      press: () => setNfcOff((n) => ({ ...n, [held.id]: !n[held.id] })),
+    },
+  ];
+
   return (
     <div className="absolute inset-x-0 top-0 px-[20px]" style={{ paddingTop: 62 }}>
       <div className={pushIn}>
         <p style={{ fontSize: 13, color: c.MUTED, letterSpacing: "-0.01em" }}>Wallet</p>
         <p style={{ fontSize: 26, fontWeight: 700, color: c.FG, letterSpacing: "-0.02em", marginTop: 2 }}>
-          My cards
+          Virtual Cards
         </p>
       </div>
 
@@ -544,54 +611,68 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
           height: (CARDS.length - 1) * CARD_STEP + CARD_H,
         }}
       >
-        {CARDS.map((card, i) => (
-          <div
-            key={card.id}
-            className={pushIn}
-            style={{
-              position: "absolute",
-              top: i * CARD_STEP,
-              left: 0,
-              right: 0,
-              height: CARD_H,
-              /* Dealt in from the right, one after another. The ease has a
-                 long tail rather than a bounce: these are cards being laid
-                 down, not springs. */
-              animationDelay: `${90 + i * 110}ms`,
-              borderRadius: 22,
-              padding: 18,
-              background: card.tint,
-              boxShadow: `0 20px 40px -18px ${c.SHADOW}`,
-              border: "1px solid rgba(236,233,225,0.14)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
-                <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(236,233,225,0.62)" }}>
-                  {card.label.toUpperCase()}
-                </p>
-                <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
+        {CARDS.map((card, i) => {
+          const slot = order.indexOf(i);
+          const atFront = i === front;
+          const off = !!frozen[card.id];
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => setFront(i)}
+              aria-pressed={atFront}
+              aria-label={`${card.name}, ${card.label.toLowerCase()} card${off ? ", frozen" : ""}`}
+              data-cursor="link"
+              className={pushIn}
+              style={{
+                position: "absolute",
+                top: slot * CARD_STEP,
+                left: 0,
+                right: 0,
+                height: CARD_H,
+                zIndex: slot,
+                /* Dealt in from the right, one after another. The ease has a
+                   long tail rather than a bounce: these are cards being laid
+                   down, not springs. */
+                animationDelay: `${90 + i * 110}ms`,
+                borderRadius: 22,
+                padding: 18,
+                textAlign: "left",
+                background: card.tint,
+                boxShadow: atFront
+                  ? `0 28px 52px -18px ${c.SHADOW}`
+                  : `0 20px 40px -18px ${c.SHADOW}`,
+                border: "1px solid rgba(236,233,225,0.14)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                /* Frozen is a state you can see on the card, not a word in a
+                   list somewhere else. */
+                filter: off ? "saturate(0.2) brightness(0.72)" : "none",
+                transition:
+                  "top 460ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease, filter 320ms ease",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
+                <div>
+                  <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(236,233,225,0.62)" }}>
+                    {off ? "FROZEN" : card.label.toUpperCase()}
+                  </p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
+                </div>
+                <Contactless opacity={nfcOff[card.id] ? 0.14 : 0.55} />
               </div>
-              {/* Contactless, drawn rather than iconified. */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-                {[6, 10, 14].map((r, k) => (
-                  <path key={r} d={`M${8 + k * 3} 7a7 7 0 0 1 0 10`} stroke="rgba(236,233,225,0.55)" strokeWidth="1.6" strokeLinecap="round" />
-                ))}
-              </svg>
-            </div>
-            <div>
-              <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
-                •••• •••• •••• {card.num}
-              </p>
-              <p style={{ fontSize: 19, fontWeight: 700, color: "#ece9e1", marginTop: 6, letterSpacing: "-0.02em" }}>
-                {card.bal} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{card.cur}</span>
-              </p>
-            </div>
-          </div>
-        ))}
+              <div>
+                <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
+                  •••• •••• •••• {card.num}
+                </p>
+                <p style={{ fontSize: 19, fontWeight: 700, color: "#ece9e1", marginTop: 6, letterSpacing: "-0.02em" }}>
+                  {card.bal} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{card.cur}</span>
+                </p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* The stack leaves the lower half of the screen empty, which reads as
@@ -600,7 +681,9 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
         className={pushIn}
         style={{ marginTop: 26, animationDelay: `${90 + CARDS.length * 110}ms` }}
       >
-        <p style={{ fontSize: 12, color: c.MUTED, letterSpacing: "0.06em" }}>CARD CONTROLS</p>
+        <p style={{ fontSize: 12, color: c.MUTED, letterSpacing: "0.06em" }}>
+          CARD CONTROLS · {held.label.toUpperCase()}
+        </p>
         <div
           style={{
             marginTop: 10,
@@ -610,41 +693,47 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
             overflow: "hidden",
           }}
         >
-          {[
-            { label: "Freeze card", value: "Off", d: "M12 3v18M3 12h18M6 6l12 12M18 6 6 18" },
-            { label: "Spending limit", value: "250 000 DZD", d: "M4 18V8m5 10V5m5 13v-7m5 7V9" },
-            { label: "Contactless", value: "On", d: "M6 8a8 8 0 0 1 0 8M10 5a13 13 0 0 1 0 14" },
-          ].map((row, i) => (
-            <div
-              key={row.label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "13px 14px",
-                borderTop: i === 0 ? "none" : `1px solid ${c.SEP}`,
-              }}
-            >
-              <span
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 10,
-                  background: c.CHIP,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d={row.d} stroke={c.FG} strokeWidth="1.7" strokeLinecap="round" />
-                </svg>
-              </span>
-              <span style={{ flex: 1, fontSize: 13.5, color: c.FG }}>{row.label}</span>
-              <span style={{ fontSize: 12.5, color: c.MUTED }}>{row.value}</span>
-            </div>
-          ))}
+          {rows.map((row, i) => {
+            const body = (
+              <>
+                <span
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 10,
+                    background: c.CHIP,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d={row.d} stroke={c.FG} strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, fontSize: 13.5, color: c.FG, textAlign: "left" }}>{row.label}</span>
+                <span style={{ fontSize: 12.5, color: c.MUTED }}>{row.value}</span>
+              </>
+            );
+            const style = {
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "13px 14px",
+              width: "100%",
+              borderTop: i === 0 ? "none" : `1px solid ${c.SEP}`,
+            } as const;
+            return row.press ? (
+              <button key={row.label} type="button" onClick={row.press} data-cursor="link"
+                      aria-pressed={row.value === "On"} style={style}
+                      className="transition-opacity duration-200 active:opacity-60">
+                {body}
+              </button>
+            ) : (
+              <div key={row.label} style={style}>{body}</div>
+            );
+          })}
         </div>
       </div>
     </div>

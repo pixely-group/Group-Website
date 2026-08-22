@@ -208,16 +208,16 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — build what’s next with identity, data and trust"
+          aria-label="Pixely — make money move instantly, differently, your way"
         >
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              Build what’s
+              Make money
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
-              next with{" "}
+              Move{" "}
               {/* 1.32em, not 1.14. The line around it is uppercase Archivo
                   at a 0.686em cap height; the word is lowercase Fraunces
                   italic, whose x-height is 0.4427em. At 1.14 the word's body

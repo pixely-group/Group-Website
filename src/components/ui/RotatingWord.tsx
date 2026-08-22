@@ -11,15 +11,15 @@ import { useReducedMotion } from "@/lib/hooks";
  * "next with" is set once in the display face and stays there, so the typing
  * has one short word to do and the caret works across a few characters.
  *
- * "With" is what makes these three work where the last set did not: it takes
- * a bare noun of any kind, so identity, data and trust all follow it without
- * an article and without straining. Each is also a thing the company hands
- * you rather than a thing it does, which is why the line reads as an
- * invitation instead of a boast.
+ * "Move" is what makes these three work: it takes an adverb, so each one
+ * finishes the verb rather than restating it — the line says what happens to
+ * the money, and the word says how. Lowercase, because the word is a
+ * continuation of the line above it and not a heading of its own; the italic
+ * serif is what sets it apart, not its case.
  *
  * The count is not fixed; the cycle is however many are listed here.
  */
-const WORDS = ["identity", "data", "trust"] as const;
+const WORDS = ["instantly", "differently", "your way"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
@@ -160,7 +160,13 @@ export default function RotatingWord({ className }: { className?: string }) {
       <span ref={textRef}>
         {reduced
           ? WORDS[0]
-          : text.split("").map((ch, i) => <span key={i}>{ch}</span>)}
+          : text.split("").map((ch, i) => (
+              /* A non-breaking space, because one of these is two words and
+                 an ordinary space is trimmed at the end of a line box — so
+                 halfway through typing "your way" the space would vanish and
+                 the caret would step back over it. */
+              <span key={i}>{ch === " " ? "\u00a0" : ch}</span>
+            ))}
       </span>
       {/* The full stop doubles as the caret. Drawn rather than set: a period
           in this face is small and slanted, and this mark has to end a line
