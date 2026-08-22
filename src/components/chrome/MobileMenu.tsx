@@ -160,7 +160,10 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
             aria-label="Close menu"
             data-cursor="link"
             tabIndex={open ? 0 : -1}
-            className="flex size-10 items-center justify-center"
+            /* The cross is 20px in a 40px target, so 10px of slack each
+               side; -mr-2.5 pays it back and lands the mark the same
+               distance from the edge as the wordmark opposite it. */
+            className="-mr-2.5 flex size-10 items-center justify-center"
           >
             <svg
               width="20"

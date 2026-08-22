@@ -49,8 +49,9 @@ export const LOGIN_HREF = "#start";
 
 export const NAV_INSETS =
   "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:52rem] " +
+  "[--nav-row-right:20px] " +
   "sm:[--nav-gutter:40px] sm:[--nav-inset:96px] " +
-  "lg:[--nav-gutter:56px] lg:[--nav-inset:64px]";
+  "lg:[--nav-gutter:56px] lg:[--nav-inset:64px] lg:[--nav-row-right:4px]";
 
 /**
  * Geometry interpolated by `--nav-p`, 0 (at rest) → 1 (condensed). Every
@@ -66,15 +67,20 @@ export const NAV_GEOMETRY = {
    *  column as the hero headline. */
   padLeft:
     "calc(var(--nav-gutter) + (var(--nav-end) - var(--nav-gutter)) * var(--nav-p))",
-  /** Right starts at the row's own vertical padding instead of the gutter,
-   *  so the corner control is inset equally from the top and the right even
-   *  before the bar has a visible edge. */
-  padRight: "calc(24px + (var(--nav-end) - 24px) * var(--nav-p))",
+  /** The same as the left. It used to start at 24px — the row's vertical
+   *  padding — so the corner control would be inset equally from the top and
+   *  the right; but that put the trailing control 16px closer to the edge
+   *  than the wordmark was on the other side at every width above sm, which
+   *  is the asymmetry you actually see. Left and right now agree. */
+  padRight:
+    "calc(var(--nav-gutter) + (var(--nav-end) - var(--nav-gutter)) * var(--nav-p))",
   rowPadBlock: "calc(24px - var(--nav-p) * 20px)",
   rowPadLeft: "calc(var(--nav-p) * 20px)",
-  /** Matches the condensed vertical padding exactly, so the corner stays
-   *  square. Changing one without the other threw it out last time. */
-  rowPadRight: "calc(var(--nav-p) * 4px)",
+  /** Matches rowPadLeft wherever the trailing control is the menu button, so
+   *  the icon and the wordmark are inset the same. At lg the trailing control
+   *  is the pill instead, and that goes back to 4px — the same as the
+   *  condensed vertical padding, so the pill sits square in the corner. */
+  rowPadRight: "calc(var(--nav-p) * var(--nav-row-right))",
 } as const;
 
 export function Wordmark({ className = "" }: { className?: string }) {
@@ -570,7 +576,12 @@ export default function Navigation() {
                 aria-controls="mobile-menu"
                 onClick={toggleMenu}
                 data-cursor="link"
-                className="relative flex size-10 flex-col items-center justify-center gap-[7px] lg:hidden"
+                /* -mr-2 pays back the button's own slack. The tap target is
+                   40px and the bars are 24px, so the icon sits 8px inside its
+                   own box; without pulling the box out by that much, matching
+                   the container padding on both sides still leaves the icon
+                   8px further in than the wordmark. */
+                className="relative -mr-2 flex size-10 flex-col items-center justify-center gap-[7px] lg:hidden"
               >
                 <span className="sr-only">
                   {menuOpen ? "Close menu" : "Open menu"}

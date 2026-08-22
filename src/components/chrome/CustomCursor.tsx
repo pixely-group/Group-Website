@@ -24,7 +24,10 @@ const CURSOR_DOT_CLICKABLE_SCALE = 1.15;
 
 /**
  * Cursor ink for the chapter beneath it: a dark section takes the light
- * cursor and vice versa. `mix-blend-difference` cannot do this job here —
+ * cursor and vice versa. It changes on the frame, with no transition: a
+ * cursor easing between two inks is a cursor that is the wrong colour for
+ * a third of a second, and the one thing on screen that must never be hard
+ * to see is the pointer. `mix-blend-difference` cannot do this job here —
  * the fixed, z-indexed container is its own stacking context, which
  * isolates the blend group, so the cursor would only ever blend against
  * its own transparent parent.
@@ -129,13 +132,35 @@ export default function CustomCursor() {
       root.style.setProperty("--cursor-color", CURSOR_COLOR[next]);
     };
 
+    /* Where the pointer was last seen, so the ink can be worked out again
+       without it. */
+    let lastX = -1;
+    let lastY = -1;
+
     const onMove = (e: PointerEvent) => {
       setVisible(true);
+      lastX = e.clientX;
+      lastY = e.clientY;
       dotX(e.clientX);
       dotY(e.clientY);
       ringX(e.clientX);
       ringY(e.clientY);
       applyTheme(resolveTheme(asElement(e.target)));
+    };
+
+    /**
+     * The chapter can change under a pointer that has not moved.
+     *
+     * Reading the ink from the pointermove target alone means the cursor only
+     * finds out what it is sitting on when it is dragged across something —
+     * so scrolling a dark section up under a resting cursor left it black on
+     * black until the reader jiggled the mouse. It is re-read on scroll from
+     * the last known position instead, which is the moment the thing beneath
+     * it actually changes.
+     */
+    const resync = () => {
+      if (lastX < 0) return;
+      applyTheme(resolveTheme(document.elementFromPoint(lastX, lastY)));
     };
 
     const resolveTarget = (el: Element | null): [CursorState, string?] => {
@@ -173,6 +198,8 @@ export default function CustomCursor() {
     const onEnter = () => setVisible(true);
 
     window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("scroll", resync, { passive: true });
+    window.addEventListener("resize", resync, { passive: true });
     document.addEventListener("pointerover", onOver, { passive: true });
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("pointerup", onUp);
@@ -183,6 +210,8 @@ export default function CustomCursor() {
       delete root.dataset.cursor;
       root.style.removeProperty("--cursor-color");
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("scroll", resync);
+      window.removeEventListener("resize", resync);
       document.removeEventListener("pointerover", onOver);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
@@ -207,11 +236,11 @@ export default function CustomCursor() {
           top: -CURSOR_DOT_PX / 2,
           left: -CURSOR_DOT_PX / 2,
         }}
-        className="absolute rounded-full bg-(--cursor-color) transition-[background-color] duration-300 ease-(--ease-out-expo)"
+        className="absolute rounded-full bg-(--cursor-color)"
       />
       <div
         ref={ringRef}
-        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-(--cursor-color) transition-[border-color] duration-300 ease-(--ease-out-expo)"
+        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-(--cursor-color)"
       >
         <span
           ref={labelRef}
