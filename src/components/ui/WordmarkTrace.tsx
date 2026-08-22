@@ -36,7 +36,20 @@ const FORGIVE = 4;
  *  anti-aliased and the edge should feel live rather than walled. */
 const INK = 40;
 
-export default function WordmarkTrace({ text }: { text: string }) {
+export default function WordmarkTrace({
+  text,
+  fitTo,
+  dot = false,
+}: {
+  text: string;
+  /** Size the letters as if this string spanned the line — see FitText. */
+  fitTo?: string;
+  /** End the line with the brand's square full stop. Always in accent, never
+   *  traced: it is the lit pixel, and it is already lit. The trace canvas
+   *  only inks characters, so the pointer passing over the square correctly
+   *  lights nothing. */
+  dot?: boolean;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fine = useFinePointer();
 
@@ -248,6 +261,16 @@ export default function WordmarkTrace({ text }: { text: string }) {
       <FitText
         className="type-display leading-[0.78] select-none"
         letterClassName="wordmark-letter"
+        fitTo={fitTo}
+        after={
+          dot ? (
+            <span
+              aria-hidden
+              className="inline-block bg-accent"
+              style={{ width: "0.17em", height: "0.17em", marginLeft: "0.07em" }}
+            />
+          ) : undefined
+        }
       >
         {text}
       </FitText>

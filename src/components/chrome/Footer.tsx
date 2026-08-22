@@ -163,12 +163,14 @@ export default function Footer() {
           </nav>
         </div>
 
-        {/* Wordmark as a rule across the base of the page. Each letter traces
-            under the pointer — and only when the pointer is on the letter
-            itself rather than in its box, which WordmarkTrace settles by
-            reading the alpha under the cursor. */}
+        {/* The sign-off: the monogram at the base of the page, P. where the
+            full PIXELY used to run. `fitTo` keeps the letter at exactly the
+            size its P had inside the long form — the word has contracted the
+            same way the nav's does, letters folded away, dot docked. The P
+            still traces under the pointer; the dot is the lit pixel and is
+            already lit. */}
         <div aria-hidden className="mt-20 overflow-hidden">
-          <WordmarkTrace text="Pixely" />
+          <WordmarkTrace text="P" fitTo="Pixely" dot />
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">

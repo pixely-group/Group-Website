@@ -85,9 +85,17 @@ export const NAV_GEOMETRY = {
 
 /**
  * The wordmark is the mark: PIXELY with the brand's full stop, the square
- * pixel on the baseline. Its short form — P. — lives in the favicon and the
- * app icon; the two are one gesture at two lengths and never appear
- * together, because the name already begins with the letter.
+ * pixel on the baseline. Its short form — P. — is the same mark contracted,
+ * and the contraction is literal: as the bar gathers, the letters between
+ * the P and the dot fold away and the dot docks against the initial. One
+ * gesture, two lengths, and the travel between them is the word itself
+ * closing up rather than one logo swapped for another.
+ *
+ * The tail rides `--nav-p`, which the header already scrubs, so outside the
+ * header (the footer) the variable is unset and the mark stays long. The
+ * clip is `overflow: clip`, not `hidden` — hidden makes the span a scroll
+ * container and a scroll container's flex baseline is its border edge, which
+ * floats the letters off the line the P sits on.
  *
  * The dot is sized in em so any font-size override scales the whole mark,
  * and it takes the accent token rather than raw blue so it lifts with the
@@ -98,12 +106,14 @@ export function Wordmark({ className = "" }: { className?: string }) {
     <span
       className={`type-headline inline-flex items-baseline text-[0.95rem] tracking-[0.06em] ${className}`}
     >
-      Pixely
-      <span
-        aria-hidden
-        className="inline-block bg-accent"
-        style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
-      />
+      <span className="sr-only">Pixely</span>
+      <span aria-hidden style={{ display: "contents" }}>
+        P<span className="wordmark-tail">ixely</span>
+        <span
+          className="inline-block bg-accent"
+          style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
+        />
+      </span>
     </span>
   );
 }
@@ -576,6 +586,7 @@ export default function Navigation() {
         data-theme={barScheme}
         data-crossing={crossing || undefined}
         data-instant={instant || undefined}
+        data-wm-short={menuOpen || undefined}
         className={`nav-ground fixed inset-x-0 top-0 ${
           menuOpen || overMenu ? "z-(--z-nav-over-menu)" : "z-(--z-nav)"
         }`}

@@ -179,6 +179,27 @@
 /* Switched, not crossed. Used at both ends of the menu, where the change
    happens under something covering the bar and easing through the mid-tones
    would be the one moment the bar cannot be read. */
+/* The wordmark's tail — the IXELY between the P and the dot. Collapses as
+   the bar gathers (or the instant the menu opens), leaving P. behind. The
+   3.6em ceiling only starts to bite once it crosses the letters' real width,
+   so the fold begins about a third of the way into the gather rather than
+   stretching thin across the whole of it. The 0.25s transition smooths the
+   per-frame scrub the way the cursor smooths the pointer, and carries the
+   menu's instant flip as an animation instead of a pop. */
+.wordmark-tail {
+  white-space: pre;
+  overflow: clip;
+  max-width: calc((1 - var(--nav-p, 0)) * 3.6em);
+  opacity: calc(1.5 - var(--nav-p, 0) * 2);
+  transition:
+    max-width 0.25s var(--ease-out-expo),
+    opacity 0.25s linear;
+}
+[data-wm-short] .wordmark-tail {
+  max-width: 0;
+  opacity: 0;
+}
+
 .nav-ground[data-instant] {
   --nav-cross: 1ms;
 }
