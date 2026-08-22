@@ -595,7 +595,12 @@ export default function Globe({ className }: { className?: string }) {
         gap === 0 ? "YOUR TIME" : `${hm(gap)} ${gap > 0 ? "AHEAD" : "BEHIND"}`
       }`;
       hudSecond = -1;
-      hud.dataset.on = "true";
+      /* Struck again for every city, not only the first. Moving straight
+         from one city to another never clears the attribute, so without
+         standing it down and reading a layout property in between — which
+         flushes the pending style — the browser sees no change and the rail
+         does not replay. The measurement below is that read. */
+      delete hud.dataset.on;
       /* Measured now rather than per frame: the plate holds its berth for
          the whole hover, and the name is the only thing that changes its
          width — the digits are tabular. */
@@ -603,6 +608,7 @@ export default function Globe({ className }: { className?: string }) {
       hudY = hud.offsetTop;
       hudW = hud.offsetWidth;
       hudH = hud.offsetHeight;
+      hud.dataset.on = "true";
     };
 
 
