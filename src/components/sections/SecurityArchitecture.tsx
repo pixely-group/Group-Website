@@ -105,6 +105,10 @@ const OURS_MS = CUMULATIVE[LAYERS.length - 2];
 /** Policy is the layer that refuses. Everything under it is never reached. */
 const BLOCK_AT = 2;
 
+/** The request's own radius, in drawing units. Named because the moment it
+ *  touches a plate is a question about its leading edge, not its centre. */
+const MARK_R = 5.5;
+
 /**
  * Isometric plate geometry — a 2:1 diamond per layer.
  *
@@ -288,7 +292,21 @@ export default function SecurityArchitecture() {
          as though they refused it too. */
       const mark = beamElRef.current;
       if (mark) {
-        const refused = isDeclined && cy >= layerY(geo, BLOCK_AT) - 1;
+        /* Contact, not arrival. The request runs down the spine, and on the
+           spine a plate begins at its top vertex — HH above the centre line
+           the register hangs on. Measuring to the centre held the mark blue
+           across the whole plate it had already landed on. Its own leading
+           edge is what touches, so the radius comes off too.
+
+           Divided by the squeeze, and that is the part worth being careful
+           about: closing the stack moves the plates but does not shrink
+           them. Positions are squeezed, sizes are not — so a gap of HH on
+           screen is HH/s in the coordinates this comparison is written in.
+           Subtracting a flat HH held the mark blue until it was eighty
+           pixels into the plate. */
+        const s = squeeze.current.s || 1;
+        const refused =
+          isDeclined && cy >= layerY(geo, BLOCK_AT) - (geo.HH + MARK_R) / s;
         const want = refused ? REFUSED : ACCENT;
         if (beamFill.current !== want) {
           beamFill.current = want;
@@ -751,12 +769,13 @@ export default function SecurityArchitecture() {
 
         {/* — The drawing. Wide, the register hangs on it at the same
             fractions that place the plates; narrow, it follows underneath. */}
-        {/* Half the gap below lg. Wide, the register hangs beside the
+        {/* Almost nothing below lg. Wide, the register hangs beside the
             drawing and the space above it is the section breathing; narrow,
-            the replay control is the thing directly above, and 48px on top
-            of the drawing's own 99px of headroom left it stranded well clear
-            of the stack it replays. */}
-        <div data-stack className="relative mt-6 lg:mt-12">
+            the replay control is the thing directly above, and the drawing
+            already carries its own margin — 26 units of blank above the
+            first plate's tip so the request has somewhere to come in from,
+            which is 26px of gap before any margin is added to it. */}
+        <div data-stack className="relative mt-1 lg:mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
             data-drawing
@@ -946,7 +965,7 @@ export default function SecurityArchitecture() {
               data-beam
               cx={geo.CX}
               cy={travelFrom(geo)}
-              r="5.5"
+              r={MARK_R}
               opacity="0"
               style={{
                 /* Only the starting colour. Which colour it should be from
