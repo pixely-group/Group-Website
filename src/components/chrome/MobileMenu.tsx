@@ -295,29 +295,39 @@ export default function MobileMenu({
           })}
         </ul>
 
-        {/* Both of the bar's corner controls are hidden below sm and land
-            here instead — as the controls they are, not as two more chapters
-            on the list. They were numbered 06 and 07 in among the sections,
+        {/* The bar's corner controls, for the widths where the bar has not
+            got them — as the controls they are, not as two more chapters on
+            the list. They were numbered 06 and 07 in among the sections,
             which read as places on the page rather than things to press.
-            Same pairing the bar and the hero make: one invitation, one way
-            back in. */}
-        {/* On a phone: stacked, matched and centred. Side by side at that
+
+            Get started only below sm. From sm the bar carries it, and a
+            reader who can see it in the bar behind this panel does not need
+            it offered again three inches lower; two of the same button is a
+            question about whether they do the same thing. Login stays at
+            every width — the bar drops it as it condenses, so this is the
+            only place it is certain to be.
+
+            On a phone: stacked, matched and centred. Side by side at that
             width they sized themselves to their own words, so "Get started"
             was half again "Login" and the pair read as one control with an
-            afterthought beside it. From sm there is room for the row, and
-            with room the natural widths are the honest ones. */}
+            afterthought beside it. From sm there is room for a row, and with
+            room the natural widths are the honest ones. */}
         <div
           data-menu-meta
           className="mx-auto mt-9 flex max-w-[16.5rem] flex-col items-stretch gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:items-center"
           inert={!open || undefined}
         >
-          <MagneticButton
-            href="#start"
-            onClick={onNavigate("#start")}
-            className="w-full justify-center sm:w-auto"
-          >
-            Get started
-          </MagneticButton>
+          {/* Wrapped rather than given `sm:hidden` directly: the button's own
+              inline-flex is the same specificity and wins by CSS order. */}
+          <span className="block w-full sm:hidden">
+            <MagneticButton
+              href="#start"
+              onClick={onNavigate("#start")}
+              className="w-full justify-center"
+            >
+              Get started
+            </MagneticButton>
+          </span>
           <MagneticButton
             href={LOGIN_HREF}
             onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}

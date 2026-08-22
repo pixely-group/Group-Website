@@ -100,12 +100,18 @@ export default function Globe({ className }: { className?: string }) {
        brand's electric blue. */
     const SIGNAL = new THREE.Color("#2d46ff");
     const LIFT = new THREE.Color("#7290ff");
-    /* The land is a cooler, more azure blue: far enough round the wheel to
-       separate the ground from the traffic running over it, close enough to
-       still read as one palette. Same two-tone treatment as before — deep at
-       the limb, lit where it faces the camera — just on its own hue. */
-    const LAND_DEEP = new THREE.Color("#1d55c8");
-    const LAND_LIT = new THREE.Color("#59a6ff");
+    /* The land is a cooler, brighter blue than the traffic running over it.
+       It was fifteen degrees of hue away, which separated the two layers on
+       paper and not on screen: at dot size, against an electric-blue
+       atmosphere, fifteen degrees is a shade of the same thing. This is
+       nearer thirty, and lighter with it — the ground reads as ground and
+       the corridors still read as the brightest thing on the globe.
+
+       Same two-tone treatment as before: deep at the limb, lit where it
+       faces the camera, just on its own hue. The atmosphere, the halo, the
+       cities, the arcs and the packets are all untouched. */
+    const LAND_DEEP = new THREE.Color("#1a86e6");
+    const LAND_LIT = new THREE.Color("#86d4ff");
 
     /* ---- the halo ---------------------------------------------------
        No shell inside the sphere. One was tried at two opacities and both
