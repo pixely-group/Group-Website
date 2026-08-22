@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
+import MagneticButton from "@/components/ui/MagneticButton";
 import {
   LOGIN_HREF,
   NAV_GEOMETRY,
@@ -17,10 +18,20 @@ type Props = {
   /** The bar's condense progress, frozen at the moment the menu opened, so
    *  the close button lands on the toggle it replaces. */
   navP: number;
+  /** The chapter the page is currently in, from the same scrollspy that
+   *  marks the bar. The menu covers the bar, so without this the reader
+   *  loses all sense of where they are the moment they open it. */
+  activeHref: string | null;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
-export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
+export default function MobileMenu({
+  open,
+  onClose,
+  onNavigate,
+  navP,
+  activeHref,
+}: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
 
@@ -80,10 +91,14 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
         panel.style.visibility = "hidden";
         panel.style.pointerEvents = "none";
       } else {
+        /* The same gesture, run backwards. It used to fade, which read as a
+           different thing happening: the panel comes down over the page, so
+           it should go back up off it. Same curve, a touch quicker, because
+           leaving should never feel as deliberate as arriving. */
         gsap.to(panel, {
-          opacity: 0,
-          duration: 0.35,
-          ease: "power2.inOut",
+          clipPath: "inset(0% 0% 100% 0%)",
+          duration: 0.55,
+          ease: "expo.inOut",
           onComplete: () => {
             panel.style.visibility = "hidden";
             panel.style.pointerEvents = "none";
@@ -168,50 +183,59 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
 
       <nav aria-label="Menu" className="px-6 py-10 sm:px-10">
         <ul className="flex flex-col gap-1">
-          {NAV_LINKS.map((link, i) => (
-            <li key={link.href} className="overflow-hidden">
-              <a
-                href={link.href}
-                onClick={onNavigate(link.href)}
-                data-menu-link
-                className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] transition-colors duration-300 hover:text-accent focus-visible:text-accent"
-                tabIndex={open ? 0 : -1}
-              >
-                <span className="type-label w-7 shrink-0 text-accent">
-                  0{i + 1}
-                </span>
-                {link.label}
-              </a>
-            </li>
-          ))}
-          <li className="mt-4 overflow-hidden">
-            <a
-              href="#start"
-              onClick={onNavigate("#start")}
-              data-menu-link
-              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] text-accent"
-              tabIndex={open ? 0 : -1}
-            >
-              <span className="type-label w-7 shrink-0">06</span>
-              Get started
-            </a>
-          </li>
-          {/* Both of the bar's corner controls are hidden below sm and land
-              here instead. Signing in would have had nowhere to go on a
-              phone otherwise. */}
-          <li className="overflow-hidden">
-            <a
-              href={LOGIN_HREF}
-              onClick={onNavigate(LOGIN_HREF)}
-              data-menu-link
-              className="type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] transition-colors duration-300 hover:text-accent focus-visible:text-accent"
-              tabIndex={open ? 0 : -1}
-            >
-              <span className="type-label w-7 shrink-0 text-accent">07</span>
-              Login
-            </a>
-          </li>
+          {NAV_LINKS.map((link, i) => {
+            const active = activeHref === link.href;
+            return (
+              <li key={link.href} className="overflow-hidden">
+                <a
+                  href={link.href}
+                  onClick={onNavigate(link.href)}
+                  data-menu-link
+                  aria-current={active ? "true" : undefined}
+                  className={`type-headline flex items-baseline gap-4 py-2 text-[clamp(1.9rem,8.6vw,2.6rem)] transition-colors duration-300 hover:text-accent focus-visible:text-accent ${
+                    active ? "text-accent" : ""
+                  }`}
+                  tabIndex={open ? 0 : -1}
+                >
+                  {/* The index carries the mark rather than the label: the
+                      labels are enormous here, and colouring one of them
+                      leaves the other four looking switched off. */}
+                  <span
+                    className={`type-label w-7 shrink-0 transition-colors duration-300 ${
+                      active ? "text-accent" : "text-(--faint)"
+                    }`}
+                  >
+                    0{i + 1}
+                  </span>
+                  {link.label}
+                </a>
+              </li>
+            );
+          })}
         </ul>
+
+        {/* Both of the bar's corner controls are hidden below sm and land
+            here instead — as the controls they are, not as two more chapters
+            on the list. They were numbered 06 and 07 in among the sections,
+            which read as places on the page rather than things to press.
+            Same pairing the bar and the hero make: one invitation, one way
+            back in. */}
+        <div
+          data-menu-meta
+          className="mt-9 flex flex-wrap items-center gap-3"
+          inert={!open || undefined}
+        >
+          <MagneticButton href="#start" onClick={onNavigate("#start")}>
+            Get started
+          </MagneticButton>
+          <MagneticButton
+            href={LOGIN_HREF}
+            onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}
+            variant="outline"
+          >
+            Login
+          </MagneticButton>
+        </div>
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">

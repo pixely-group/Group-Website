@@ -622,6 +622,7 @@ export default function Navigation() {
         onClose={() => setMenuOpen(false)}
         onNavigate={scrollTo}
         navP={menuNavP}
+        activeHref={activeHref}
       />
     </>
   );
