@@ -845,18 +845,14 @@ export default function SecurityArchitecture() {
             Narrow and on a tablet it does not stick at all. There is one
             column there and the control would cross everything in it, which
             it cannot do without a ground, and a ground is a second design
-            for a control that already had one. It stays where it was: on
-            its own line above the plates, centred with them, stacked on a
-            phone.
+            for a control that already had one. It sits in the column
+            instead, under the plates.
 
             flow-root, or the drawing's own top margin collapses through
             this wrapper's top edge and takes the wrapper 48px down the page
             with it — which is where the control's -36px was landing before,
             48px below the row it is meant to sit in. */}
         <div className="relative flow-root">
-          <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 rounded-(--radius-chip) sm:flex-row sm:gap-4 lg:sticky lg:top-[5.5rem] lg:z-20 lg:-mt-11 lg:-mr-4 lg:-mb-2 lg:ml-auto lg:w-fit lg:justify-end lg:bg-theme lg:px-4 lg:py-2">
-            {replayControl}
-          </div>
 
           {/* One step below lg, four above it. The control drives this
               drawing, so narrow they are one object and sit together; wide,
@@ -864,7 +860,7 @@ export default function SecurityArchitecture() {
               above it is the section breathing. The drawing also carries 26
               units of blank above the first plate's tip, so the gap on
               screen is that plus this. */}
-          <div data-stack className="relative mt-2 lg:mt-12">
+          <div data-stack className="relative mt-2 flex flex-col lg:mt-12">
             <svg
               viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
               data-drawing
@@ -1088,6 +1084,25 @@ export default function SecurityArchitecture() {
                 }}
               />
             </svg>
+
+            {/* Below lg it sits here, under the plates and over the
+                register — the reader meets the drawing first, then the
+                control that replays it, then what it did. Above the plates
+                it was the first thing in the section and the easiest to
+                scroll past without reading, which on a phone means never
+                finding out the drawing can be replayed at all.
+
+                Wide it goes back to the head of the column, which is where
+                it has to be: sticky takes its resting place from where the
+                element falls in flow, and in flow down here it would begin
+                its travel below the drawing rather than above it. -23
+                against the 12 of the drawing's own gap and the 9 it rises,
+                plus the 2 of padding it now carries; +39 gives back the
+                53px of height that leaves behind, so the drawing starts
+                exactly where it did and the two margins net to nothing. */}
+            <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 rounded-(--radius-chip) sm:flex-row sm:gap-4 lg:sticky lg:top-[5.5rem] lg:z-20 lg:order-first lg:-mt-23 lg:mr-[-1rem] lg:mb-[39px] lg:ml-auto lg:w-fit lg:justify-end lg:bg-theme lg:px-4 lg:py-2">
+              {replayControl}
+            </div>
 
             <ol
               ref={registerRef}
