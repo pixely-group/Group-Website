@@ -307,14 +307,16 @@ export default function MobileMenu({
             every width — the bar drops it as it condenses, so this is the
             only place it is certain to be.
 
-            On a phone: stacked, matched and centred. Side by side at that
-            width they sized themselves to their own words, so "Get started"
-            was half again "Login" and the pair read as one control with an
-            afterthought beside it. From sm there is room for a row, and with
-            room the natural widths are the honest ones. */}
+            Same block at every width. Stacked, matched, centred on a phone
+            and against the list's own margin from sm. Letting them size to
+            their words was tried twice and failed twice: as a pair "Get
+            started" came out half again "Login", and alone Login shrank to
+            ninety-nine pixels and read as a footnote under type five times
+            its height. A control that is the only thing offered has to look
+            like it was meant. */}
         <div
           data-menu-meta
-          className="mx-auto mt-9 flex max-w-[16.5rem] flex-col items-stretch gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:items-center"
+          className="mx-auto mt-9 flex max-w-[16.5rem] flex-col items-stretch gap-3 sm:mx-0"
           inert={!open || undefined}
         >
           {/* Wrapped rather than given `sm:hidden` directly: the button's own
@@ -332,7 +334,7 @@ export default function MobileMenu({
             href={LOGIN_HREF}
             onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}
             variant="outline"
-            className="w-full justify-center sm:w-auto"
+            className="w-full justify-center"
           >
             Login
           </MagneticButton>
