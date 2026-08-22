@@ -25,6 +25,11 @@ type Props = {
    *  marks the bar. The menu covers the bar, so without this the reader
    *  loses all sense of where they are the moment they open it. */
   activeHref: string | null;
+  /** Fired the moment the closing panel stops covering the bar, so the bar
+   *  can take the page's treatment back on exactly that frame. A timer
+   *  cannot do this: the panel's tail is eased, so the frame it uncovers the
+   *  bar on is not a fixed number of milliseconds from the click. */
+  onBarUncovered: () => void;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
@@ -35,6 +40,7 @@ export default function MobileMenu({
   navP,
   scheme,
   activeHref,
+  onBarUncovered,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
@@ -59,7 +65,14 @@ export default function MobileMenu({
         .querySelector("[data-menu-lip]")
         ?.getBoundingClientRect().height ?? 72,
     );
-    const shut = `inset(0% 0% calc(100% - ${lip}px) 0%)`;
+    /* Driven as a height rather than a percentage clip, because both ends
+       need to know where the edge actually is: opening starts at the bar's
+       height so the bar is covered from the first frame, and closing has to
+       report the frame it passes back under that height. */
+    const full = panel.getBoundingClientRect().height || window.innerHeight;
+    const clipTo = (h: number) => {
+      panel.style.clipPath = `inset(0px 0px ${Math.max(0, full - h)}px 0px)`;
+    };
 
     if (open) {
       lenis?.stop();
@@ -69,18 +82,17 @@ export default function MobileMenu({
         gsap.set(panel, { clipPath: "inset(0% 0% 0% 0%)", opacity: 1 });
         gsap.set([links, meta], { yPercent: 0, opacity: 1 });
       } else {
+        const grow = { h: lip };
+        clipTo(lip);
         gsap
           .timeline()
           .set(panel, { opacity: 1 })
-          .fromTo(
-            panel,
-            { clipPath: shut },
-            {
-              clipPath: "inset(0% 0% 0% 0%)",
-              duration: 0.7,
-              ease: "expo.inOut",
-            },
-          )
+          .to(grow, {
+            h: full,
+            duration: 0.7,
+            ease: "expo.inOut",
+            onUpdate: () => clipTo(grow.h),
+          })
           .fromTo(
             links,
             { yPercent: 120 },
@@ -107,23 +119,49 @@ export default function MobileMenu({
         gsap.set(panel, { opacity: 0 });
         panel.style.visibility = "hidden";
         panel.style.pointerEvents = "none";
+        onBarUncovered();
       } else {
         /* The same gesture, run backwards. It used to fade, which read as a
            different thing happening: the panel comes down over the page, so
            it should go back up off it. Same curve, a touch quicker, because
-           leaving should never feel as deliberate as arriving. */
-        gsap.to(panel, {
-          clipPath: shut,
-          duration: 0.55,
-          ease: "expo.inOut",
-          onComplete: () => {
-            panel.style.visibility = "hidden";
-            panel.style.pointerEvents = "none";
-          },
-        });
+           leaving should never feel as deliberate as arriving.
+
+           All the way to nothing, not back to the lip. Stopping at the lip
+           left a strip the height of the bar still painted, which then went
+           out with visibility — a snap at the end of a smooth close. */
+        const shrink = { h: full };
+        gsap
+          .timeline({
+            onComplete: () => {
+              panel.style.visibility = "hidden";
+              panel.style.pointerEvents = "none";
+            },
+          })
+          /* Down to the bar's own height on the opening's curve, so the
+             gesture reads as the same one reversed. The bar is covered for
+             all of it and keeps the menu's treatment. */
+          .to(shrink, {
+            h: lip,
+            duration: 0.48,
+            ease: "expo.inOut",
+            onUpdate: () => clipTo(shrink.h),
+          })
+          /* Then off the bar quickly. This last stretch is the one place the
+             bar cannot be right: the panel is behind the top of it and the
+             page behind the bottom, so whichever ink the bar takes, half of
+             it is on the wrong ground. There is no colour that solves that —
+             only making it short. A tenth of a second, accelerating, which
+             reads as the tail of the same movement rather than a snap. */
+          .to(shrink, {
+            h: 0,
+            duration: 0.1,
+            ease: "power1.in",
+            onStart: onBarUncovered,
+            onUpdate: () => clipTo(shrink.h),
+          });
       }
     }
-  }, [open, lenis]);
+  }, [open, lenis, onBarUncovered]);
 
   useEffect(() => {
     if (!open) return;
@@ -240,19 +278,20 @@ export default function MobileMenu({
             which read as places on the page rather than things to press.
             Same pairing the bar and the hero make: one invitation, one way
             back in. */}
-        {/* Stacked and matched. Side by side they sized themselves to their
-            own words, so "Get started" was half again the width of "Login"
-            and the pair read as one control and an afterthought. A column of
-            two equal blocks reads as two ways in. */}
+        {/* On a phone: stacked, matched and centred. Side by side at that
+            width they sized themselves to their own words, so "Get started"
+            was half again "Login" and the pair read as one control with an
+            afterthought beside it. From sm there is room for the row, and
+            with room the natural widths are the honest ones. */}
         <div
           data-menu-meta
-          className="mt-9 flex max-w-[13.5rem] flex-col items-stretch gap-3"
+          className="mx-auto mt-9 flex max-w-[13.5rem] flex-col items-stretch gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:items-center"
           inert={!open || undefined}
         >
           <MagneticButton
             href="#start"
             onClick={onNavigate("#start")}
-            className="w-full justify-center"
+            className="w-full justify-center sm:w-auto"
           >
             Get started
           </MagneticButton>
@@ -260,7 +299,7 @@ export default function MobileMenu({
             href={LOGIN_HREF}
             onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}
             variant="outline"
-            className="w-full justify-center"
+            className="w-full justify-center sm:w-auto"
           >
             Login
           </MagneticButton>

@@ -145,6 +145,8 @@ export default function Navigation() {
   const [instant, setInstant] = useState(false);
 
   const menuTimers = useRef<number[]>([]);
+  /* Set while the menu is open, read by the condense scrub. */
+  const menuFrozen = useRef(false);
   useEffect(
     () => () => {
       menuTimers.current.forEach(window.clearTimeout);
@@ -156,6 +158,15 @@ export default function Navigation() {
   /* One place the menu is opened or shut from, because the bar's treatment
      has to be sequenced against it and three call sites doing that
      separately is three chances to get the order wrong. */
+  /* The bar takes the page's treatment back. Called by the panel on the
+     frame it stops covering the bar, and by a backstop timer if that frame
+     never comes. */
+  const revealBar = useCallback(() => {
+    setInstant(true);
+    menuTimers.current.push(window.setTimeout(() => setInstant(false), 140));
+    setOverMenu(false);
+  }, []);
+
   const setMenu = useCallback((next: boolean) => {
     /* Anything still pending from the last toggle is about to be wrong.
        Closing schedules the bar's return for 560ms out; reopen inside that
@@ -171,20 +182,19 @@ export default function Navigation() {
       later(() => setInstant(false), 140);
     };
     setMenuOpen(next);
+    menuFrozen.current = next;
     if (next) {
       /* The panel already covers the bar on its first frame, so the bar can
          take the menu's ground straight away. */
       switchNow();
       setOverMenu(true);
     } else {
-      /* Coming back, the panel covers the bar until the very last frame:
-         the wipe collapses upward into a lip this bar's height. */
-      later(() => {
-        switchNow();
-        setOverMenu(false);
-      }, 560);
+      /* Coming back is the panel's call, not a timer's — its tail is eased,
+         so the frame it uncovers the bar on is not a fixed distance from the
+         click. This is only the backstop. */
+      later(revealBar, 900);
     }
-  }, []);
+  }, [revealBar]);
 
   /* The panel is lg:hidden, so widening past lg takes it away without
      telling React. The bar would be left riding at menu z-index in the
@@ -229,6 +239,11 @@ export default function Navigation() {
     if (!header) return;
 
     const setP = (p: number) => {
+      /* Held still while the menu is up. Opening the menu stops Lenis, which
+         can nudge the scroll position, which runs this — and the bar is on
+         top of the menu now, so the reader watches it re-gather itself to a
+         width it had no reason to change to. */
+      if (menuFrozen.current) return;
       navP.current = p;
       header.style.setProperty("--nav-p", p.toFixed(4));
       // Past the point where it has faded out. Compared against a ref because
@@ -682,6 +697,7 @@ export default function Navigation() {
         navP={menuNavP}
         scheme={menuScheme}
         activeHref={activeHref}
+        onBarUncovered={revealBar}
       />
     </>
   );
