@@ -28,6 +28,8 @@
   --font-display: var(--font-archivo);
   --font-serif: var(--font-fraunces);
   --font-mono: var(--font-plex-mono);
+  /* Departure-board figures, for the globe's clock only. */
+  --font-clock: var(--font-martian);
 
   /* — Motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -777,8 +779,9 @@ html[data-cursor="on"] * {
 }
 
 /* ---- the city readout ------------------------------------------------
-   It opens beside the city it describes and then stays exactly where it
-   opened. It does not track the marker: the globe keeps turning under a
+   The box is uniform — one border, all four sides, no rail and no glow down
+   one edge. It opens beside the city it describes and then stays exactly
+   where it opened. It does not track the marker: the globe keeps turning under a
    plate that is being read, and a panel that follows a moving point is a
    thing you chase rather than read. Placed once, on hover, by JS through
    --hud-x/--hud-y.
@@ -796,106 +799,50 @@ html[data-cursor="on"] * {
   position: absolute;
   top: 0;
   left: 0;
-  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px));
+  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px)) scaleY(0.7);
+  transform-origin: left center;
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  /* Wider than it is tall, and wider again now the country sits beside the
-     clock. At 9.5rem the three lines made a square, which reads as a badge;
-     a readout should be a strip. */
-  min-width: 17.5rem;
+  /* Fixed, not minimum. On min-width the plate sized itself to whichever
+     name it happened to be showing, and "Johannesburg — South Africa" came
+     out 27px wider than everything else; a readout that changes shape city
+     to city is not a uniform box. Set to hold the longest line there is. */
+  width: 19.5rem;
   padding: 0.7rem 0.95rem 0.65rem;
   pointer-events: none;
   opacity: 0;
+  /* One rule, all four sides. The 5px rail down the left made the box read
+     as a tab clipped onto something; a readout is a plate, and a plate has
+     one edge. */
   border: 1px solid rgb(45 70 255 / 0.5);
   border-radius: 3px;
   background: rgb(10 10 11 / 0.74);
   backdrop-filter: blur(10px) saturate(1.25);
-  box-shadow:
-    0 18px 40px -18px rgb(0 0 0 / 0.9),
-    0 0 26px -8px rgb(45 70 255 / 0.5);
-  /* Shut, this leaves the rail's own width showing rather than nothing. The
-     rail is a child of this element, so a clip to zero takes the rail with
-     it — and the strike would then play, in full, inside something no wider
-     than a hairline. The body opens from the rail; it does not open from
-     nowhere. */
-  clip-path: inset(0 calc(100% - 7px) 0 0);
-  /* Closing: the body collapses back to the rail, the rail drops after it
-     (its own delay, below), and only then does the whole thing go out. */
+  /* Depth, not glow. The blue bloom went with the rail. */
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.9);
+  clip-path: inset(0 100% 0 0);
   transition:
-    opacity 150ms var(--ease-swift) 210ms,
-    clip-path 200ms var(--ease-swift);
+    opacity 150ms var(--ease-swift),
+    clip-path 200ms var(--ease-swift),
+    transform 220ms var(--ease-swift);
 }
 
 .globe-hud[data-on] {
   opacity: 1;
   clip-path: inset(0 0 0 0);
-  /* Opening: no delay on opacity, because the strike is the first thing and
-     has to be visible while it happens. The body is held back 130ms, so the
-     plate reads as pulled out of the rail rather than as two things that
-     happen to start together. */
+  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px)) scaleY(1);
+  /* The plate does its own growing now the rail is gone: it opens from a
+     flattened strip along its left edge and prints out to the right, which
+     is the gesture the rail used to start. */
   transition:
-    opacity 120ms var(--ease-swift),
-    clip-path 380ms var(--ease-out-expo) 130ms;
+    opacity 130ms var(--ease-swift),
+    clip-path 400ms var(--ease-out-expo) 70ms,
+    transform 300ms var(--ease-out-expo);
 }
 
-/* The rail: the edge the panel grows from, and the only solid mark on it.
-   It is also what announces the plate: it grows from a short mark to full
-   height, overshoots, and settles, while the body is still held back — so
-   the plate looks drawn out of the rail rather than merely revealed beside
-   it. No colour change in it. A rail that whitens reads as a camera flash
-   going off next to the type; the same energy put into the movement, with
-   only the glow blooming at the peak, reads as the rail taking charge.
 
-   Collapsing is the same in reverse: the body goes first and the rail drops
-   after it, which is what the 150ms delay here is for. */
-.globe-hud::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  bottom: -1px;
-  left: -1px;
-  width: 5px;
-  background: var(--color-signal);
-  box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
-  transform: scaleY(0.06);
-  transform-origin: center;
-  opacity: 0;
-  transition:
-    transform 200ms var(--ease-swift) 150ms,
-    opacity 160ms var(--ease-swift) 150ms;
-}
-
-.globe-hud[data-on]::before {
-  transform: scaleY(1);
-  opacity: 1;
-  transition: none;
-  animation: hud-rail 460ms var(--ease-out-expo);
-}
-
-@keyframes hud-rail {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.06);
-    box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
-  }
-  14% {
-    opacity: 1;
-    transform: scaleY(0.16);
-    box-shadow: 0 0 12px 0 rgb(45 70 255 / 0.9);
-  }
-  58% {
-    opacity: 1;
-    transform: scaleY(1.06);
-    box-shadow: 0 0 22px 2px rgb(114 144 255 / 0.7);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1);
-    box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
-  }
-}
 
 /* Corner ticks. Four corners out of one element: eight small gradients,
    which is duller to read than a mask and far easier to be sure of. */
@@ -937,22 +884,16 @@ html[data-cursor="on"] * {
   color: var(--color-signal-glow);
 }
 
-/* The clock. Tabular, so the seconds tick without the panel breathing. */
+/* The clock, on the departure-board face. Monospaced by construction, so
+   the seconds tick without the plate breathing. Seconds are set exactly as
+   the hours and minutes are — one clock, one size, one colour. */
 .globe-hud__time {
   margin-top: 0.4rem;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 1.0625rem;
+  font-family: var(--font-clock), var(--font-mono);
+  font-size: 0.9375rem;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--color-bone);
-}
-
-/* Seconds a step down, so the hour and minute are read and the tick is
-   only felt. */
-.globe-hud__sec {
-  font-size: 0.6875rem;
-  color: rgb(236 233 225 / 0.45);
 }
 
 .globe-hud__read {
@@ -965,8 +906,8 @@ html[data-cursor="on"] * {
    optimising for. The city sits on it as a single mark. */
 .globe-hud__map {
   flex: 0 0 auto;
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 4.4rem;
+  height: 4.4rem;
   overflow: visible;
 }
 
@@ -975,7 +916,7 @@ html[data-cursor="on"] * {
   /* Lesotho is a hole in South Africa, and the outlines carry it as one. */
   fill-rule: evenodd;
   stroke: var(--color-signal-lift);
-  stroke-width: 1.4;
+  stroke-width: 1.2;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }

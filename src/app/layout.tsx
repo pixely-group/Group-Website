@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Fraunces, IBM_Plex_Mono, Nunito } from "next/font/google";
+import {
+  Archivo,
+  Fraunces,
+  IBM_Plex_Mono,
+  Martian_Mono,
+  Nunito,
+} from "next/font/google";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -38,6 +44,22 @@ const nunito = Nunito({
   weight: ["400", "500", "600", "700"],
 });
 
+/**
+ * The clock on the globe's readout, and nothing else.
+ *
+ * A departure board is not set in a text mono — the figures are square, wide
+ * and flat-terminalled so they stay legible on a flap at thirty metres, and
+ * that squareness is what makes a row of digits read as an instrument rather
+ * than as prose. Martian Mono is the nearest thing to it here. Kept to the
+ * one component: it is a face for eight characters, not for a paragraph.
+ */
+const martianMono = Martian_Mono({
+  subsets: ["latin"],
+  weight: ["500"],
+  variable: "--font-martian",
+  display: "swap",
+});
+
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -68,7 +90,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} ${nunito.variable} h-full`}
+      className={`${archivo.variable} ${fraunces.variable} ${plexMono.variable} ${martianMono.variable} ${nunito.variable} h-full`}
     >
       {/* Extensions commonly stamp attributes onto <body> before React
           hydrates — the reported mismatch was a testing extension adding

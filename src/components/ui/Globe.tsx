@@ -473,9 +473,13 @@ export default function Globe({ className }: { className?: string }) {
        this size the shape is the whole of the information, and its true
        area is not recoverable from ninety pixels anyway.
 
-       Longitude is scaled by the cosine of the country's middle latitude
-       before fitting. Without it every shape is stretched sideways by the
-       amount the latitude lies about, and Russia comes out a smear.
+       Projected sinusoidally — x = (lon - centre) * cos(lat), per point —
+       rather than scaled by one cosine taken at the country's middle. A
+       single cosine is only right at that one latitude: across Russia,
+       which runs from 41N to 78N, cos falls from 0.75 to 0.21, so a
+       mid-latitude constant makes the north far too wide and the south too
+       narrow. Per-point is equal-area and gives the shape countries are
+       actually recognised by.
 
        Cut once per country and kept: hovering back and forth between two
        cities should not re-project a hundred points each way. */
@@ -495,15 +499,25 @@ export default function Globe({ className }: { className?: string }) {
           if (lat < y0) y0 = lat;
           if (lat > y1) y1 = lat;
         }
-      const k = Math.max(0.2, Math.cos((((y0 + y1) / 2) * Math.PI) / 180));
-      const spanX = Math.max(1e-6, (x1 - x0) * k);
+      const lon0 = (x0 + x1) / 2;
+      const flat = (lon: number, lat: number) =>
+        (lon - lon0) * Math.cos((lat * Math.PI) / 180);
+      let u0 = Infinity;
+      let u1 = -Infinity;
+      for (const r of rings)
+        for (const [lon, lat] of r) {
+          const u = flat(lon, lat);
+          if (u < u0) u0 = u;
+          if (u > u1) u1 = u;
+        }
+      const spanX = Math.max(1e-6, u1 - u0);
       const spanY = Math.max(1e-6, y1 - y0);
-      const PAD = 8;
+      const PAD = 6;
       const scale = Math.min((100 - PAD * 2) / spanX, (100 - PAD * 2) / spanY);
       const offX = (100 - spanX * scale) / 2;
       const offY = (100 - spanY * scale) / 2;
       const pin = (lon: number, lat: number): [number, number] => [
-        offX + (lon - x0) * k * scale,
+        offX + (flat(lon, lat) - u0) * scale,
         /* Latitude increases northward and SVG y increases downward. */
         offY + (y1 - lat) * scale,
       ];
@@ -590,7 +604,11 @@ export default function Globe({ className }: { className?: string }) {
       const [px, py] = cut.pin(CENTRES[i].lon, CENTRES[i].lat);
       hudPin.setAttribute("cx", px.toFixed(1));
       hudPin.setAttribute("cy", py.toFixed(1));
-      hudCity.textContent = CENTRES[i].name;
+      const here = CENTRES[i];
+      /* The country shares the line with the city. The two city-states here
+         carry none, because "Singapore, Singapore" is not information. */
+      hudCity.textContent =
+        "country" in here ? `${here.name} — ${here.country}` : here.name;
       hudMeta.textContent = `${utc} \u00b7 ${
         gap === 0 ? "YOUR TIME" : `${hm(gap)} ${gap > 0 ? "AHEAD" : "BEHIND"}`
       }`;
