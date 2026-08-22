@@ -1190,8 +1190,9 @@ export default function SecurityArchitecture() {
                         element has nothing to transition from. line-height
                         because type-label sets 1, which is right for a label
                         on one line and collapses a wrapped one onto itself
-                        — 1.4 is enough to hold a wrapped line apart without
-                        the two lines reading as separate paragraphs. */}
+                        — 1.25 is the least that still holds a wrapped line
+                        apart, and it keeps the two of them reading as one
+                        block rather than two paragraphs. */}
                       <div
                         aria-hidden={!stamped}
                         className={`mt-3 transition-all duration-500 lg:mt-2 ${
@@ -1203,8 +1204,8 @@ export default function SecurityArchitecture() {
                           color: refusedHere ? REFUSED_TEXT : "var(--muted)",
                         }}
                       >
-                        <p className="type-label leading-[1.4]">{layer.spec}</p>
-                        <p className="type-label mt-1 leading-[1.4]">
+                        <p className="type-label leading-[1.25]">{layer.spec}</p>
+                        <p className="type-label mt-1 leading-[1.25]">
                           {refusedHere ? layer.fail : layer.pass} ·{" "}
                           {layer.ms.toFixed(1)} ms
                         </p>
