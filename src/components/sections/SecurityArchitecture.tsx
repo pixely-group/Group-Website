@@ -804,27 +804,50 @@ export default function SecurityArchitecture() {
             element sticks within its own parent's box, and the control's old
             parent was the authorisation row — seventy pixels tall, so there
             was nowhere for it to travel. Here its parent is the drawing's
-            full height, and it stays on screen for as long as there is a
-            stack to watch it against.
+            full height, and the control stays on screen for as long as there
+            is a stack to watch it against.
 
-            Wide it goes back where it was, at the row's right-hand end: the
-            row's bottom is this wrapper's top, and the control sat 40px down
-            a 76px row, so -36px puts it back to the pixel. It does not need
-            to stick there — the drawing and the register sit side by side at
-            that width and the control never leaves the screen anyway. */}
-        {/* The control carries its own ground below lg. Stuck, it stands
-            over the drawing, and the plates were reading straight through
-            the gap between the two options — a control you have to look
-            twice at is not one you will use while scrolling past. Wide it
-            sits on the section's own background and needs none.
+            It sticks at every width now, wide included, where it had been
+            absolutely positioned and simply scrolled away. Wide it keeps the
+            place it had: the row's bottom is this wrapper's top and the
+            control sat 40px down a 76px row, so a -36px top margin puts it
+            back to the pixel while it is at rest. In flow it costs the
+            drawing one pixel, which is cheaper than a second magic number
+            to cancel the first.
+
+            It grounds itself at every width, because at every width it
+            crosses text. Wide there had looked to be room — the register's
+            entries left 261px of slack against the 187 the pill needs — but
+            that was measured before the spec and the verdict became one
+            line, and one line of both runs 205px further than the slack
+            allows. The measurement was true when it was taken and false by
+            the time it mattered.
+
+            The ground hugs the control rather than spanning the column: a
+            full-width band read as a strip cut out of the page, with the
+            heading below it sliced in half. A chip the width of what it
+            holds, with a shadow under it, reads as a thing standing over
+            the page instead — and the text it covers reads as text behind
+            it, which is what it is.
+
+            Its padding is cancelled by margins of the same size, so the
+            ground grows around the control without moving it: the pill
+            still sits 36px above this wrapper and still ends on the
+            section's right margin, to the pixel. Only the band it stands on
+            is new. The band itself is let through to whatever is under it —
+            the plates below lg, the register's own entries above it — and
+            only the chip takes clicks, because only the chip is hiding
+            anything.
 
             flow-root, or the drawing's own top margin collapses through
             this wrapper's top edge and takes the wrapper 48px down the page
             with it — which is where the control's -36px was landing before,
             48px below the row it is meant to sit in. */}
         <div className="relative flow-root">
-          <div className="sticky top-[5.5rem] z-20 mt-10 flex flex-col items-center justify-center gap-3 rounded-(--radius-chip) bg-theme px-5 py-3 sm:flex-row sm:gap-4 lg:absolute lg:top-[-36px] lg:right-0 lg:z-0 lg:mt-0 lg:w-auto lg:justify-end lg:bg-transparent lg:p-0">
-            {replayControl}
+          <div className="pointer-events-none sticky top-[5.5rem] z-20 mt-10 flex justify-center lg:-mt-12 lg:-mb-3 lg:justify-end">
+            <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-(--radius-chip) bg-theme px-5 py-3 shadow-[0_14px_34px_-16px_rgba(19,19,22,0.45)] sm:flex-row sm:gap-4 lg:-mr-5">
+              {replayControl}
+            </div>
           </div>
 
           {/* One step below lg, four above it. The control drives this
@@ -1062,6 +1085,11 @@ export default function SecurityArchitecture() {
               ref={registerRef}
               className="relative mt-10 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0"
             >
+              {/* The marker turns with the title it is marking. Left blue
+                against a red heading it was the last thing in the section
+                still saying the request had gone through. Vivid red rather
+                than the text red — this is a mark, and it is the same red
+                as the mark on the plate it stands for. */}
               <span
                 ref={registerDotRef}
                 aria-hidden
@@ -1069,8 +1097,11 @@ export default function SecurityArchitecture() {
                   width: CURSOR_DOT_LINK_PX,
                   height: CURSOR_DOT_LINK_PX,
                   opacity: 0,
+                  backgroundColor:
+                    declined && activeLayer >= BLOCK_AT ? REFUSED : ACCENT,
+                  transition: "background-color 300ms linear",
                 }}
-                className="pointer-events-none absolute top-0 left-0 z-10 rounded-full bg-accent"
+                className="pointer-events-none absolute top-0 left-0 z-10 rounded-full"
               />
               {LAYERS.map((layer, i) => {
                 const refusedHere = declined && i === BLOCK_AT;
@@ -1137,21 +1168,25 @@ export default function SecurityArchitecture() {
                       <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted) lg:mt-1">
                         {layer.note}
                       </p>
-                      <p className="type-label mt-3 text-(--faint) lg:mt-2">
-                        {layer.spec}
-                      </p>
-                      {/* The verdict closes the entry rather than sharing a
-                        line with the note. Beside the note it had to be
-                        aligned to it, sized against it and given room by it;
-                        on its own line underneath it is simply the last
-                        thing the entry says, which is what it is. Same
-                        placement at every width.
+                      {/* What the layer checks and what it concluded, as
+                        one line and one colour. They were two: a standing
+                        grey line of spec, and a verdict that faded in
+                        underneath it in a different weight of grey. But the
+                        spec is not a heading for the verdict — it is the
+                        first half of the same sentence, and splitting them
+                        left the entry with two quiet lines where it should
+                        have one that arrives. So the whole line arrives,
+                        starting at "Scoped", and the refusal takes all of
+                        it rather than only its last few words.
 
                         Always rendered so it can fade in — a mounting
-                        element has nothing to transition from. */}
-                      <span
+                        element has nothing to transition from. line-height
+                        because type-label sets 1, which is right for a
+                        label on one line and collapses this onto itself the
+                        moment it wraps. */}
+                      <p
                         aria-hidden={!stamped}
-                        className={`type-label mt-3 block text-[0.65rem] transition-all duration-500 lg:mt-2 ${
+                        className={`type-label mt-3 leading-[1.7] transition-all duration-500 lg:mt-2 ${
                           stamped
                             ? "translate-x-0 opacity-100"
                             : "-translate-x-1 opacity-0"
@@ -1160,9 +1195,9 @@ export default function SecurityArchitecture() {
                           color: refusedHere ? REFUSED_TEXT : "var(--muted)",
                         }}
                       >
-                        {refusedHere ? layer.fail : layer.pass} ·{" "}
-                        {layer.ms.toFixed(1)} ms
-                      </span>
+                        {layer.spec} · {refusedHere ? layer.fail : layer.pass}{" "}
+                        · {layer.ms.toFixed(1)} ms
+                      </p>
                     </button>
                   </li>
                 );

@@ -207,6 +207,15 @@ export default function Navigation() {
   // travel is mistaken for a first placement and never glides.
   const dotPlaced = useRef(false);
   const activeHrefRef = useRef<string | null>(null);
+  /** Where a click has sent the page, held until it arrives. The spy below
+   *  asks which section is under the reading line on every scrolled frame,
+   *  and a click starts 1.6 seconds of scrolling that passes through every
+   *  section in between — so a run from the cover to Contact had the marker
+   *  stopping at Platform, then Identity, then Services, then Company, when
+   *  the reader had asked for one move. The destination is known at the
+   *  click; nothing the page passes over on the way there is a choice. */
+  const glideTo = useRef<string | null>(null);
+  const glideTimer = useRef(0);
   // The menu reproduces the bar's geometry, and opening it stops Lenis —
   // which can reset scroll and move the bar underneath. So the menu keeps
   // whatever the bar measured at the moment the toggle was pressed.
@@ -302,6 +311,12 @@ export default function Navigation() {
 
     let last: string | null = null;
     const pick = () => {
+      /* A glide owns the marker until it lands. `last` is deliberately left
+         where it was: on release the spy compares the section it actually
+         finds against the one it last chose for itself, which is what makes
+         an interrupted glide correct itself instead of holding a stale
+         answer. */
+      if (glideTo.current) return;
       /* Two fifths down: high enough that a section counts once it is the
          thing being read, rather than only when it fills the screen. */
       const line = window.innerHeight * 0.4;
@@ -409,6 +424,52 @@ export default function Navigation() {
     };
   }, []);
 
+  /* A glide is over when the page arrives — or the moment the reader takes
+     the scroll back, because a wheel or a finger mid-flight is Lenis
+     abandoning the run, and a run that was abandoned never reports that it
+     finished. Without this the marker would sit on the destination while the
+     page went somewhere else entirely. */
+  useEffect(() => {
+    const drop = () => {
+      glideTo.current = null;
+    };
+    const taken = ["wheel", "touchstart", "keydown"] as const;
+    for (const e of taken) window.addEventListener(e, drop, { passive: true });
+    return () => {
+      for (const e of taken) window.removeEventListener(e, drop);
+      window.clearTimeout(glideTimer.current);
+    };
+  }, []);
+
+  /* Held for the length of the run, so the spy cannot walk the marker
+     through every section the page crosses on the way. Its own callback
+     rather than the handler's body: scrollTo is curried and called from the
+     markup, so everything written inside it counts as render. */
+  const glide = useCallback(
+    (href: string, el: Element) => {
+      glideTo.current = href;
+      window.clearTimeout(glideTimer.current);
+      const land = () => {
+        if (glideTo.current === href) glideTo.current = null;
+      };
+      if (lenis) {
+        // The menu stops Lenis while it is open so the page behind cannot
+        // scroll, and a stopped instance drops scrollTo silently. Resume
+        // first: closing the menu is precisely when scrolling should resume.
+        lenis.start();
+        lenis.scrollTo(el as HTMLElement, { duration: 1.6, onComplete: land });
+        // A backstop, because a run that cannot reach its target — the last
+        // section, against the end of the document — settles without ever
+        // calling back.
+        glideTimer.current = window.setTimeout(land, 2000);
+      } else {
+        el.scrollIntoView({ behavior: "smooth" });
+        glideTimer.current = window.setTimeout(land, 1400);
+      }
+    },
+    [lenis],
+  );
+
   const scrollTo = (href: string) => (e: React.MouseEvent) => {
     const el = document.querySelector(href);
     // Let the browser handle anything we cannot resolve, rather than
@@ -417,15 +478,7 @@ export default function Navigation() {
     e.preventDefault();
     setMenu(false);
     setActiveHref(href);
-    if (lenis) {
-      // The menu stops Lenis while it is open so the page behind cannot
-      // scroll, and a stopped instance drops scrollTo silently. Resume
-      // first: closing the menu is precisely when scrolling should resume.
-      lenis.start();
-      lenis.scrollTo(el as HTMLElement, { duration: 1.6 });
-    } else {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
+    glide(href, el);
   };
 
   // A single marker that moves to whichever entry is selected. Five dots
