@@ -512,10 +512,11 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
   );
 }
 
-/* 190, up from 176. A card at this width is 228 tall in life; the stack
-   has nowhere to put that, and 200 came back as too much, so this is a
-   step and not a correction. */
-const CARD_H = 190;
+/* 204, by steps from 176. A card at this width is 228 tall in life and the
+   stack has nowhere to put that, so this walks toward the real proportion
+   rather than arriving at it: 362 across 204 is 1.78:1, against 2.06 where
+   it started and 1.59 in the hand. */
+const CARD_H = 204;
 const CARD_STEP = 86;
 
 /** The EMV contactless indicator, as it is printed on a card: four arcs
@@ -527,7 +528,7 @@ const CARD_STEP = 86;
  *  about (3,12), so the endpoints are r·cos50 across and r·sin50 up and
  *  down, and the four stay concentric by construction. */
 const CARDS = [
-  { id: "primary", name: "Pixely Visa", num: "4021", bal: "412 800,00", cur: "DZD",
+  { id: "primary", name: "Pixely Personal", num: "4021", bal: "412 800,00", cur: "DZD",
     tint: "linear-gradient(135deg,#2d46ff 0%,#1f33d6 46%,#0b1440 100%)", label: "Primary" },
   { id: "business", name: "Pixely Business", num: "8817", bal: "1 908 240,00", cur: "DZD",
     tint: "linear-gradient(135deg,#2a2f3c 0%,#14171e 52%,#05070a 100%)", label: "Business" },
