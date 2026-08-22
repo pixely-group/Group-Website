@@ -530,6 +530,40 @@ const CARD_STEP = 86;
  *  Struck rather than drawn by hand: each arc is the same 100-degree sweep
  *  about (3,12), so the endpoints are r·cos50 across and r·sin50 up and
  *  down, and the four stay concentric by construction. */
+/** The contact plate. On a real card it is 11.5mm across an 85.6mm card —
+ *  13% of the width — and it is the one thing on a card that says card
+ *  before a word of it has been read. Gradient rather than flat gold: the
+ *  plate is milled metal and catches the light across its diagonal, which is
+ *  most of what makes it read as metal at this size. The face is divided
+ *  into the eight contacts around a centre pad, which is the pattern the eye
+ *  actually recognises. */
+function Chip({ w = 44 }: { w?: number }) {
+  const h = Math.round((w / 1.28) * 10) / 10;
+  return (
+    <span
+      aria-hidden
+      style={{
+        position: "relative",
+        width: w,
+        height: h,
+        flexShrink: 0,
+        borderRadius: 6,
+        background:
+          "linear-gradient(132deg,#efe0ab 0%,#cdae59 34%,#9d8033 58%,#e3d296 82%,#b9993f 100%)",
+        boxShadow: "inset 0 0 0 0.7px rgba(86,64,10,0.55)",
+      }}
+    >
+      <svg width={w} height={h} viewBox="0 0 44 34" fill="none"
+           style={{ position: "absolute", inset: 0 }}>
+        <g stroke="rgba(84,62,10,0.5)" strokeWidth="1">
+          <path d="M14.7 0v34M29.3 0v34M0 11.3h44M0 22.7h44" />
+          <rect x="14.7" y="11.3" width="14.6" height="11.4" rx="2" />
+        </g>
+      </svg>
+    </span>
+  );
+}
+
 const NFC_R = [2.2, 5.2, 8.2, 11.2];
 function Contactless({ opacity = 0.55, size = 20 }: { opacity?: number; size?: number }) {
   return (
@@ -662,6 +696,9 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
                 </div>
                 <Contactless opacity={nfcOff[card.id] ? 0.14 : 0.55} />
               </div>
+              {/* Where it sits on the card in your pocket: left, under the
+                  name, with the contactless mark above it to the right. */}
+              <Chip />
               <div>
                 <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
                   •••• •••• •••• {card.num}
