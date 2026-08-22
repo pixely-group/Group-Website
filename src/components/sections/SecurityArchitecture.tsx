@@ -1187,12 +1187,21 @@ export default function SecurityArchitecture() {
                         together they read as a list that lost its ending.
 
                         Always rendered so it can fade in — a mounting
-                        element has nothing to transition from. line-height
-                        because type-label sets 1, which is right for a label
-                        on one line and collapses a wrapped one onto itself
-                        — 1.25 is the least that still holds a wrapped line
-                        apart, and it keeps the two of them reading as one
-                        block rather than two paragraphs. */}
+                        element has nothing to transition from.
+
+                        The two lines are held together by leading alone, no
+                        margin between them: the gap is what wanted closing,
+                        not the lines themselves.
+
+                        And on a phone each line has to be one line. The
+                        column gives 311px and Rails asks for 343, so Ledger
+                        and Rails were the only two that wrapped — and a
+                        two-word orphan under a list of five reads as a
+                        mistake rather than a wrap. 0.6rem is a ninth off,
+                        which is what the 343 needed; it clears by 12px, and
+                        the tracking stays, because at this size the tracking
+                        is what keeps it readable. Full size from sm, where
+                        the column is twice what the longest line needs. */}
                       <div
                         aria-hidden={!stamped}
                         className={`mt-3 transition-all duration-500 lg:mt-2 ${
@@ -1204,8 +1213,10 @@ export default function SecurityArchitecture() {
                           color: refusedHere ? REFUSED_TEXT : "var(--muted)",
                         }}
                       >
-                        <p className="type-label leading-[1.25]">{layer.spec}</p>
-                        <p className="type-label mt-1 leading-[1.25]">
+                        <p className="type-label text-[0.6rem] leading-[1.4] sm:text-[0.6875rem]">
+                          {layer.spec}
+                        </p>
+                        <p className="type-label text-[0.6rem] leading-[1.4] sm:text-[0.6875rem]">
                           {refusedHere ? layer.fail : layer.pass} ·{" "}
                           {layer.ms.toFixed(1)} ms
                         </p>
