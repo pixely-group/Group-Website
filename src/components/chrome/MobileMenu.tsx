@@ -323,7 +323,7 @@ export default function MobileMenu({
             under type five times its height. */}
         <div
           data-menu-meta
-          className="mt-9 ms-11 flex max-w-[16.5rem] flex-col items-stretch gap-3"
+          className="mt-9 ms-11 flex max-w-[15rem] flex-col items-stretch gap-3"
           inert={!open || undefined}
         >
           {/* Wrapped rather than given `sm:hidden` directly: the button's own
@@ -349,10 +349,10 @@ export default function MobileMenu({
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">
-          © 2026 Pixely, SARL.
+          © 2026 Pixely.
         </div>
         <div data-menu-meta className="type-label text-(--muted)">
-          hello@pixely.dz
+          hello@pixely.com
         </div>
       </div>
     </div>
