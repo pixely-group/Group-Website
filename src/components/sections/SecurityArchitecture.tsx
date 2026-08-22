@@ -264,6 +264,10 @@ export default function SecurityArchitecture() {
   const registerRef = useRef<HTMLOListElement>(null);
   const registerDotRef = useRef<HTMLSpanElement>(null);
   const registerDotPlaced = useRef(false);
+  /** The mark's current fill, so the frame loop is not writing a colour it
+   *  already wrote. Reading it back off the element is no use — the browser
+   *  hands back rgb() and the comparison never matches. */
+  const beamFill = useRef("");
   /** Armed a moment after a selection, so the ticks that immediately follow
    *  a click cannot cancel it before the request has arrived. */
   const releaseArmed = useRef(true);
@@ -275,6 +279,22 @@ export default function SecurityArchitecture() {
       const isDeclined = scenarioRef.current === "declined";
       const last = isDeclined ? BLOCK_AT : LAYERS.length - 1;
       const ms = elapsedAt(geo, cy, isDeclined);
+
+      /* The mark turns on arrival, not on the toggle. Refusing is something
+         that happens at policy — the request leaves as any other request
+         does and is turned back when it gets there. Colouring it red at the
+         top of the stack tells the reader the outcome before the drawing
+         has made its argument, and makes the four layers above policy look
+         as though they refused it too. */
+      const mark = beamElRef.current;
+      if (mark) {
+        const refused = isDeclined && cy >= layerY(geo, BLOCK_AT) - 1;
+        const want = refused ? REFUSED : ACCENT;
+        if (beamFill.current !== want) {
+          beamFill.current = want;
+          mark.style.fill = want;
+        }
+      }
 
       if (clockRef.current) clockRef.current.textContent = ms.toFixed(1);
       if (railFillRef.current) {
@@ -731,11 +751,22 @@ export default function SecurityArchitecture() {
 
         {/* — The drawing. Wide, the register hangs on it at the same
             fractions that place the plates; narrow, it follows underneath. */}
-        <div data-stack className="relative mt-12">
+        {/* Half the gap below lg. Wide, the register hangs beside the
+            drawing and the space above it is the section breathing; narrow,
+            the replay control is the thing directly above, and 48px on top
+            of the drawing's own 99px of headroom left it stranded well clear
+            of the stack it replays. */}
+        <div data-stack className="relative mt-6 lg:mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
             data-drawing
-            className="w-full lg:w-[44%]"
+            /* Capped at the width it is drawn at on a desktop, and centred.
+               Full-bleed, a tablet rendered the stack at 688px — wider than
+               the 532 it gets at 1321, so "the same as desktop" came out
+               half again bigger than desktop, and every control on the page
+               looked to have shrunk beside it. A phone is narrower than the
+               cap, so nothing changes there. */
+            className="mx-auto w-full max-w-[33rem] lg:mx-0 lg:w-[44%] lg:max-w-none"
             role="img"
             aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
           >
@@ -918,7 +949,10 @@ export default function SecurityArchitecture() {
               r="5.5"
               opacity="0"
               style={{
-                fill: declined ? REFUSED : ACCENT,
+                /* Only the starting colour. Which colour it should be from
+                   then on depends on where it has got to, so paintReadout
+                   owns it. */
+                fill: ACCENT,
                 transition: "fill 400ms var(--ease-out-expo)",
               }}
             />
