@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* The globe sits beside the words only when there is a beside to sit in.
+   Width alone was the test, and width alone is wrong: a tablet held upright
+   is 1024 points across and still has no room for a column of type next to a
+   sphere — the words end up printed over the globe, and on a phone five of
+   the eight city names visible were landing on the headline. Landscape is
+   the other half of the question, so it is asked here once and answered the
+   same way everywhere. */
+@custom-variant beside (@media (width >= 64rem) and (orientation: landscape));
+
 @theme {
   /* — Palette: ink / bone / signal. One neutral pair used both ways. */
   --color-ink: #0a0a0b;

@@ -57,14 +57,10 @@ export default function GlobalCorridors() {
             swallowed every drag, which is how the last one broke — so the
             layer is transparent to the pointer and only the type itself is
             not. Drag works everywhere except on the words. */}
-        <div className="relative min-h-[clamp(450px,54vw,730px)]">
-          <div className="absolute inset-y-0 right-0 w-[92%] sm:w-[80%] lg:-right-[6%] lg:w-[64%]">
-            <Globe className="h-full w-full" />
-          </div>
-
-          {/* Nothing in this column takes pointer events. It sits over the
-              globe, so anything here that accepted them took them from the
-              globe underneath — which is where dragging and hovering both
+        <div className="relative flex flex-col beside:block beside:min-h-[clamp(450px,54vw,730px)]">
+          {/* Nothing in this column takes pointer events. Beside the globe it
+              sits over it, so anything here that accepted them took them from
+              the globe underneath — which is where dragging and hovering both
               died, in the band where the headline crosses it.
 
               No width cap on the column. `max-w-md` is a fixed 28rem while
@@ -74,7 +70,7 @@ export default function GlobalCorridors() {
               the paragraph carry their own measures, exactly the ones they
               had before the globe arrived, and nothing above them overrides
               it. */}
-          <div className="pointer-events-none relative z-10 flex min-h-[clamp(450px,54vw,730px)] flex-col justify-center">
+          <div className="pointer-events-none relative z-10 flex flex-col justify-center beside:min-h-[clamp(450px,54vw,730px)]">
             <p className="type-label section-index mb-6 w-max text-(--muted)">
               05 — Global
             </p>
@@ -90,10 +86,24 @@ export default function GlobalCorridors() {
               markets Algerian businesses actually trade with.
             </p>
           </div>
+
+          {/* Stacked, the globe follows the words rather than lying under
+              them. A sphere is fitted to the shorter axis of its box, so the
+              box is made wider than it is tall and the slack that leaves at
+              the sides is where the city names go: full-column, the sphere
+              ran to both edges and Tehran, Doha and Johannesburg were cut off
+              by the overlay. It bleeds through the section's own padding to
+              widen that slack without shrinking the globe.
+
+              Beside the words it goes back to where it was — absolute, out to
+              -6%, and sized by the row's own height. */}
+          <div className="-mx-6 mt-12 h-[clamp(300px,80vw,600px)] w-[calc(100%+3rem)] sm:-mx-10 sm:w-[calc(100%+5rem)] beside:absolute beside:inset-y-0 beside:-right-[6%] beside:mx-0 beside:mt-0 beside:h-auto beside:w-[64%]">
+            <Globe className="h-full w-full" />
+          </div>
         </div>
 
-        {/* Under the globe, where it was. */}
-        <div className="ml-auto w-[92%] sm:w-[80%] lg:-mr-[6%] lg:w-[64%]">
+        {/* Under the globe, wherever the globe is. */}
+        <div className="w-full beside:ml-auto beside:-mr-[6%] beside:w-[64%]">
           <p aria-hidden className="type-label mt-3 text-center text-[9px] text-(--faint)">
             Drag to turn
           </p>
