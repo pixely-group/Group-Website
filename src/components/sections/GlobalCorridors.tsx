@@ -109,7 +109,7 @@ export default function GlobalCorridors() {
           </p>
         </div>
         <p className="sr-only">
-          A globe showing twenty-two corridors running between Algiers and
+          A globe showing twenty-three corridors running between Algiers and
           financial centres worldwide, with value moving continuously along
           each. Drag to rotate it.
         </p>
