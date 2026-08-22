@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CURSOR_DOT_LINK_PX } from "@/components/chrome/CustomCursor";
 import { useMediaQuery } from "@/lib/hooks";
 import { gsap } from "@/lib/gsap";
 
@@ -116,6 +115,16 @@ const BLOCK_AT = 2;
 /** The request's own radius, in drawing units. Named because the moment it
  *  touches a plate is a question about its leading edge, not its centre. */
 const MARK_R = 5.5;
+
+/**
+ * The register's travelling marker. It began as the nav's, at the nav's
+ * size, so the two would read as one language — but the nav marks a 0.69rem
+ * label and this marks a 1.05rem title with its own index beside it, and at
+ * 2.4px it read as a speck against them rather than a mark on them. A marker
+ * should be sized by what it marks. Same shape, same colour, same distance
+ * from its text; only the diameter answers to different typography.
+ */
+const REG_MARK_PX = 4;
 
 /**
  * Where a refused request comes to rest.
@@ -393,9 +402,9 @@ export default function SecurityArchitecture() {
   }, [scenario, geo, paintReadout]);
 
   // One marker that travels down the register to whichever layer is
-  // current — the same idea as the nav's, at the same size and the same
-  // distance from its label, so the two read as one language. Measured
-  // rather than positioned, which is what lets it serve both layouts.
+  // current — the nav's idea and the nav's distance from its text, at a
+  // diameter of its own. Measured rather than positioned, which is what
+  // lets it serve both layouts.
   useEffect(() => {
     const ol = registerRef.current;
     const dot = registerDotRef.current;
@@ -406,7 +415,7 @@ export default function SecurityArchitecture() {
     const olBox = ol.getBoundingClientRect();
     const box = heading.getBoundingClientRect();
     const x = box.left - olBox.left - 12;
-    const y = box.top - olBox.top + box.height / 2 - CURSOR_DOT_LINK_PX / 2;
+    const y = box.top - olBox.top + box.height / 2 - REG_MARK_PX / 2;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -1093,8 +1102,8 @@ export default function SecurityArchitecture() {
                 ref={registerDotRef}
                 aria-hidden
                 style={{
-                  width: CURSOR_DOT_LINK_PX,
-                  height: CURSOR_DOT_LINK_PX,
+                  width: REG_MARK_PX,
+                  height: REG_MARK_PX,
                   opacity: 0,
                   backgroundColor:
                     declined && activeLayer >= BLOCK_AT ? REFUSED : ACCENT,
@@ -1152,7 +1161,7 @@ export default function SecurityArchitecture() {
                             line joins the two. Left uncoloured so it takes
                             the title's own state and sits a shade behind
                             it. */}
-                          <span className="type-label text-[0.62rem] opacity-45">
+                          <span className="type-label text-[0.78rem] opacity-45">
                             {layer.index}
                           </span>
                           {layer.name}
@@ -1180,8 +1189,9 @@ export default function SecurityArchitecture() {
                         Always rendered so it can fade in — a mounting
                         element has nothing to transition from. line-height
                         because type-label sets 1, which is right for a label
-                        on one line and collapses a wrapped one onto
-                        itself. */}
+                        on one line and collapses a wrapped one onto itself
+                        — 1.4 is enough to hold a wrapped line apart without
+                        the two lines reading as separate paragraphs. */}
                       <div
                         aria-hidden={!stamped}
                         className={`mt-3 transition-all duration-500 lg:mt-2 ${
@@ -1193,8 +1203,8 @@ export default function SecurityArchitecture() {
                           color: refusedHere ? REFUSED_TEXT : "var(--muted)",
                         }}
                       >
-                        <p className="type-label leading-[1.7]">{layer.spec}</p>
-                        <p className="type-label mt-1.5 leading-[1.7]">
+                        <p className="type-label leading-[1.4]">{layer.spec}</p>
+                        <p className="type-label mt-1 leading-[1.4]">
                           {refusedHere ? layer.fail : layer.pass} ·{" "}
                           {layer.ms.toFixed(1)} ms
                         </p>
