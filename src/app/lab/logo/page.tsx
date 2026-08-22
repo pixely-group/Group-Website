@@ -74,6 +74,37 @@ function Monogram({
   );
 }
 
+/** The wordmark with the same full stop. This is the lockup: the monogram
+ *  never sits beside the name, because the name starts with the same letter
+ *  and the P would be said twice. One gesture, two lengths — PIXELY. at full
+ *  width, P. where there is no room. */
+function WordmarkDot({ size = 34, dot = BLUE }: { size?: number; dot?: string }) {
+  return (
+    <span
+      className="type-headline"
+      style={{
+        fontSize: size,
+        lineHeight: 1,
+        letterSpacing: "0.06em",
+        display: "inline-flex",
+        alignItems: "baseline",
+      }}
+    >
+      Pixely
+      <span
+        aria-hidden
+        style={{
+          display: "inline-block",
+          width: size * 0.17,
+          height: size * 0.17,
+          marginLeft: size * 0.12,
+          background: dot,
+        }}
+      />
+    </span>
+  );
+}
+
 /* ---- tiles ------------------------------------------------------------- */
 
 function MeridianTile({ size = 96 }: { size?: number }) {
@@ -122,12 +153,14 @@ function Bench({
   title,
   note,
   render,
-  lockupMark,
+  tail,
+  tailLabel = "lockup",
 }: {
   title: string;
   note: string;
   render: (size: number) => React.ReactNode;
-  lockupMark?: (size: number) => React.ReactNode;
+  tail?: React.ReactNode;
+  tailLabel?: string;
 }) {
   return (
     <section className="border-t border-(--line) pt-8">
@@ -146,10 +179,10 @@ function Bench({
                 <span className="type-label text-[0.55rem] text-(--faint)">{s}</span>
               </span>
             ))}
-            {lockupMark && (
+            {tail && (
               <span className="flex flex-col gap-2">
-                <Lockup mark={lockupMark(26)} size={36} />
-                <span className="type-label text-[0.55rem] text-(--faint)">lockup</span>
+                {tail}
+                <span className="type-label text-[0.55rem] text-(--faint)">{tailLabel}</span>
               </span>
             )}
           </div>
@@ -184,7 +217,7 @@ export default function LogoLab() {
                 it, it already sits in the navigation, and it says the business: a sphere on its
                 axis, turning. The case against it stands too: it says the world, not the name."
           render={(s) => <Meridian size={s} />}
-          lockupMark={(s) => <Meridian size={s} />}
+          tail={<Lockup mark={<Meridian size={26} />} size={36} />}
         />
 
         <Bench
@@ -193,10 +226,14 @@ export default function LogoLab() {
                 hero's 125%, weight 700 — with the hero's ending-dot as its full stop, on the
                 baseline where a full stop lives. The letter is the type designer's, which is
                 what the hand-drawn attempts were missing. It says the name and it ends the
-                sentence, the way the headline does. If chosen, the shipped file is the glyph's
+                sentence, the way the headline does. The monogram never sits beside the name —
+                the name begins with the same letter, and the P would be said twice. The lockup
+                is the name carrying the dot itself: one gesture, two lengths. PIXELY. at full
+                width, P. where there is no room. If chosen, the shipped file is the glyph's
                 extracted outline, so it stays vector everywhere type cannot go."
           render={(s) => <Monogram size={s} />}
-          lockupMark={(s) => <Monogram size={s} />}
+          tail={<WordmarkDot size={24} />}
+          tailLabel="wordmark — the long form of the same mark"
         />
 
         <section className="border-t border-(--line) pt-8">
