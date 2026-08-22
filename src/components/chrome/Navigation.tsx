@@ -83,32 +83,27 @@ export const NAV_GEOMETRY = {
   rowPadRight: "calc(var(--nav-p) * var(--nav-row-right))",
 } as const;
 
+/**
+ * The wordmark is the mark: PIXELY with the brand's full stop, the square
+ * pixel on the baseline. Its short form — P. — lives in the favicon and the
+ * app icon; the two are one gesture at two lengths and never appear
+ * together, because the name already begins with the letter.
+ *
+ * The dot is sized in em so any font-size override scales the whole mark,
+ * and it takes the accent token rather than raw blue so it lifts with the
+ * chapter the bar is riding over, the same way the nav's marker dot does.
+ */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex items-center gap-2.5 ${className}`}>
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 22 22"
-        fill="none"
+    <span
+      className={`type-headline inline-flex items-baseline text-[0.95rem] tracking-[0.06em] ${className}`}
+    >
+      Pixely
+      <span
         aria-hidden
-        className="shrink-0"
-      >
-        <circle cx="11" cy="11" r="9.5" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="11" y1="0" x2="11" y2="22" stroke="currentColor" strokeWidth="1.5" />
-        <ellipse
-          cx="11"
-          cy="11"
-          rx="4.2"
-          ry="9.5"
-          stroke="currentColor"
-          strokeWidth="1"
-          opacity="0.55"
-        />
-      </svg>
-      <span className="type-headline text-[0.95rem] tracking-[0.06em]">
-        Pixely
-      </span>
+        className="inline-block bg-accent"
+        style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
+      />
     </span>
   );
 }
