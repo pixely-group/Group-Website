@@ -25,11 +25,11 @@ type Props = {
    *  marks the bar. The menu covers the bar, so without this the reader
    *  loses all sense of where they are the moment they open it. */
   activeHref: string | null;
-  /** Fired the moment the closing panel stops covering the bar, so the bar
-   *  can take the page's treatment back on exactly that frame. A timer
-   *  cannot do this: the panel's tail is eased, so the frame it uncovers the
-   *  bar on is not a fixed number of milliseconds from the click. */
-  onBarUncovered: () => void;
+  /** Fired on the frame the panel's edge crosses the bar, in whichever
+   *  direction it is travelling, so the bar changes ground exactly then. A
+   *  timer cannot do this: the wipe is eased, so that frame is not a fixed
+   *  number of milliseconds from the click. */
+  onBarGround: (overMenu: boolean) => void;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
@@ -40,7 +40,7 @@ export default function MobileMenu({
   navP,
   scheme,
   activeHref,
-  onBarUncovered,
+  onBarGround,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
@@ -73,6 +73,18 @@ export default function MobileMenu({
     const clipTo = (h: number) => {
       panel.style.clipPath = `inset(0px 0px ${Math.max(0, full - h)}px 0px)`;
     };
+    /* The cursor reads its ink from whatever is under it, and the thing
+       under it is about to change without the pointer moving at all. Told on
+       every frame of the wipe, so the ink turns as the edge passes beneath
+       it rather than whenever the reader next happens to move. */
+    const sync = () =>
+      window.dispatchEvent(new CustomEvent("pixely:cursor-resync"));
+    /* Half the bar's height: while the edge is crossing the wordmark the
+       panel is behind the letters' top and the page behind their bottom, so
+       no ink is right for both. The change goes to the middle of that
+       crossing, where the error is smallest — and to the same point in both
+       directions, so opening and closing are each other's reverse. */
+    const handover = lip * 0.5;
 
     if (open) {
       lenis?.stop();
@@ -81,17 +93,33 @@ export default function MobileMenu({
       if (reduced) {
         gsap.set(panel, { clipPath: "inset(0% 0% 0% 0%)", opacity: 1 });
         gsap.set([links, meta], { yPercent: 0, opacity: 1 });
+        onBarGround(true);
+        sync();
       } else {
-        const grow = { h: lip };
-        clipTo(lip);
+        /* From nothing, on the closing curve reversed. It used to start at
+           the bar's height so the bar was covered from the first frame —
+           which put a 72px strip on screen instantly, and then expo.inOut
+           held it there for a quarter of a second before sweeping. That
+           reads as two movements: a jump, then the wipe. One movement means
+           starting where the close ends. */
+        const grow = { h: 0 };
+        let handed = false;
+        clipTo(0);
         gsap
           .timeline()
           .set(panel, { opacity: 1 })
           .to(grow, {
             h: full,
-            duration: 0.7,
+            duration: 0.55,
             ease: "expo.inOut",
-            onUpdate: () => clipTo(grow.h),
+            onUpdate: () => {
+              clipTo(grow.h);
+              sync();
+              if (!handed && grow.h >= handover) {
+                handed = true;
+                onBarGround(true);
+              }
+            },
           })
           .fromTo(
             links,
@@ -102,13 +130,13 @@ export default function MobileMenu({
               stagger: 0.06,
               ease: "expo.out",
             },
-            "-=0.25",
+            "-=0.2",
           )
           .fromTo(
             meta,
             { opacity: 0, y: 12 },
             { opacity: 1, y: 0, duration: 0.5, stagger: 0.05 },
-            "-=0.5",
+            "-=0.42",
           );
       }
       const first = panel.querySelector<HTMLElement>("a, button");
@@ -119,7 +147,8 @@ export default function MobileMenu({
         gsap.set(panel, { opacity: 0 });
         panel.style.visibility = "hidden";
         panel.style.pointerEvents = "none";
-        onBarUncovered();
+        onBarGround(false);
+        sync();
       } else {
         /* The same gesture, run backwards. It used to fade, which read as a
            different thing happening: the panel comes down over the page, so
@@ -141,24 +170,21 @@ export default function MobileMenu({
           ease: "expo.inOut",
           onUpdate: () => {
             clipTo(shrink.h);
-            /* Handed back as the panel passes the middle of the wordmark
-               rather than the bottom of the bar. While the edge is crossing
-               the letters there is no ink that is right — the panel is behind
-               their top and the page behind their bottom — so the switch goes
-               where the error is smallest, halfway through. */
-            if (!handedBack && shrink.h <= lip * 0.5) {
+            sync();
+            if (!handedBack && shrink.h <= handover) {
               handedBack = true;
-              onBarUncovered();
+              onBarGround(false);
             }
           },
           onComplete: () => {
             panel.style.visibility = "hidden";
             panel.style.pointerEvents = "none";
+            sync();
           },
         });
       }
     }
-  }, [open, lenis, onBarUncovered]);
+  }, [open, lenis, onBarGround]);
 
   useEffect(() => {
     if (!open) return;

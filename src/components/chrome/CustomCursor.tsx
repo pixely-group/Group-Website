@@ -157,6 +157,12 @@ export default function CustomCursor() {
      * black until the reader jiggled the mouse. It is re-read on scroll from
      * the last known position instead, which is the moment the thing beneath
      * it actually changes.
+     *
+     * Scroll is not the only such moment. An overlay opening puts a whole
+     * new ground under a pointer that has not moved either, and it does it
+     * without scrolling anything — so anything that covers the page says so
+     * on this event, and the menu says it on every frame of its wipe. The
+     * ink then turns as the edge passes under the cursor.
      */
     const resync = () => {
       if (lastX < 0) return;
@@ -200,6 +206,7 @@ export default function CustomCursor() {
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("scroll", resync, { passive: true });
     window.addEventListener("resize", resync, { passive: true });
+    window.addEventListener("pixely:cursor-resync", resync);
     document.addEventListener("pointerover", onOver, { passive: true });
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("pointerup", onUp);
@@ -212,6 +219,7 @@ export default function CustomCursor() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("scroll", resync);
       window.removeEventListener("resize", resync);
+      window.removeEventListener("pixely:cursor-resync", resync);
       document.removeEventListener("pointerover", onOver);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);

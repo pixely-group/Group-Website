@@ -158,13 +158,13 @@ export default function Navigation() {
   /* One place the menu is opened or shut from, because the bar's treatment
      has to be sequenced against it and three call sites doing that
      separately is three chances to get the order wrong. */
-  /* The bar takes the page's treatment back. Called by the panel on the
-     frame it stops covering the bar, and by a backstop timer if that frame
-     never comes. */
-  const revealBar = useCallback(() => {
+  /* Which ground the bar is standing on. Called by the panel on the frame
+     its edge crosses the bar, in whichever direction — and by a backstop
+     timer if that frame never comes. */
+  const setBarGround = useCallback((next: boolean) => {
     setInstant(true);
     menuTimers.current.push(window.setTimeout(() => setInstant(false), 140));
-    setOverMenu(false);
+    setOverMenu(next);
   }, []);
 
   const setMenu = useCallback((next: boolean) => {
@@ -177,24 +177,13 @@ export default function Navigation() {
     menuTimers.current = [];
     const later = (fn: () => void, ms: number) =>
       menuTimers.current.push(window.setTimeout(fn, ms));
-    const switchNow = () => {
-      setInstant(true);
-      later(() => setInstant(false), 140);
-    };
     setMenuOpen(next);
     menuFrozen.current = next;
-    if (next) {
-      /* The panel already covers the bar on its first frame, so the bar can
-         take the menu's ground straight away. */
-      switchNow();
-      setOverMenu(true);
-    } else {
-      /* Coming back is the panel's call, not a timer's — its tail is eased,
-         so the frame it uncovers the bar on is not a fixed distance from the
-         click. This is only the backstop. */
-      later(revealBar, 900);
-    }
-  }, [revealBar]);
+    /* Which ground the bar stands on is the panel's call, not a timer's: the
+       wipe is eased, so the frame its edge crosses the bar is not a fixed
+       distance from the click. This is only the backstop. */
+    later(() => setBarGround(next), 900);
+  }, [setBarGround]);
 
   /* The panel is lg:hidden, so widening past lg takes it away without
      telling React. The bar would be left riding at menu z-index in the
@@ -697,7 +686,7 @@ export default function Navigation() {
         navP={menuNavP}
         scheme={menuScheme}
         activeHref={activeHref}
-        onBarUncovered={revealBar}
+        onBarGround={setBarGround}
       />
     </>
   );
