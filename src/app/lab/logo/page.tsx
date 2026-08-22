@@ -85,6 +85,83 @@ function Contained({ size = 96, radius = 0.22 }: { size?: number; radius?: numbe
   );
 }
 
+
+/* ---- the P directions ------------------------------------------------ */
+
+/** A geometric P: one stem, one bowl. The bowl is a half turn that starts on
+ *  the stem and comes back to it, which is what makes a capital P — a whole
+ *  circle hung off a vertical is a lowercase p, however tall the vertical is,
+ *  and that is what the first draft of this drew. */
+function AperturePMark({ size = 96 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Aperture P"
+         stroke="currentColor" strokeLinecap="round">
+      <line x1="7" y1="2.2" x2="7" y2="19.8" strokeWidth={1.6} />
+      <path d="M7 2.2a4.9 4.9 0 0 1 0 9.8" strokeWidth={1.6} />
+    </svg>
+  );
+}
+
+/** The same P with the mark's own detail kept: the axis is the stem, the bowl
+ *  is the half turn, and inside it runs the second, tighter arc — the meridian
+ *  the sphere had. The three parts are the three parts; they are arranged to
+ *  spell the letter instead of to draw a globe. */
+function MeridianPMark({ size = 96 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Meridian P"
+         stroke="currentColor" strokeLinecap="round">
+      <line x1="7" y1="2.2" x2="7" y2="19.8" strokeWidth={1.6} />
+      <path d="M7 2.2a4.9 4.9 0 0 1 0 9.8" strokeWidth={1.6} />
+      {/* The turn. First thing to go at 16px, and it should be — what is left
+          is still the letter. */}
+      <path d="M7 2.2a2.1 4.9 0 0 1 0 9.8" strokeWidth={1} opacity="0.55" />
+    </svg>
+  );
+}
+
+/** A P with enough grid to be one. The supplied glyph is three cells across
+ *  and four down — seven filled squares, which is not room for a letter, and
+ *  is why it reads as a fragment rather than a P. Six by eleven is. */
+const P_BITS = [
+  "111110",
+  "110011",
+  "110011",
+  "110011",
+  "111110",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+];
+function PixelPMark({ size = 96 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Pixel P">
+      {P_BITS.flatMap((row, j) =>
+        row.split("").map((bit, i) =>
+          bit === "1" ? (
+            <rect key={`${i}-${j}`} x={5 + i * 2} y={j * 2} width="2" height="2" fill="currentColor" />
+          ) : null,
+        ),
+      )}
+    </svg>
+  );
+}
+
+/** Any of them, in the container. */
+function ContainedP({ size = 96, mark }: { size?: number; mark: "aperture" | "meridian" | "pixel" }) {
+  const Inner = mark === "aperture" ? AperturePMark : mark === "meridian" ? MeridianPMark : PixelPMark;
+  return (
+    <span
+      className="inline-flex items-center justify-center text-bone"
+      style={{ width: size, height: size, borderRadius: size * 0.22, background: "#2d46ff" }}
+    >
+      <Inner size={size * 0.62} />
+    </span>
+  );
+}
+
 /* ---- the lockup ------------------------------------------------------ */
 
 function Lockup({
@@ -209,6 +286,55 @@ export default function LogoLab() {
                 difference is whether it is also the logo."
           render={(s) => <Contained size={s} />}
         />
+
+        <Bench
+          title="5 — The aperture P"
+          note="A geometric P: one stem, one half turn that starts on the stem and comes back to
+                it. That last part is what makes it a capital — a whole circle hung off a vertical
+                is a lowercase p however tall the vertical is. Two elements and no detail to lose,
+                so it is still unmistakably a P at 16px, which is the size that decides these."
+          render={(s) => <AperturePMark size={s} />}
+        />
+
+        <Bench
+          title="6 — The meridian P"
+          note="The same letter with the mark's own detail kept: the axis is the stem, the bowl is
+                the half turn, and the second tighter arc inside it is the meridian the sphere
+                had. The three parts are the same three, arranged to spell the letter instead of
+                to draw a globe. If you want both the P and what the site already wears, this is
+                the one that gives you both — the turn drops out at 16px and the letter stays."
+          render={(s) => <MeridianPMark size={s} />}
+        />
+
+        <Bench
+          title="7 — The pixel P"
+          note="A P with enough grid to be one. The supplied glyph is three cells across and four
+                down — seven filled squares, decoding to ### / #.# / .## / #.. — which is not room
+                for a letter, and is why it reads as a fragment. Six by eleven is room. This keeps
+                the pixel idea and spends it on the initial rather than on an abstraction."
+          render={(s) => <PixelPMark size={s} />}
+        />
+
+        <section className="border-t border-(--line) pt-8">
+          <h2 className="type-headline text-[1.15rem]">8 — The P in the container</h2>
+          <p className="mt-2 max-w-[52ch] text-[0.9rem] leading-relaxed text-(--muted)">
+            Whichever P, this is the app icon and the favicon: brand blue, corners at 22%, the
+            letter knocked out. No keyline, so it needs no ground under it.
+          </p>
+          <div className="mt-7 flex flex-wrap items-end gap-9 rounded-2xl bg-ink p-7">
+            {(["aperture", "meridian", "pixel"] as const).map((m) => (
+              <span key={m} className="flex flex-col items-center gap-3">
+                <span className="flex items-end gap-4">
+                  <ContainedP size={96} mark={m} />
+                  <ContainedP size={44} mark={m} />
+                  <ContainedP size={22} mark={m} />
+                  <ContainedP size={16} mark={m} />
+                </span>
+                <span className="type-label text-[0.55rem] text-(--faint)">{m}</span>
+              </span>
+            ))}
+          </div>
+        </section>
 
         <section className="border-t border-(--line) pt-8">
           <h2 className="type-headline text-[1.15rem]">4 — The wordmark, either way</h2>
