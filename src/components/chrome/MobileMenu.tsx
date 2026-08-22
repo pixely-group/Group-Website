@@ -307,16 +307,23 @@ export default function MobileMenu({
             every width — the bar drops it as it condenses, so this is the
             only place it is certain to be.
 
-            Same block at every width. Stacked, matched, centred on a phone
-            and against the list's own margin from sm. Letting them size to
-            their words was tried twice and failed twice: as a pair "Get
-            started" came out half again "Login", and alone Login shrank to
-            ninety-nine pixels and read as a footnote under type five times
-            its height. A control that is the only thing offered has to look
-            like it was meant. */}
+            Same block at every width, and set against the words rather than
+            the margin. The list is an index column and then a label; the
+            labels are what the eye takes as the left edge of this menu, so
+            that is where these start — ms-11 is the index column and its gap
+            (w-7 plus gap-4), both fixed, so the two line up at any width.
+
+            Flush with the padding it sat under the numbers instead, which at
+            sm put it 44px left of every word above it. Centring hid that on
+            a phone by landing 12px off the labels, near enough to pass.
+
+            Letting them size to their words was tried twice and failed
+            twice: as a pair "Get started" came out half again "Login", and
+            alone Login shrank to ninety-nine pixels and read as a footnote
+            under type five times its height. */}
         <div
           data-menu-meta
-          className="mx-auto mt-9 flex max-w-[16.5rem] flex-col items-stretch gap-3 sm:mx-0"
+          className="mt-9 ms-11 flex max-w-[16.5rem] flex-col items-stretch gap-3"
           inert={!open || undefined}
         >
           {/* Wrapped rather than given `sm:hidden` directly: the button's own
@@ -342,10 +349,10 @@ export default function MobileMenu({
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">
         <div data-menu-meta className="type-label text-(--muted)">
-          hello@pixely.com
+          © 2026 Pixely, SARL.
         </div>
         <div data-menu-meta className="type-label text-(--muted)">
-          Algiers — DZ
+          hello@pixely.dz
         </div>
       </div>
     </div>
