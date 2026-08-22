@@ -530,42 +530,30 @@ const CARD_STEP = 86;
  *  Struck rather than drawn by hand: each arc is the same 100-degree sweep
  *  about (3,12), so the endpoints are r·cos50 across and r·sin50 up and
  *  down, and the four stay concentric by construction. */
-/** The contact plate. On a real card it is 11.5mm across an 85.6mm card —
- *  13% of the width — and it is the one thing on a card that says card
- *  before a word of it has been read. Gradient rather than flat gold: the
- *  plate is milled metal and catches the light across its diagonal, which is
- *  most of what makes it read as metal at this size. The face is divided
- *  into the eight contacts around a centre pad, which is the pattern the eye
- *  actually recognises. */
-function Chip({ w = 44 }: { w?: number }) {
-  const h = Math.round((w / 1.28) * 10) / 10;
+/** The chip, abstracted to a plate and its contact. Line art, not a milled
+ *  gold rectangle: on a card this size the plate is four millimetres of
+ *  detail nobody can resolve, and rendering it faithfully only made a bright
+ *  gold blob in a corner. Drawn in the same stroke as the contactless mark
+ *  above it, the two read as one pair of marks rather than a photograph and
+ *  an icon sharing a card. */
+function Chip({ size = 30, opacity = 0.85 }: { size?: number; opacity?: number }) {
   return (
-    <span
-      aria-hidden
-      style={{
-        position: "relative",
-        width: w,
-        height: h,
-        flexShrink: 0,
-        borderRadius: 6,
-        background:
-          "linear-gradient(132deg,#efe0ab 0%,#cdae59 34%,#9d8033 58%,#e3d296 82%,#b9993f 100%)",
-        boxShadow: "inset 0 0 0 0.7px rgba(86,64,10,0.55)",
-      }}
-    >
-      <svg width={w} height={h} viewBox="0 0 44 34" fill="none"
-           style={{ position: "absolute", inset: 0 }}>
-        <g stroke="rgba(84,62,10,0.5)" strokeWidth="1">
-          <path d="M14.7 0v34M29.3 0v34M0 11.3h44M0 22.7h44" />
-          <rect x="14.7" y="11.3" width="14.6" height="11.4" rx="2" />
-        </g>
-      </svg>
-    </span>
+    <svg width={size} height={size * 0.76} viewBox="0 0 25 19" fill="none" aria-hidden
+         stroke={`rgba(236,233,225,${opacity})`} strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round">
+      <rect x="0.75" y="0.75" width="23.5" height="17.5" rx="3.6" />
+      <rect x="8" y="6.2" width="9" height="6.6" rx="1.6" />
+      <path d="M0.75 9.5H8M17 9.5h7.25" />
+    </svg>
   );
 }
 
 const NFC_R = [2.2, 5.2, 8.2, 11.2];
-function Contactless({ opacity = 0.55, size = 20 }: { opacity?: number; size?: number }) {
+/* 36 across a 362pt card is 10%, which is about what a card prints it at.
+   It was 20 — 5.5% — and at the scale the phone renders, that is a
+   fifteen-pixel mark in a 1.2px stroke at 55% opacity: drawn correctly and
+   invisible, which is the same thing as not being there. */
+function Contactless({ opacity = 0.85, size = 36 }: { opacity?: number; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden
          style={{ transition: "opacity 260ms ease" }}>
@@ -694,11 +682,13 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
                   </p>
                   <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
                 </div>
-                <Contactless opacity={nfcOff[card.id] ? 0.14 : 0.55} />
+                {/* The two marks stack in the corner, the chip under the
+                    contactless. */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 9 }}>
+                  <Contactless opacity={nfcOff[card.id] ? 0.2 : 0.85} />
+                  <Chip />
+                </div>
               </div>
-              {/* Where it sits on the card in your pocket: left, under the
-                  name, with the contactless mark above it to the right. */}
-              <Chip />
               <div>
                 <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
                   •••• •••• •••• {card.num}
