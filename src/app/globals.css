@@ -777,9 +777,11 @@ html[data-cursor="on"] * {
 }
 
 /* ---- the city readout ------------------------------------------------
-   It holds one corner of the frame and stays there. A panel that moves is
-   a thing you track; a plate that stays put is a thing you read, and the
-   marker's own ring already says which city is being read.
+   It opens beside the city it describes and then stays exactly where it
+   opened. It does not track the marker: the globe keeps turning under a
+   plate that is being read, and a panel that follows a moving point is a
+   thing you chase rather than read. Placed once, on hover, by JS through
+   --hud-x/--hud-y.
 
    Two halves: the clock on the left, the country on the right.
 
@@ -792,8 +794,9 @@ html[data-cursor="on"] * {
    what the reader drags. */
 .globe-hud {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 0;
+  left: 0;
+  transform: translate(var(--hud-x, 14px), var(--hud-y, 14px));
   z-index: 20;
   display: flex;
   align-items: center;
@@ -838,10 +841,12 @@ html[data-cursor="on"] * {
 }
 
 /* The rail: the edge the panel grows from, and the only solid mark on it.
-   It is also what announces the plate. It strikes as a short white sliver,
-   grows past full height and settles back into brand blue, and the body is
-   still held back while it does — so the plate looks drawn out of the rail
-   rather than merely revealed beside it.
+   It is also what announces the plate: it grows from a short mark to full
+   height, overshoots, and settles, while the body is still held back — so
+   the plate looks drawn out of the rail rather than merely revealed beside
+   it. No colour change in it. A rail that whitens reads as a camera flash
+   going off next to the type; the same energy put into the movement, with
+   only the glow blooming at the peak, reads as the rail taking charge.
 
    Collapsing is the same in reverse: the body goes first and the rail drops
    after it, which is what the 150ms delay here is for. */
@@ -873,25 +878,21 @@ html[data-cursor="on"] * {
   0% {
     opacity: 0;
     transform: scaleY(0.06);
-    background: var(--color-bone);
-    box-shadow: 0 0 26px 5px rgb(159 180 255 / 0.95);
+    box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
   }
-  16% {
+  14% {
     opacity: 1;
-    transform: scaleY(0.14);
-    background: var(--color-bone);
-    box-shadow: 0 0 26px 5px rgb(159 180 255 / 0.95);
+    transform: scaleY(0.16);
+    box-shadow: 0 0 12px 0 rgb(45 70 255 / 0.9);
   }
   58% {
     opacity: 1;
     transform: scaleY(1.06);
-    background: var(--color-signal-lift);
-    box-shadow: 0 0 18px 2px rgb(114 144 255 / 0.85);
+    box-shadow: 0 0 22px 2px rgb(114 144 255 / 0.7);
   }
   100% {
     opacity: 1;
     transform: scaleY(1);
-    background: var(--color-signal);
     box-shadow: 0 0 10px 0 rgb(45 70 255 / 0.9);
   }
 }

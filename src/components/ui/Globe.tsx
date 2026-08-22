@@ -601,14 +601,111 @@ export default function Globe({ className }: { className?: string }) {
          flushes the pending style — the browser sees no change and the rail
          does not replay. The measurement below is that read. */
       delete hud.dataset.on;
-      /* Measured now rather than per frame: the plate holds its berth for
-         the whole hover, and the name is the only thing that changes its
-         width — the digits are tabular. */
-      hudX = hud.offsetLeft;
-      hudY = hud.offsetTop;
+      /* Measured now rather than per frame: the plate holds still for the
+         whole hover, and the name is the only thing that changes its width
+         — the digits are tabular. Reading it is also what flushes the
+         pending style, above. */
       hudW = hud.offsetWidth;
       hudH = hud.offsetHeight;
+      place(i);
+      hud.style.setProperty("--hud-x", `${hudX}px`);
+      hud.style.setProperty("--hud-y", `${hudY}px`);
       hud.dataset.on = "true";
+    };
+
+    /**
+     * Where the plate opens: beside the city, and then not moved again.
+     *
+     * Placed once, on hover, and left there. Tracking the marker would mean
+     * a plate sliding around under the eye trying to read it every time the
+     * globe turns — and the globe is always turning.
+     *
+     * Four spots are tried in order, right of the city first, and the first
+     * that is clear wins. Clear means three things: inside the window, which
+     * the frame itself is not — it runs past the right edge and below the
+     * fold; off anything the section marked data-globe-avoid, since the
+     * headline crosses the left of the frame; and not sitting on the marker
+     * it belongs to.
+     */
+    const GAP = 18;
+    const place = (i: number) => {
+      const box = renderer.domElement.getBoundingClientRect();
+      const mx = labelX[i];
+      const my = labelY[i];
+
+      const avoid: number[][] = [];
+      host
+        .closest("section")
+        ?.querySelectorAll<HTMLElement>("[data-globe-avoid]")
+        .forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.height)
+            avoid.push([
+              r.left - box.left,
+              r.top - box.top,
+              r.right - box.left,
+              r.bottom - box.top,
+            ]);
+        });
+
+      /* The window, in frame coordinates. */
+      const loX = 12 - box.left;
+      const hiX = window.innerWidth - 12 - hudW - box.left;
+      const loY = 88 - box.top;
+      const hiY = window.innerHeight - 12 - hudH - box.top;
+      const clampX = (x: number) => Math.max(Math.min(loX, hiX), Math.min(x, hiX));
+      const clampY = (y: number) => Math.max(Math.min(loY, hiY), Math.min(y, hiY));
+
+      const tries = [
+        [mx + GAP, my - hudH / 2],
+        [mx - GAP - hudW, my - hudH / 2],
+        [mx - hudW / 2, my + GAP],
+        [mx - hudW / 2, my - GAP - hudH],
+      ];
+      /* Beside the city in each of four directions — and, for every obstacle,
+         the same four slid just past its edges. Without that second set a
+         city can have all four of its own spots blocked at once, which is
+         what happens wherever the headline crosses the globe, and the plate
+         has nowhere to go but on top of the words. */
+      const spots = tries.slice();
+      for (const a of avoid) {
+        for (const [, ry] of tries) {
+          spots.push([a[2] + 6, ry]);
+          spots.push([a[0] - hudW - 6, ry]);
+        }
+        for (const [rx] of tries) {
+          spots.push([rx, a[3] + 6]);
+          spots.push([rx, a[1] - hudH - 6]);
+        }
+      }
+
+      let put: number[] | null = null;
+      let near = Infinity;
+      for (const [rx, ry] of spots) {
+        const x = clampX(rx);
+        const y = clampY(ry);
+        if (
+          avoid.some(
+            (a) => x < a[2] && a[0] < x + hudW && y < a[3] && a[1] < y + hudH,
+          )
+        )
+          continue;
+        /* Clamping can push a spot back over the city it was placed beside. */
+        if (mx > x - 4 && mx < x + hudW + 4 && my > y - 4 && my < y + hudH + 4)
+          continue;
+        /* Of everything that is clear, the one nearest the city wins — which
+           is the whole point of putting it beside the city at all. */
+        const dx = mx - Math.max(x, Math.min(x + hudW, mx));
+        const dy = my - Math.max(y, Math.min(y + hudH, my));
+        const d = dx * dx + dy * dy;
+        if (d < near) {
+          near = d;
+          put = [x, y];
+        }
+      }
+      if (!put) put = [clampX(tries[0][0]), clampY(tries[0][1])];
+      hudX = Math.round(put[0]);
+      hudY = Math.round(put[1]);
     };
 
 
