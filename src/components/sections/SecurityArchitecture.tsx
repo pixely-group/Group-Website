@@ -1062,21 +1062,27 @@ export default function SecurityArchitecture() {
                         title's line it also had to share a narrow row with
                         the name, which on a phone left the two of them at
                         opposite edges with nothing in between. */}
-                    <div className="mt-1.5 flow-root lg:mt-1">
-                      {/* Floated rather than set beside the note in a row.
-                          Side by side, the verdict takes 170px of a 311px
-                          line on a phone and the note is left writing in a
-                          125px column — four words tall and hyphenated.
-                          Floated, the note's first line sits level with the
-                          verdict and the rest of it runs underneath, which
-                          is the whole point of a float and the only way both
-                          get the width they need.
+                    {/* The verdict and the note.
 
-                          Always rendered so it can fade in — a mounting
+                        On a phone the verdict takes its own line under the
+                        title: 170px of a 311px line leaves the note nothing
+                        to write in, and floating it only moved the problem
+                        into the note's first line.
+
+                        From sm they share a line, and share it by baseline
+                        rather than by box. A float sits at the top of the
+                        line box, and these two are 10.4px mono against
+                        14.4px Archivo on a 23.4px leading — so their tops
+                        agreed to within 3.5px while their baselines were
+                        10.6px apart, which is what "not quite aligned"
+                        looks like. items-baseline is the browser doing it
+                        exactly, at any size, without a nudge to maintain. */}
+                    <div className="mt-1.5 sm:flex sm:items-baseline sm:justify-between sm:gap-6 lg:mt-1">
+                      {/* Always rendered so it can fade in — a mounting
                           element has nothing to transition from. */}
                       <span
                         aria-hidden={!stamped}
-                        className={`type-label float-right ml-4 text-[0.65rem] transition-all duration-500 ${
+                        className={`type-label block text-[0.65rem] transition-all duration-500 sm:order-2 sm:shrink-0 ${
                           stamped
                             ? "translate-x-0 opacity-100"
                             : "-translate-x-1 opacity-0"
@@ -1088,7 +1094,7 @@ export default function SecurityArchitecture() {
                         {refusedHere ? layer.fail : layer.pass} ·{" "}
                         {layer.ms.toFixed(1)} ms
                       </span>
-                      <p className="text-[0.9rem] leading-relaxed text-(--muted)">
+                      <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted) sm:order-1 sm:mt-0">
                         {layer.note}
                       </p>
                     </div>
