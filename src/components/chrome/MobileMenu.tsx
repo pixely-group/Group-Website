@@ -129,36 +129,33 @@ export default function MobileMenu({
            All the way to nothing, not back to the lip. Stopping at the lip
            left a strip the height of the bar still painted, which then went
            out with visibility — a snap at the end of a smooth close. */
+        /* One movement, not two. It was split so the last stretch could
+           clear the bar quickly, and the seam showed: down in one go and up
+           in one go is the whole gesture, and a stage change reads as the
+           panel thinking about it. Same curve as the opening, reversed. */
         const shrink = { h: full };
-        gsap
-          .timeline({
-            onComplete: () => {
-              panel.style.visibility = "hidden";
-              panel.style.pointerEvents = "none";
-            },
-          })
-          /* Down to the bar's own height on the opening's curve, so the
-             gesture reads as the same one reversed. The bar is covered for
-             all of it and keeps the menu's treatment. */
-          .to(shrink, {
-            h: lip,
-            duration: 0.48,
-            ease: "expo.inOut",
-            onUpdate: () => clipTo(shrink.h),
-          })
-          /* Then off the bar quickly. This last stretch is the one place the
-             bar cannot be right: the panel is behind the top of it and the
-             page behind the bottom, so whichever ink the bar takes, half of
-             it is on the wrong ground. There is no colour that solves that —
-             only making it short. A tenth of a second, accelerating, which
-             reads as the tail of the same movement rather than a snap. */
-          .to(shrink, {
-            h: 0,
-            duration: 0.1,
-            ease: "power1.in",
-            onStart: onBarUncovered,
-            onUpdate: () => clipTo(shrink.h),
-          });
+        let handedBack = false;
+        gsap.to(shrink, {
+          h: 0,
+          duration: 0.55,
+          ease: "expo.inOut",
+          onUpdate: () => {
+            clipTo(shrink.h);
+            /* Handed back as the panel passes the middle of the wordmark
+               rather than the bottom of the bar. While the edge is crossing
+               the letters there is no ink that is right — the panel is behind
+               their top and the page behind their bottom — so the switch goes
+               where the error is smallest, halfway through. */
+            if (!handedBack && shrink.h <= lip * 0.5) {
+              handedBack = true;
+              onBarUncovered();
+            }
+          },
+          onComplete: () => {
+            panel.style.visibility = "hidden";
+            panel.style.pointerEvents = "none";
+          },
+        });
       }
     }
   }, [open, lenis, onBarUncovered]);
@@ -285,7 +282,7 @@ export default function MobileMenu({
             with room the natural widths are the honest ones. */}
         <div
           data-menu-meta
-          className="mx-auto mt-9 flex max-w-[13.5rem] flex-col items-stretch gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:items-center"
+          className="mx-auto mt-9 flex max-w-[16.5rem] flex-col items-stretch gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:items-center"
           inert={!open || undefined}
         >
           <MagneticButton

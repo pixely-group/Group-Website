@@ -218,12 +218,21 @@ export default function Hero() {
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">
             <span data-hero-line className="block">
               next with{" "}
-              {/* The brand blue itself, not the lifted tint --accent resolves
+              {/* 1.32em, not 1.14. The line around it is uppercase Archivo
+                  at a 0.686em cap height; the word is lowercase Fraunces
+                  italic, whose x-height is 0.4427em. At 1.14 the word's body
+                  stood at 73% of the caps beside it, which is why it read as
+                  undersized however large the number looked. 1.32 puts it at
+                  85%. It cannot go to a true match — that would want 1.55,
+                  and Fraunces carries tall ascenders, so the word would climb
+                  half again above the caps.
+
+                  The brand blue itself, not the lifted tint --accent resolves
                   to on dark chapters. That lift exists because the primary
                   reaches only ~3.25:1 on ink, which fails AA for body copy —
                   but this is display type well past the large-text threshold,
                   where 3:1 is the bar. */}
-              <RotatingWord className="type-serif-inherit text-signal normal-case text-[1.14em]" />
+              <RotatingWord className="type-serif-inherit text-signal normal-case text-[1.32em]" />
             </span>
           </span>
         </h1>
