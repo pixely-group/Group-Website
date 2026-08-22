@@ -131,6 +131,19 @@ export default function Navigation() {
   const [crossing, setCrossing] = useState(false);
   const schemeRef = useRef<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /* The panel is lg:hidden, so widening past lg takes it away without
+     telling React. The bar would be left riding at menu z-index in the
+     forced ink treatment with nothing underneath it, so the state is closed
+     at the same breakpoint the panel stops existing at. */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const shut = () => wide.matches && setMenuOpen(false);
+    shut();
+    wide.addEventListener("change", shut);
+    return () => wide.removeEventListener("change", shut);
+  }, [menuOpen]);
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const navP = useRef(0);
@@ -439,7 +452,10 @@ export default function Navigation() {
     setMenuOpen((v) => !v);
   }, []);
 
-  const glass = scheme === "bone" ? "bg-bone/72" : "bg-ink/64";
+  /* While the menu is open the bar stands on a solid ink panel, so it reads
+     as a dark chapter whatever it was crossing over a moment ago. */
+  const barScheme = menuOpen ? "ink" : scheme;
+  const glass = barScheme === "bone" ? "bg-bone/72" : "bg-ink/64";
 
   return (
     <>
@@ -448,9 +464,11 @@ export default function Navigation() {
       </a>
       <header
         ref={headerRef}
-        data-theme={scheme}
+        data-theme={barScheme}
         data-crossing={crossing || undefined}
-        className="nav-ground fixed inset-x-0 top-0 z-(--z-nav)"
+        className={`nav-ground fixed inset-x-0 top-0 ${
+          menuOpen ? "z-(--z-nav-over-menu)" : "z-(--z-nav)"
+        }`}
         style={{ "--nav-p": 0 } as React.CSSProperties}
       >
         {/* Full-bleed at rest, so the wordmark sits on the page's gutter and

@@ -65,6 +65,9 @@
   --z-content: 10;
   --z-nav: 100;
   --z-menu: 110;
+  /* The bar rides over the open menu rather than being covered and redrawn
+     by it — there is only ever one bar, and its own button shuts the menu. */
+  --z-nav-over-menu: 120;
   --z-cursor: 130;
 }
 

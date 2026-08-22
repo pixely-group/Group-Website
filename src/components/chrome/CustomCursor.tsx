@@ -24,10 +24,10 @@ const CURSOR_DOT_CLICKABLE_SCALE = 1.15;
 
 /**
  * Cursor ink for the chapter beneath it: a dark section takes the light
- * cursor and vice versa. It changes on the frame, with no transition: a
- * cursor easing between two inks is a cursor that is the wrong colour for
- * a third of a second, and the one thing on screen that must never be hard
- * to see is the pointer. `mix-blend-difference` cannot do this job here —
+ * cursor and vice versa. The ink is re-read on scroll as well as on move,
+ * which is what actually fixes a cursor sitting black on a dark chapter; a
+ * short cross keeps the change from being a hard snap without leaving the
+ * pointer the wrong colour long enough to lose it. `mix-blend-difference` cannot do this job here —
  * the fixed, z-indexed container is its own stacking context, which
  * isolates the blend group, so the cursor would only ever blend against
  * its own transparent parent.
@@ -236,11 +236,11 @@ export default function CustomCursor() {
           top: -CURSOR_DOT_PX / 2,
           left: -CURSOR_DOT_PX / 2,
         }}
-        className="absolute rounded-full bg-(--cursor-color)"
+        className="absolute rounded-full bg-(--cursor-color) transition-[background-color] duration-150 ease-(--ease-cross)"
       />
       <div
         ref={ringRef}
-        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-(--cursor-color)"
+        className="absolute -top-[19px] -left-[19px] flex size-[38px] items-center justify-center rounded-full border border-(--cursor-color) transition-[border-color] duration-150 ease-(--ease-cross)"
       >
         <span
           ref={labelRef}

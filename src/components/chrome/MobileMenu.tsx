@@ -8,7 +8,6 @@ import {
   NAV_GEOMETRY,
   NAV_INSETS,
   NAV_LINKS,
-  Wordmark,
 } from "@/components/chrome/Navigation";
 
 type Props = {
@@ -99,10 +98,20 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "Tab") {
-        const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
+        /* The control that closes this is the bar's own button, which is
+           not inside the panel — so the ring has to be built rather than
+           queried, or Tab walks straight out of the menu. */
+        const inPanel = panelRef.current?.querySelectorAll<HTMLElement>(
           "a[href], button:not([disabled])",
         );
-        if (!focusables || focusables.length === 0) return;
+        const toggle = document.querySelector<HTMLElement>(
+          'header button[aria-controls="mobile-menu"]',
+        );
+        const focusables = [
+          ...(toggle ? [toggle] : []),
+          ...Array.from(inPanel ?? []),
+        ];
+        if (focusables.length === 0) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         if (e.shiftKey && document.activeElement === first) {
@@ -130,10 +139,16 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
       className="invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto bg-ink pb-10 text-bone opacity-0 lg:hidden"
       style={{ pointerEvents: "none" }}
     >
-      {/* Reproduces the bar's geometry from the same interpolation, at the
-          progress it held when the menu opened. */}
+      {/* Holds the bar's height open and nothing else.
+
+          This used to reproduce the bar — wordmark, close button, the lot —
+          and the copy sat 12px below the real one, so opening the menu made
+          the wordmark jump as the panel wiped over it. Two bars means two
+          chances to disagree. There is one bar now: the real one, which the
+          menu passes under, and its own button is what closes it. This is
+          only the space it stands in. */}
       <div
-        data-menu-meta
+        aria-hidden
         className={NAV_INSETS}
         style={
           {
@@ -146,51 +161,9 @@ export default function MobileMenu({ open, onClose, onNavigate, navP }: Props) {
         }
       >
         <div
-          className="flex min-h-10 items-center justify-between"
-          style={{
-            paddingBlock: NAV_GEOMETRY.rowPadBlock,
-            paddingLeft: NAV_GEOMETRY.rowPadLeft,
-            paddingRight: NAV_GEOMETRY.rowPadRight,
-          }}
-        >
-          <Wordmark />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close menu"
-            data-cursor="link"
-            tabIndex={open ? 0 : -1}
-            /* The cross is 20px in a 40px target, so 10px of slack each
-               side; -mr-2.5 pays it back and lands the mark the same
-               distance from the edge as the wordmark opposite it. */
-            className="-mr-2.5 flex size-10 items-center justify-center"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              aria-hidden
-              fill="none"
-            >
-              <line
-                x1="3"
-                y1="3"
-                x2="17"
-                y2="17"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <line
-                x1="17"
-                y1="3"
-                x2="3"
-                y2="17"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-            </svg>
-          </button>
-        </div>
+          className="min-h-10"
+          style={{ paddingBlock: NAV_GEOMETRY.rowPadBlock }}
+        />
       </div>
 
       <nav aria-label="Menu" className="px-6 py-10 sm:px-10">
