@@ -530,42 +530,50 @@ const CARD_STEP = 86;
  *  Struck rather than drawn by hand: each arc is the same 100-degree sweep
  *  about (3,12), so the endpoints are r·cos50 across and r·sin50 up and
  *  down, and the four stay concentric by construction. */
-/** The chip, abstracted to a plate and its contact. Line art, not a milled
- *  gold rectangle: on a card this size the plate is four millimetres of
- *  detail nobody can resolve, and rendering it faithfully only made a bright
- *  gold blob in a corner. Drawn in the same stroke as the contactless mark
- *  above it, the two read as one pair of marks rather than a photograph and
- *  an icon sharing a card. */
-function Chip({ size = 30, opacity = 0.85 }: { size?: number; opacity?: number }) {
+/* Both marks are the supplied artwork, traced from the card design rather
+   than reconstructed from a description of one — which is what the last two
+   attempts were, and why neither landed. Figma's export wrapper is dropped:
+   the backdrop-filter foreignObject, the inner-shadow filter and the
+   clipPath were a background blur, a bevel and a rect the size of the
+   viewBox, and the ids in them would have collided across three cards. The
+   geometry is untouched. Colour is the one thing changed — the artwork is
+   #1F1F1F for a light card and these are light marks on a dark one. */
+
+/** The chip: a plate, its contacts, and the pad at the centre. */
+function Chip({ size = 40, opacity = 0.85 }: { size?: number; opacity?: number }) {
+  const ink = `rgba(236,233,225,${opacity})`;
   return (
-    <svg width={size} height={size * 0.76} viewBox="0 0 25 19" fill="none" aria-hidden
-         stroke={`rgba(236,233,225,${opacity})`} strokeWidth="1.5"
-         strokeLinecap="round" strokeLinejoin="round">
-      <rect x="0.75" y="0.75" width="23.5" height="17.5" rx="3.6" />
-      <rect x="8" y="6.2" width="9" height="6.6" rx="1.6" />
-      <path d="M0.75 9.5H8M17 9.5h7.25" />
+    <svg width={size} height={(size * 20) / 30} viewBox="0 0 30 20" fill="none" aria-hidden>
+      <path
+        d="M4.28613 0.299805H25.7139C27.9349 0.299805 29.7002 1.97571 29.7002 4V16C29.7002 18.0243 27.9349 19.7002 25.7139 19.7002H4.28613C2.06505 19.7002 0.299805 18.0243 0.299805 16V4C0.299805 1.97571 2.06505 0.299805 4.28613 0.299805Z"
+        stroke={ink}
+        strokeWidth="0.6"
+      />
+      <path d="M7.23207 0.5H7.76779V19.5H7.23207V13.5H0.535645V13H7.23207V7H0.535645V6.5H7.23207V0.5Z" fill={ink} />
+      <path d="M22.4999 13H29.4642V13.5H22.4999V19.5H21.9642V9.5C21.9642 7.84314 23.4033 6.5 25.1785 6.5H29.4642V7H25.1785C23.6992 7 22.4999 8.11929 22.4999 9.5V13Z" fill={ink} />
+      <path d="M22.4999 0.5H21.9642V4.5H22.4999V0.5Z" fill={ink} />
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M18.7499 10C18.7499 11.933 17.071 13.5 14.9999 13.5C12.9289 13.5 11.2499 11.933 11.2499 10C11.2499 8.067 12.9289 6.5 14.9999 6.5C17.071 6.5 18.7499 8.067 18.7499 10ZM18.2142 10C18.2142 11.6569 16.7751 13 14.9999 13C13.2247 13 11.7856 11.6569 11.7856 10C11.7856 8.34314 13.2247 7 14.9999 7C16.7751 7 18.2142 8.34314 18.2142 10Z"
+        fill={ink}
+      />
     </svg>
   );
 }
 
-const NFC_R = [2.2, 5.2, 8.2, 11.2];
-/* 36 across a 362pt card is 10%, which is about what a card prints it at.
-   It was 20 — 5.5% — and at the scale the phone renders, that is a
-   fifteen-pixel mark in a 1.2px stroke at 55% opacity: drawn correctly and
-   invisible, which is the same thing as not being there. */
-function Contactless({ opacity = 0.85, size = 36 }: { opacity?: number; size?: number }) {
+/** The contactless mark: four arcs, filled and tapered rather than stroked,
+ *  which is what makes it hold at this size where an even-weight arc did
+ *  not. */
+function Contactless({ opacity = 0.85, size = 30 }: { opacity?: number; size?: number }) {
+  const ink = `rgba(236,233,225,${opacity})`;
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden
+    <svg width={size} height={(size * 23) / 24} viewBox="0 0 24 23" fill="none" aria-hidden
          style={{ transition: "opacity 260ms ease" }}>
-      {NFC_R.map((r) => (
-        <path
-          key={r}
-          d={`M${(3 + r * 0.643).toFixed(2)} ${(12 - r * 0.766).toFixed(2)}a${r} ${r} 0 0 1 0 ${(r * 1.532).toFixed(2)}`}
-          stroke={`rgba(236,233,225,${opacity})`}
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-      ))}
+      <path d="M3.22974 8.475C3.52974 8.85 3.75474 9.3 3.90474 9.75C4.05474 10.2 4.12974 10.725 4.12974 11.25C4.12974 11.775 4.05474 12.3 3.90474 12.75C3.75474 13.2 3.52974 13.65 3.22974 14.025C2.85474 14.55 2.92974 15.3 3.45474 15.675C3.97974 16.05 4.72974 15.975 5.10474 15.45C5.55474 14.85 5.85474 14.25 6.15474 13.5C6.45474 12.75 6.52974 12 6.52974 11.25C6.52974 10.5 6.37974 9.75 6.15474 9C5.92974 8.325 5.55474 7.65 5.10474 7.05C4.72974 6.525 3.97974 6.45 3.45474 6.825C2.92974 7.2 2.85474 7.95 3.22974 8.475Z" fill={ink} />
+      <path d="M7.35473 6.3C8.25473 7.725 8.77973 9.45 8.77973 11.25C8.77973 13.05 8.25473 14.775 7.35473 16.2C6.97973 16.725 7.20473 17.475 7.72973 17.85C8.32973 18.225 9.00473 18 9.37973 17.475C10.5047 15.675 11.1797 13.575 11.1797 11.25C11.1797 9 10.5047 6.825 9.37973 5.025C9.00473 4.5 8.25473 4.275 7.72973 4.65C7.20473 5.025 6.97973 5.7 7.35473 6.3Z" fill={ink} />
+      <path d="M11.7047 4.05C12.9797 6.15 13.6547 8.625 13.6547 11.25C13.6547 13.875 12.9047 16.35 11.7047 18.45C11.4047 19.05 11.5547 19.725 12.1547 20.1C12.7547 20.4 13.4297 20.25 13.8047 19.65C15.3047 17.175 16.1297 14.325 16.1297 11.25C16.1297 8.175 15.3047 5.325 13.8047 2.85C13.5047 2.25 12.7547 2.1 12.1547 2.4C11.5547 2.775 11.4047 3.45 11.7047 4.05Z" fill={ink} />
+      <path d="M16.0547 1.8C17.6297 4.575 18.6047 7.8 18.6047 11.25C18.6047 14.7 17.7047 17.925 16.0547 20.7C15.7547 21.3 15.9047 21.975 16.5047 22.35C17.1047 22.65 17.7797 22.5 18.1547 21.9C19.9547 18.75 21.0047 15.15 21.0047 11.25C21.0047 7.35 19.9547 3.75 18.1547 0.6C17.8547 -0.0447035 17.1047 -0.15 16.5047 0.15C15.9047 0.45 15.7547 1.2 16.0547 1.8Z" fill={ink} />
     </svg>
   );
 }
@@ -684,7 +692,7 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
                 </div>
                 {/* The two marks stack in the corner, the chip under the
                     contactless. */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 9 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
                   <Contactless opacity={nfcOff[card.id] ? 0.2 : 0.85} />
                   <Chip />
                 </div>
