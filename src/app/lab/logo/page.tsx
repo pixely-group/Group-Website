@@ -162,6 +162,84 @@ function ContainedP({ size = 96, mark }: { size?: number; mark: "aperture" | "me
   );
 }
 
+
+/* ---- a mark drawn for this company ----------------------------------- */
+
+/* One idea, three weights.
+ *
+ * A pixel is to a picture what a transaction is to an economy: the smallest
+ * unit there is, and everything is made of them. So the letter holds one —
+ * the counter of the P is not an oval but a square, and the square is lit.
+ * That is the whole mark. It says the initial, it says the name, and it says
+ * what the company is for, and it does all three with one square.
+ *
+ * The bowl turns and the counter does not — the idea lives in the hole, and
+ * the contrast between a round outside and a square inside is what makes the
+ * square read as a decision rather than as a letter that failed to curve.
+ */
+
+/** The solid cut. The app icon, and anywhere the mark stands alone.
+ *
+ *  The bowl turns. Drawn square it was not a P at all — a rectangle on a
+ *  pole reads as a flag, and that is what the first cut of this was. The idea
+ *  is the counter, not the bowl: it is the hole that is a pixel, and a round
+ *  bowl around a square hole is what makes the square read as a decision
+ *  rather than as a letter that failed to curve. */
+function LitP({ size = 96, lit = "#2d46ff" }: { size?: number; lit?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Pixely P">
+      <path d="M5.5 2H11a5.5 5.5 0 0 1 0 11H8.5v7h-3V2Z" fill="currentColor" />
+      <rect x="8.5" y="5" width="5" height="5" fill={lit} />
+    </svg>
+  );
+}
+
+/** The drawn cut, for setting beside type — the nav, a footer, a signature. */
+function LitPLine({ size = 96, lit = "#2d46ff" }: { size?: number; lit?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Pixely P">
+      <path
+        d="M7 2.6v16.8M7 2.6h4.1a4.35 4.35 0 0 1 0 8.7H7"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="square"
+      />
+      <rect x="8.8" y="5.2" width="3.5" height="3.5" fill={lit} />
+    </svg>
+  );
+}
+
+/** The counted cut: the same letter spelled out in units, one of them lit.
+ *  For where the pixel should be the loudest thing in the room. */
+const LIT_P_BITS = [
+  "111110",
+  "110011",
+  "110011",
+  "110011",
+  "111110",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+  "110000",
+];
+function LitPGrid({ size = 96, lit = "#2d46ff" }: { size?: number; lit?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-label="Pixely P">
+      {LIT_P_BITS.flatMap((row, j) =>
+        row.split("").map((bit, i) =>
+          bit === "1" ? (
+            <rect key={`${i}-${j}`} x={5 + i * 2} y={j * 2} width="2" height="2" fill="currentColor" />
+          ) : null,
+        ),
+      )}
+      {/* The one unit that is not the letter: the counter, lit. */}
+      <rect x="9" y="2" width="4" height="6" fill={lit} />
+    </svg>
+  );
+}
+
 /* ---- the lockup ------------------------------------------------------ */
 
 function Lockup({
@@ -286,6 +364,61 @@ export default function LogoLab() {
                 difference is whether it is also the logo."
           render={(s) => <Contained size={s} />}
         />
+
+        <section className="border-t border-(--line) pt-8">
+          <h2 className="type-headline text-[1.15rem]">A mark drawn for this company</h2>
+          <p className="mt-2 max-w-[56ch] text-[0.9rem] leading-relaxed text-(--muted)">
+            A pixel is to a picture what a transaction is to an economy: the smallest unit there
+            is, and everything is made of them. So the letter holds one. The counter of the P is
+            not an oval but a square, and the square is lit — that is the whole mark. It says the
+            initial, it says the name, and it says what the company is for, with one square. The
+            bowl turns, because the idea lives in the hole and not the outline: a square bowl on
+            a stem reads as a flag, and a round bowl around a square hole is what makes the
+            square read as a decision. In the app icon the counter is the container showing
+            through, the way a cut letter works.
+          </p>
+          <div className="mt-7 grid gap-6 sm:grid-cols-2">
+            {(["ink", "bone"] as const).map((ground) => (
+              <div
+                key={ground}
+                data-theme={ground}
+                className="flex flex-col gap-8 rounded-2xl bg-theme p-7 text-theme"
+              >
+                {([
+                  ["solid", (n: number) => <LitP size={n} />],
+                  ["drawn", (n: number) => <LitPLine size={n} />],
+                  ["counted", (n: number) => <LitPGrid size={n} />],
+                ] as const).map(([name, render]) => (
+                  <span key={name} className="flex flex-wrap items-end gap-7">
+                    {SIZES.map((n) => (
+                      <span key={n} className="flex flex-col items-center gap-2">
+                        {render(n)}
+                        <span className="type-label text-[0.55rem] text-(--faint)">{n}</span>
+                      </span>
+                    ))}
+                    <span className="flex flex-col gap-2">
+                      <Lockup mark={render(26)} />
+                      <span className="type-label text-[0.55rem] text-(--faint)">{name}</span>
+                    </span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-end gap-9 rounded-2xl bg-ink p-7 text-bone">
+            {[96, 44, 22, 16].map((n) => (
+              <span
+                key={n}
+                className="inline-flex items-center justify-center"
+                style={{ width: n, height: n, borderRadius: n * 0.22, background: "#2d46ff" }}
+              >
+                <LitP size={n * 0.78} lit="#2d46ff" />
+              </span>
+            ))}
+            <span className="type-label text-[0.55rem] text-(--faint)">app icon — the lit square inverts</span>
+          </div>
+        </section>
 
         <Bench
           title="5 — The aperture P"
