@@ -775,7 +775,21 @@ html[data-cursor="on"] * {
   font-size: 0.5rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgb(236 233 225 / 0.5);
+  /* Bone at half strength cleared 4.6:1 on the ink, which is a passing
+     number for text at a readable size and not for eight-pixel capitals
+     with a globe turning behind them. 0.9 puts them at 12.8:1 and they
+     read as names rather than as texture. The rim fade still takes them
+     down as they go round the back — that dimming is distance, and it
+     should stay. */
+  color: rgb(236 233 225 / 0.9);
+  /* The ground behind a name is not one colour: mostly the dark of space,
+     but land is a field of dots running to #86d4ff, and a near-white name
+     crossing a lit dot has almost no contrast against it. A dark halo seats
+     every name on its own ground whatever it is standing on, and at eight
+     pixels it reads as weight rather than as glow. */
+  text-shadow:
+    0 0 3px rgb(10 10 11 / 0.95),
+    0 0 7px rgb(10 10 11 / 0.6);
   transition: color 220ms var(--ease-out-expo);
   will-change: transform, opacity;
 }
