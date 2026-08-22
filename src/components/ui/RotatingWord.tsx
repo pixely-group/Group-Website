@@ -19,7 +19,7 @@ import { useReducedMotion } from "@/lib/hooks";
  *
  * The count is not fixed; the cycle is however many are listed here.
  */
-const WORDS = ["instantly", "differently", "your way"] as const;
+const WORDS = ["instantly", "securely", "your way"] as const;
 
 /** Per character, typing. A ramp, the same shape the erase runs — which is
  *  the half of this that already worked. Jitter was the wrong instinct: an
