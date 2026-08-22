@@ -642,10 +642,10 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
                 {/* Contactless, drawn rather than iconified. Dimmed rather
                     than removed when the card's contactless is switched off,
                     which is the one thing here that is not as it was. */}
-                {/* 26, up from 20 — the arcs scale with the box, so the
-                    stroke thickens with them and the mark keeps its weight
-                    rather than turning into wire. */}
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden
+                {/* 32, by steps from 20. The arcs scale with the box, so
+                    the stroke thickens with them and the mark keeps its
+                    weight rather than thinning into wire as it grows. */}
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden
                      style={{ opacity: nfcOff[card.id] ? 0.28 : 1, transition: "opacity 260ms ease" }}>
                   {[6, 10, 14].map((r, k) => (
                     <path key={r} d={`M${8 + k * 3} 7a7 7 0 0 1 0 10`} stroke="rgba(236,233,225,0.55)" strokeWidth="1.6" strokeLinecap="round" />
