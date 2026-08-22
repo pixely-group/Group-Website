@@ -910,6 +910,8 @@ html[data-cursor="on"] * {
 
 .globe-hud__shape {
   fill: rgb(45 70 255 / 0.28);
+  /* Lesotho is a hole in South Africa, and the outlines carry it as one. */
+  fill-rule: evenodd;
   stroke: var(--color-signal-lift);
   stroke-width: 1.4;
   stroke-linejoin: round;
