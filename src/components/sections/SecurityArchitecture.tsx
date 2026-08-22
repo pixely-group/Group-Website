@@ -21,8 +21,16 @@ const ACCENT = "#2d46ff";
  */
 const accentA = (a: number) =>
   `rgb(${parseInt(ACCENT.slice(1, 3), 16)} ${parseInt(ACCENT.slice(3, 5), 16)} ${parseInt(ACCENT.slice(5, 7), 16)} / ${a})`;
-const REFUSED = "#c2402d";
-const REFUSED_TEXT = "#9c2d18";
+/**
+ * The refusal red, cut to sit with the blue rather than beside it. The old
+ * pair sat at hue 8 and 62% saturation — a brick red, which against a 100%
+ * saturated electric blue reads as a colour from a different drawing. These
+ * are hue 350 at 81 and 80%: the same voltage, turned the other way round
+ * the wheel. #e01838 clears 3.97:1 on bone as a mark, #b81530 clears 5.43 as
+ * text and carries bone on it at the same ratio for the toggle's own pill.
+ */
+const REFUSED = "#e01838";
+const REFUSED_TEXT = "#b81530";
 
 type Layer = {
   index: string;
@@ -292,21 +300,13 @@ export default function SecurityArchitecture() {
          as though they refused it too. */
       const mark = beamElRef.current;
       if (mark) {
-        /* Contact, not arrival. The request runs down the spine, and on the
-           spine a plate begins at its top vertex — HH above the centre line
-           the register hangs on. Measuring to the centre held the mark blue
-           across the whole plate it had already landed on. Its own leading
-           edge is what touches, so the radius comes off too.
-
-           Divided by the squeeze, and that is the part worth being careful
-           about: closing the stack moves the plates but does not shrink
-           them. Positions are squeezed, sizes are not — so a gap of HH on
-           screen is HH/s in the coordinates this comparison is written in.
-           Subtracting a flat HH held the mark blue until it was eighty
-           pixels into the plate. */
-        const s = squeeze.current.s || 1;
-        const refused =
-          isDeclined && cy >= layerY(geo, BLOCK_AT) - (geo.HH + MARK_R) / s;
+/* The same question the plate asks itself, so the two cannot answer
+           it at different moments: the plate goes red when it becomes the
+           active layer, and the active layer is whichever one the request is
+           nearest. Geometry — contact with the plate's top vertex — turned
+           the mark first, because a plate is reached long before it is the
+           nearest thing to the request. */
+        const refused = isDeclined && nearestLayer(geo, cy) >= BLOCK_AT;
         const want = refused ? REFUSED : ACCENT;
         if (beamFill.current !== want) {
           beamFill.current = want;
@@ -972,7 +972,12 @@ export default function SecurityArchitecture() {
                    then on depends on where it has got to, so paintReadout
                    owns it. */
                 fill: ACCENT,
-                transition: "fill 400ms var(--ease-out-expo)",
+                /* The plate's own colours run on Tailwind's duration-500 and
+                   its default curve. Matched exactly, so the mark and the
+                   plate it has arrived at do not merely start together but
+                   finish together — 400ms on expo had the mark fully red
+                   while the plate was still two thirds of the way there. */
+                transition: "fill 500ms cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             />
           </svg>
