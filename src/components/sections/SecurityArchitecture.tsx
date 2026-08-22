@@ -118,6 +118,18 @@ const BLOCK_AT = 2;
 const MARK_R = 5.5;
 
 /**
+ * Where a refused request comes to rest.
+ *
+ * The plate's centre line is where the register hangs, not where the request
+ * should stop: closed up, the plate above overlaps this one from its own
+ * centre down to 4 units short of it, so a mark stopped on the centre sits
+ * under the lower tip of the plate above and reads as having stopped there.
+ * Four tenths of a plate's half-height further down clears that tip by about
+ * twenty units on screen and is still well inside this plate's face.
+ */
+const blockedAt = (g: Geo) => layerY(g, BLOCK_AT) + g.HH * 0.4;
+
+/**
  * Isometric plate geometry — a 2:1 diamond per layer.
  *
  * Two of them, because the register cannot share the drawing's rhythm at one
@@ -300,7 +312,7 @@ export default function SecurityArchitecture() {
          as though they refused it too. */
       const mark = beamElRef.current;
       if (mark) {
-/* The same question the plate asks itself, so the two cannot answer
+        /* The same question the plate asks itself, so the two cannot answer
            it at different moments: the plate goes red when it becomes the
            active layer, and the active layer is whichever one the request is
            nearest. Geometry — contact with the plate's top vertex — turned
@@ -372,7 +384,7 @@ export default function SecurityArchitecture() {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     gsap.to(ceiling.current, {
-      v: isDeclined ? layerY(geo, BLOCK_AT) : travelTo(geo),
+      v: isDeclined ? blockedAt(geo) : travelTo(geo),
       duration: reduced ? 0 : 0.7,
       ease: "expo.out",
       overwrite: true,
@@ -417,7 +429,11 @@ export default function SecurityArchitecture() {
       });
     } else {
       gsap.set(dot, { x, y });
-      gsap.to(dot, { opacity: 1, duration: reduced ? 0 : 0.25, overwrite: true });
+      gsap.to(dot, {
+        opacity: 1,
+        duration: reduced ? 0 : 0.25,
+        overwrite: true,
+      });
     }
     registerDotPlaced.current = true;
   }, [activeLayer, wide]);
@@ -487,7 +503,7 @@ export default function SecurityArchitecture() {
       beamOffset.current = 0;
       squeeze.current.s = 1;
       ceiling.current.v =
-        scenarioRef.current === "declined" ? layerY(g, BLOCK_AT) : to;
+        scenarioRef.current === "declined" ? blockedAt(g) : to;
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         // Plates assemble as the section arrives.
@@ -668,6 +684,72 @@ export default function SecurityArchitecture() {
 
   const faceSize = Math.round(geo.HH * 0.17);
 
+  /* Declared rather than written in place: it is rendered inside the
+     drawing's wrapper so it has something tall to stick within, and
+     there is only ever one of it — the sliding pill is measured off
+     these two buttons, so a second copy would have the ref and the
+     measurement disagreeing about which pair it is under. */
+  const replayControl = (
+    <>
+      {/* Wide, this sits at the far end of the authorisation's own row.
+        Below that it wraps onto a line of its own, and a control on its
+        own line has no business hugging the left edge when the drawing
+        it replays is centred — so it centres with the plates. On a
+        phone the label and the pill will not sit together in 327px
+        without the pill running into the margin, so they stack. */}
+      <span className="type-label text-(--faint)">Replay as</span>
+      {/* One pill that travels, rather than a background handed from
+          one button to the other. It is measured off the buttons rather
+          than positioned by hand, because "Approved" and "Refused" are
+          not the same width — a fixed half-and-half slide would sit
+          short on one side and overhang on the other. */}
+      <div
+        ref={toggleRef}
+        role="radiogroup"
+        aria-label="Authorisation outcome"
+        className="relative inline-flex items-center gap-1 rounded-(--radius-chip) border border-(--line-strong) p-1"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1 left-0 rounded-[calc(var(--radius-chip)-4px)]"
+          style={{
+            height: "calc(100% - 0.5rem)",
+            width: pill.w,
+            transform: `translateX(${pill.x}px)`,
+            background: declined ? REFUSED_TEXT : ACCENT,
+            transition:
+              "transform 420ms var(--ease-out-expo), width 420ms var(--ease-out-expo), background-color 300ms linear",
+            opacity: pill.w ? 1 : 0,
+          }}
+        />
+        {(
+          [
+            ["approved", "Approved"],
+            ["declined", "Refused"],
+          ] as const
+        ).map(([value, label]) => {
+          const on = scenario === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => setScenario(value)}
+              data-cursor="link"
+              data-toggle-option
+              className={`type-label relative z-10 rounded-[calc(var(--radius-chip)-4px)] px-3 py-2 transition-colors duration-300 ${
+                on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -714,220 +796,206 @@ export default function SecurityArchitecture() {
               <span className="text-[0.85rem] text-(--faint)">•••• 4021</span>
             </p>
           </div>
-
-          {/* Wide, this sits at the far end of the authorisation's own row.
-              Below that it wraps onto a line of its own, and a control on its
-              own line has no business hugging the left edge when the drawing
-              it replays is centred — so it centres with the plates. On a
-              phone the label and the pill will not sit together in 327px
-              without the pill running into the margin, so they stack. */}
-          <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:w-auto lg:justify-end">
-            <span className="type-label text-(--faint)">Replay as</span>
-            {/* One pill that travels, rather than a background handed from
-                one button to the other. It is measured off the buttons rather
-                than positioned by hand, because "Approved" and "Refused" are
-                not the same width — a fixed half-and-half slide would sit
-                short on one side and overhang on the other. */}
-            <div
-              ref={toggleRef}
-              role="radiogroup"
-              aria-label="Authorisation outcome"
-              className="relative inline-flex items-center gap-1 rounded-(--radius-chip) border border-(--line-strong) p-1"
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute top-1 left-0 rounded-[calc(var(--radius-chip)-4px)]"
-                style={{
-                  height: "calc(100% - 0.5rem)",
-                  width: pill.w,
-                  transform: `translateX(${pill.x}px)`,
-                  background: declined ? REFUSED_TEXT : ACCENT,
-                  transition:
-                    "transform 420ms var(--ease-out-expo), width 420ms var(--ease-out-expo), background-color 300ms linear",
-                  opacity: pill.w ? 1 : 0,
-                }}
-              />
-              {(
-                [
-                  ["approved", "Approved"],
-                  ["declined", "Refused"],
-                ] as const
-              ).map(([value, label]) => {
-                const on = scenario === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => setScenario(value)}
-                    data-cursor="link"
-                    data-toggle-option
-                    className={`type-label relative z-10 rounded-[calc(var(--radius-chip)-4px)] px-3 py-2 transition-colors duration-300 ${
-                      on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
-        {/* — The drawing. Wide, the register hangs on it at the same
-            fractions that place the plates; narrow, it follows underneath. */}
-        {/* One step below lg, four above it. The control drives this
-            drawing, so narrow they are one object and sit together; wide,
-            the register hangs beside the drawing instead and the space above
-            it is the section breathing. The drawing also carries 26 units of
-            blank above the first plate's tip, so the gap on screen is that
-            plus this. */}
-        <div data-stack className="relative mt-2 lg:mt-12">
-          <svg
-            viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
-            data-drawing
-            /* Capped at the width it is drawn at on a desktop, and centred.
+        {/* — The drawing, and the control that replays it.
+
+            One wrapper, because sticky needs something to stick inside: an
+            element sticks within its own parent's box, and the control's old
+            parent was the authorisation row — seventy pixels tall, so there
+            was nowhere for it to travel. Here its parent is the drawing's
+            full height, and it stays on screen for as long as there is a
+            stack to watch it against.
+
+            Wide it goes back where it was, at the row's right-hand end: the
+            row's bottom is this wrapper's top, and the control sat 40px down
+            a 76px row, so -36px puts it back to the pixel. It does not need
+            to stick there — the drawing and the register sit side by side at
+            that width and the control never leaves the screen anyway. */}
+        {/* The control carries its own ground below lg. Stuck, it stands
+            over the drawing, and the plates were reading straight through
+            the gap between the two options — a control you have to look
+            twice at is not one you will use while scrolling past. Wide it
+            sits on the section's own background and needs none.
+
+            flow-root, or the drawing's own top margin collapses through
+            this wrapper's top edge and takes the wrapper 48px down the page
+            with it — which is where the control's -36px was landing before,
+            48px below the row it is meant to sit in. */}
+        <div className="relative flow-root">
+          <div className="sticky top-[5.5rem] z-20 mt-10 flex flex-col items-center justify-center gap-3 rounded-(--radius-chip) bg-theme px-5 py-3 sm:flex-row sm:gap-4 lg:absolute lg:top-[-36px] lg:right-0 lg:z-0 lg:mt-0 lg:w-auto lg:justify-end lg:bg-transparent lg:p-0">
+            {replayControl}
+          </div>
+
+          {/* One step below lg, four above it. The control drives this
+              drawing, so narrow they are one object and sit together; wide,
+              the register hangs beside the drawing instead and the space
+              above it is the section breathing. The drawing also carries 26
+              units of blank above the first plate's tip, so the gap on
+              screen is that plus this. */}
+          <div data-stack className="relative mt-2 lg:mt-12">
+            <svg
+              viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
+              data-drawing
+              /* Capped at the width it is drawn at on a desktop, and centred.
                Full-bleed, a tablet rendered the stack at 688px — wider than
                the 532 it gets at 1321, so "the same as desktop" came out
                half again bigger than desktop, and every control on the page
                looked to have shrunk beside it. A phone is narrower than the
                cap, so nothing changes there. */
-            className="mx-auto w-full max-w-[33rem] lg:mx-0 lg:w-[44%] lg:max-w-none"
-            role="img"
-            aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
-          >
-            <defs>
-              <pattern
-                id="sec-hatch"
-                width="7"
-                height="7"
-                patternTransform="rotate(45)"
-                patternUnits="userSpaceOnUse"
-              >
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="7"
-                  stroke="currentColor"
-                  strokeWidth="0.6"
-                  opacity="0.28"
-                />
-              </pattern>
-              <filter
-                id="sec-glow"
-                x="-25%"
-                y="-70%"
-                width="150%"
-                height="240%"
-              >
-                <feGaussianBlur stdDeviation="9" />
-              </filter>
-            </defs>
-
-            {/* spine */}
-            <line
-              data-spine
-              x1={geo.CX}
-              y1={layerY(geo, 0) - geo.HH - 18}
-              x2={geo.CX}
-              y2={travelTo(geo) + 20}
-              stroke="currentColor"
-              strokeOpacity="0.22"
-              strokeDasharray="3 5"
-            />
-
-            {LAYERS.map((layer, i) => {
-              const refusedHere = declined && i === BLOCK_AT;
-              const unreached = declined && i > BLOCK_AT;
-              const active = activeLayer === i && !unreached;
-              const passed = i < activeLayer && !unreached;
-              const tone = refusedHere ? REFUSED : ACCENT;
-              const cy = layerY(geo, i);
-
-              // Surface, not just outline: cleared plates carry a tint of
-              // the trace and the one being crossed carries a lit face.
-              /* The active face used to take 0.2 of solid accent, which at
-                 this size read as a lit panel rather than a highlighted one. */
-              const surface = unreached ? 0 : active ? 0.07 : passed ? 0.04 : 0;
-              const hatch = unreached ? 0.12 : active ? 0.3 : passed ? 0.22 : 0.42;
-              const wall = unreached ? 0.04 : active ? 0.09 : passed ? 0.065 : 0.07;
-              const edge = active
-                ? { c: tone, o: 0.8, w: 1.5 }
-                : passed
-                  ? { c: tone, o: 0.55, w: 1.1 }
-                  : unreached
-                    ? { c: "currentColor", o: 0.16, w: 1 }
-                    : { c: "currentColor", o: 0.42, w: 1 };
-              const wallDepth = Math.round(geo.HH * 0.13);
-              // Lettering sits above the plate's centre line, because the
-              // plate below is drawn after this one and covers everything
-              // under its own top vertex — only 16 units below centre now
-              // that the run has closed up. It cannot go far up either: the
-              // diamond narrows, and the longest word (LEDGER, 70 units set)
-              // ran past the edge from 0.71·HH out. 0.55·HH out and 0.26·HH
-              // up clears both by more than 20. Expressed as the one point
-              // in the face's own plane that lands there.
-              //
-              // That placement is also what carries the word through the
-              // close. Set there, its lowest ink lands 5 units above the
-              // plate's own centre, while the plate below does not begin
-              // until 8 units past it even fully shut — 12 units of daylight
-              // at the tightest the stack gets. The lettering needs nothing
-              // done to it.
-              const faceX = -geo.HH * 0.535;
-              const faceY = geo.HH * 0.015;
-
-              return (
-                <g
-                  key={layer.name}
-                  data-plate
-                  onClick={() => selectLayer(i)}
-                  data-cursor={unreached ? undefined : "link"}
-                  className={unreached ? "cursor-default" : "cursor-pointer"}
+              className="mx-auto w-full max-w-[33rem] lg:mx-0 lg:w-[44%] lg:max-w-none"
+              role="img"
+              aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
+            >
+              <defs>
+                <pattern
+                  id="sec-hatch"
+                  width="7"
+                  height="7"
+                  patternTransform="rotate(45)"
+                  patternUnits="userSpaceOnUse"
                 >
-                  {/* The plate and everything drawn on it ride together, one
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="7"
+                    stroke="currentColor"
+                    strokeWidth="0.6"
+                    opacity="0.28"
+                  />
+                </pattern>
+                <filter
+                  id="sec-glow"
+                  x="-25%"
+                  y="-70%"
+                  width="150%"
+                  height="240%"
+                >
+                  <feGaussianBlur stdDeviation="9" />
+                </filter>
+              </defs>
+
+              {/* spine */}
+              <line
+                data-spine
+                x1={geo.CX}
+                y1={layerY(geo, 0) - geo.HH - 18}
+                x2={geo.CX}
+                y2={travelTo(geo) + 20}
+                stroke="currentColor"
+                strokeOpacity="0.22"
+                strokeDasharray="3 5"
+              />
+
+              {LAYERS.map((layer, i) => {
+                const refusedHere = declined && i === BLOCK_AT;
+                const unreached = declined && i > BLOCK_AT;
+                const active = activeLayer === i && !unreached;
+                const passed = i < activeLayer && !unreached;
+                const tone = refusedHere ? REFUSED : ACCENT;
+                const cy = layerY(geo, i);
+
+                // Surface, not just outline: cleared plates carry a tint of
+                // the trace and the one being crossed carries a lit face.
+                /* The active face used to take 0.2 of solid accent, which at
+                 this size read as a lit panel rather than a highlighted one. */
+                const surface = unreached
+                  ? 0
+                  : active
+                    ? 0.07
+                    : passed
+                      ? 0.04
+                      : 0;
+                const hatch = unreached
+                  ? 0.12
+                  : active
+                    ? 0.3
+                    : passed
+                      ? 0.22
+                      : 0.42;
+                const wall = unreached
+                  ? 0.04
+                  : active
+                    ? 0.09
+                    : passed
+                      ? 0.065
+                      : 0.07;
+                const edge = active
+                  ? { c: tone, o: 0.8, w: 1.5 }
+                  : passed
+                    ? { c: tone, o: 0.55, w: 1.1 }
+                    : unreached
+                      ? { c: "currentColor", o: 0.16, w: 1 }
+                      : { c: "currentColor", o: 0.42, w: 1 };
+                const wallDepth = Math.round(geo.HH * 0.13);
+                // Lettering sits above the plate's centre line, because the
+                // plate below is drawn after this one and covers everything
+                // under its own top vertex — only 16 units below centre now
+                // that the run has closed up. It cannot go far up either: the
+                // diamond narrows, and the longest word (LEDGER, 70 units set)
+                // ran past the edge from 0.71·HH out. 0.55·HH out and 0.26·HH
+                // up clears both by more than 20. Expressed as the one point
+                // in the face's own plane that lands there.
+                //
+                // That placement is also what carries the word through the
+                // close. Set there, its lowest ink lands 5 units above the
+                // plate's own centre, while the plate below does not begin
+                // until 8 units past it even fully shut — 12 units of daylight
+                // at the tightest the stack gets. The lettering needs nothing
+                // done to it.
+                const faceX = -geo.HH * 0.535;
+                const faceY = geo.HH * 0.015;
+
+                return (
+                  <g
+                    key={layer.name}
+                    data-plate
+                    onClick={() => selectLayer(i)}
+                    data-cursor={unreached ? undefined : "link"}
+                    className={unreached ? "cursor-default" : "cursor-pointer"}
+                  >
+                    {/* The plate and everything drawn on it ride together, one
                       group inside the group the entrance tween owns — two
                       transforms, two writers, neither able to clear the
                       other. */}
-                  <g data-plate-lift>
-                    {active && (
-                      /* The blurred bloom under the live plate. This, not the
+                    <g data-plate-lift>
+                      {active && (
+                        /* The blurred bloom under the live plate. This, not the
                          face fill, is what made the highlight read as strong —
                          half-opacity accent spread by a 9px blur. */
+                        <polygon
+                          points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                          fill={tone}
+                          fillOpacity="0.13"
+                          filter="url(#sec-glow)"
+                        />
+                      )}
+                      {/* side wall, gives the plate thickness */}
+                      <path
+                        d={`M ${geo.CX - geo.HW} ${cy} L ${geo.CX} ${cy + geo.HH} L ${geo.CX + geo.HW} ${cy} L ${geo.CX + geo.HW} ${cy + wallDepth} L ${geo.CX} ${cy + geo.HH + wallDepth} L ${geo.CX - geo.HW} ${cy + wallDepth} Z`}
+                        fill={passed || active ? tone : "currentColor"}
+                        fillOpacity={wall}
+                        className="transition-all duration-500"
+                      />
                       <polygon
                         points={diamond(geo.CX, cy, geo.HW, geo.HH)}
                         fill={tone}
-                        fillOpacity="0.13"
-                        filter="url(#sec-glow)"
+                        fillOpacity={surface}
+                        className="transition-all duration-500"
                       />
-                    )}
-                    {/* side wall, gives the plate thickness */}
-                    <path
-                      d={`M ${geo.CX - geo.HW} ${cy} L ${geo.CX} ${cy + geo.HH} L ${geo.CX + geo.HW} ${cy} L ${geo.CX + geo.HW} ${cy + wallDepth} L ${geo.CX} ${cy + geo.HH + wallDepth} L ${geo.CX - geo.HW} ${cy + wallDepth} Z`}
-                      fill={passed || active ? tone : "currentColor"}
-                      fillOpacity={wall}
-                      className="transition-all duration-500"
-                    />
-                    <polygon
-                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                      fill={tone}
-                      fillOpacity={surface}
-                      className="transition-all duration-500"
-                    />
-                    <polygon
-                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                      fill="url(#sec-hatch)"
-                      fillOpacity={hatch}
-                      className="transition-[fill-opacity] duration-500"
-                    />
-                    {/* Set in the plane of the face, the way a drawing would
+                      <polygon
+                        points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                        fill="url(#sec-hatch)"
+                        fillOpacity={hatch}
+                        className="transition-[fill-opacity] duration-500"
+                      />
+                      {/* Set in the plane of the face, the way a drawing would
                         letter it. This used to be wide-only, because the
                         narrow stack overlapped until the clear band was
                         thinner than the word — a problem that came with the
                         second geometry and left with it. */}
-                    <text
+                      <text
                         transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
                         x={faceX}
                         y={faceY}
@@ -940,149 +1008,150 @@ export default function SecurityArchitecture() {
                           unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
                         }
                         className="transition-all duration-500"
-                    >
-                      {layer.face}
-                    </text>
-                    <polygon
-                      points={diamond(geo.CX, cy, geo.HW, geo.HH)}
-                      fill="none"
-                      stroke={edge.c}
-                      strokeOpacity={edge.o}
-                      strokeWidth={edge.w}
-                      strokeDasharray={unreached ? "4 6" : undefined}
-                      className="transition-all duration-500"
-                    />
+                      >
+                        {layer.face}
+                      </text>
+                      <polygon
+                        points={diamond(geo.CX, cy, geo.HW, geo.HH)}
+                        fill="none"
+                        stroke={edge.c}
+                        strokeOpacity={edge.o}
+                        strokeWidth={edge.w}
+                        strokeDasharray={unreached ? "4 6" : undefined}
+                        className="transition-all duration-500"
+                      />
+                    </g>
                   </g>
-                </g>
-              );
-            })}
+                );
+              })}
 
-            <ellipse
-              ref={pulseRef}
-              cx={geo.CX}
-              cy={layerY(geo, 0)}
-              rx="12"
-              ry="6"
-              fill="none"
-              stroke={declined ? REFUSED : ACCENT}
-              strokeWidth="1.2"
-              opacity="0"
-            />
-            <circle
-              ref={beamElRef}
-              data-beam
-              cx={geo.CX}
-              cy={travelFrom(geo)}
-              r={MARK_R}
-              opacity="0"
-              style={{
-                /* Only the starting colour. Which colour it should be from
+              <ellipse
+                ref={pulseRef}
+                cx={geo.CX}
+                cy={layerY(geo, 0)}
+                rx="12"
+                ry="6"
+                fill="none"
+                stroke={declined ? REFUSED : ACCENT}
+                strokeWidth="1.2"
+                opacity="0"
+              />
+              <circle
+                ref={beamElRef}
+                data-beam
+                cx={geo.CX}
+                cy={travelFrom(geo)}
+                r={MARK_R}
+                opacity="0"
+                style={{
+                  /* Only the starting colour. Which colour it should be from
                    then on depends on where it has got to, so paintReadout
                    owns it. */
-                fill: ACCENT,
-                /* The plate's own colours run on Tailwind's duration-500 and
+                  fill: ACCENT,
+                  /* The plate's own colours run on Tailwind's duration-500 and
                    its default curve. Matched exactly, so the mark and the
                    plate it has arrived at do not merely start together but
                    finish together — 400ms on expo had the mark fully red
                    while the plate was still two thirds of the way there. */
-                transition: "fill 500ms cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            />
-          </svg>
+                  transition: "fill 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              />
+            </svg>
 
-          <ol
-            ref={registerRef}
-            className="relative mt-10 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0"
-          >
-            <span
-              ref={registerDotRef}
-              aria-hidden
-              style={{
-                width: CURSOR_DOT_LINK_PX,
-                height: CURSOR_DOT_LINK_PX,
-                opacity: 0,
-              }}
-              className="pointer-events-none absolute top-0 left-0 z-10 rounded-full bg-accent"
-            />
-            {LAYERS.map((layer, i) => {
-              const refusedHere = declined && i === BLOCK_AT;
-              const unreached = declined && i > BLOCK_AT;
-              const on = activeLayer === i && !unreached;
-              const stamped = i < reached && !unreached;
-              return (
-                <li
-                  key={layer.name}
-                  style={{ "--row-top": rowTop(geo, i) } as React.CSSProperties}
-                  className="relative border-t border-(--line) last:border-b lg:pointer-events-auto lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() => selectLayer(i)}
-                    aria-current={on ? "true" : undefined}
-                    disabled={unreached}
-                    data-cursor={unreached ? undefined : "link"}
-                    className={`group block w-full py-5 pr-1 pl-3 text-left transition-opacity duration-500 lg:py-0 ${
-                      unreached
-                        ? "opacity-30"
-                        : on
-                          ? "opacity-100"
-                          : "opacity-60 hover:opacity-90"
-                    }`}
+            <ol
+              ref={registerRef}
+              className="relative mt-10 lg:pointer-events-none lg:absolute lg:inset-0 lg:mt-0"
+            >
+              <span
+                ref={registerDotRef}
+                aria-hidden
+                style={{
+                  width: CURSOR_DOT_LINK_PX,
+                  height: CURSOR_DOT_LINK_PX,
+                  opacity: 0,
+                }}
+                className="pointer-events-none absolute top-0 left-0 z-10 rounded-full bg-accent"
+              />
+              {LAYERS.map((layer, i) => {
+                const refusedHere = declined && i === BLOCK_AT;
+                const unreached = declined && i > BLOCK_AT;
+                const on = activeLayer === i && !unreached;
+                const stamped = i < reached && !unreached;
+                return (
+                  <li
+                    key={layer.name}
+                    style={
+                      { "--row-top": rowTop(geo, i) } as React.CSSProperties
+                    }
+                    className="relative border-t border-(--line) last:border-b lg:pointer-events-auto lg:absolute lg:top-(--row-top) lg:right-0 lg:left-[48%] lg:-translate-y-3.5 lg:border-0 lg:last:border-0"
                   >
-                    {/* h-7 at lg fixes the title's centre at 14px from the
+                    <button
+                      type="button"
+                      onClick={() => selectLayer(i)}
+                      aria-current={on ? "true" : undefined}
+                      disabled={unreached}
+                      data-cursor={unreached ? undefined : "link"}
+                      className={`group block w-full py-5 pr-1 pl-3 text-left transition-opacity duration-500 lg:py-0 ${
+                        unreached
+                          ? "opacity-30"
+                          : on
+                            ? "opacity-100"
+                            : "opacity-60 hover:opacity-90"
+                      }`}
+                    >
+                      {/* h-7 at lg fixes the title's centre at 14px from the
                         entry's top — the offset both the hairline above and
                         the entry's own translate are written against. */}
-                    <div className="flex items-baseline justify-between gap-4 lg:h-7 lg:items-center">
-                      <h3
-                        data-reg-title
-                        className={`flex items-baseline gap-2.5 text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
-                          on
-                            ? refusedHere
-                              ? ""
-                              : "text-accent"
-                            : "group-hover:text-accent"
-                        }`}
-                        style={
-                          on && refusedHere ? { color: REFUSED_TEXT } : undefined
-                        }
-                      >
-                        {/* The layer's index, off the plate now that no
+                      <div className="flex items-baseline justify-between gap-4 lg:h-7 lg:items-center">
+                        <h3
+                          data-reg-title
+                          className={`flex items-baseline gap-2.5 text-[1.05rem] font-semibold tracking-[-0.01em] transition-colors duration-300 ${
+                            on
+                              ? refusedHere
+                                ? ""
+                                : "text-accent"
+                              : "group-hover:text-accent"
+                          }`}
+                          style={
+                            on && refusedHere
+                              ? { color: REFUSED_TEXT }
+                              : undefined
+                          }
+                        >
+                          {/* The layer's index, off the plate now that no
                             line joins the two. Left uncoloured so it takes
                             the title's own state and sits a shade behind
                             it. */}
-                        <span className="type-label text-[0.62rem] opacity-45">
-                          {layer.index}
-                        </span>
-                        {layer.name}
-                      </h3>
-                    </div>
-                    {/* The verdict sits on the note's line, not the title's.
+                          <span className="type-label text-[0.62rem] opacity-45">
+                            {layer.index}
+                          </span>
+                          {layer.name}
+                        </h3>
+                      </div>
+                      {/* The verdict sits on the note's line, not the title's.
                         It is what the layer did, and the note is what the
                         layer is for — they belong on the same level. On the
                         title's line it also had to share a narrow row with
                         the name, which on a phone left the two of them at
                         opposite edges with nothing in between. */}
-                    {/* The verdict and the note.
+                      <p className="mt-1.5 text-[0.9rem] leading-relaxed text-(--muted) lg:mt-1">
+                        {layer.note}
+                      </p>
+                      <p className="type-label mt-3 text-(--faint) lg:mt-2">
+                        {layer.spec}
+                      </p>
+                      {/* The verdict closes the entry rather than sharing a
+                        line with the note. Beside the note it had to be
+                        aligned to it, sized against it and given room by it;
+                        on its own line underneath it is simply the last
+                        thing the entry says, which is what it is. Same
+                        placement at every width.
 
-                        On a phone the verdict takes its own line under the
-                        title: 170px of a 311px line leaves the note nothing
-                        to write in, and floating it only moved the problem
-                        into the note's first line.
-
-                        From sm they share a line, and share it by baseline
-                        rather than by box. A float sits at the top of the
-                        line box, and these two are 10.4px mono against
-                        14.4px Archivo on a 23.4px leading — so their tops
-                        agreed to within 3.5px while their baselines were
-                        10.6px apart, which is what "not quite aligned"
-                        looks like. items-baseline is the browser doing it
-                        exactly, at any size, without a nudge to maintain. */}
-                    <div className="mt-1.5 sm:flex sm:items-baseline sm:justify-between sm:gap-6 lg:mt-1">
-                      {/* Always rendered so it can fade in — a mounting
-                          element has nothing to transition from. */}
+                        Always rendered so it can fade in — a mounting
+                        element has nothing to transition from. */}
                       <span
                         aria-hidden={!stamped}
-                        className={`type-label block text-[0.65rem] transition-all duration-500 sm:order-2 sm:shrink-0 ${
+                        className={`type-label mt-3 block text-[0.65rem] transition-all duration-500 lg:mt-2 ${
                           stamped
                             ? "translate-x-0 opacity-100"
                             : "-translate-x-1 opacity-0"
@@ -1094,18 +1163,12 @@ export default function SecurityArchitecture() {
                         {refusedHere ? layer.fail : layer.pass} ·{" "}
                         {layer.ms.toFixed(1)} ms
                       </span>
-                      <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted) sm:order-1 sm:mt-0">
-                        {layer.note}
-                      </p>
-                    </div>
-                    <p className="type-label mt-3 text-(--faint) lg:mt-2">
-                      {layer.spec}
-                    </p>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         </div>
 
         {/* — Where the time actually goes */}
@@ -1196,7 +1259,10 @@ export default function SecurityArchitecture() {
                 className="type-label absolute text-[0.6rem] text-(--faint)"
                 style={{
                   left: `${(CUMULATIVE[i] / OURS_MS) * 100}%`,
-                  transform: i === LAYERS.length - 2 ? "translateX(-100%)" : "translateX(-50%)",
+                  transform:
+                    i === LAYERS.length - 2
+                      ? "translateX(-100%)"
+                      : "translateX(-50%)",
                 }}
               >
                 {layer.index}
