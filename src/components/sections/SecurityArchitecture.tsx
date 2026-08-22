@@ -132,23 +132,19 @@ type Geo = {
 // margin. Changing a gap has to carry the drawing's height — and with it
 // every register entry, which hangs on a fraction of that height — or the
 // two silently part company.
-const NARROW: Geo = {
-  HW: 120,
-  HH: 60,
-  GAP: 74,
-  CX: 210,
-  TOP: 84,
-  VB_W: 470,
-  VB_H: 84 + 74 * (LAYERS.length - 1) + 60 + 124,
-};
-
+// One drawing, at every width. There were two — a NARROW set with smaller
+// plates and a tighter gap, on the reasoning that a phone has less room. It
+// does, but the drawing is an SVG in a full-width box: it scales. All the
+// second geometry bought was a different picture, close enough to look like
+// the same one drawn badly, and tight enough that the plates overlapped and
+// the face lettering had to be dropped. So a phone got a stack with no words
+// on it and a spacing nobody chose.
+//
 // The gap is not the plates' to give. Wide, every register entry hangs at the
 // same fraction of the drawing that places its plate, and those entries are
 // 74px tall against a 103px pitch — closing the stack up would run the words
-// of one layer into the next. So the plates come down and the spacing stays,
-// which is also the only reading of "smaller plates" that survives at 1024,
-// where the drawing is scaled down but the type is not.
-const WIDE: Geo = {
+// of one layer into the next. So the plates come down and the spacing stays.
+const PLATES: Geo = {
   HW: 144,
   HH: 72,
   GAP: 118,
@@ -223,7 +219,7 @@ type Scenario = "approved" | "declined";
 
 export default function SecurityArchitecture() {
   const wide = useMediaQuery("(min-width: 1024px)");
-  const geo = wide ? WIDE : NARROW;
+  const geo = PLATES;
 
   const sectionRef = useRef<HTMLElement>(null);
   const [activeLayer, setActiveLayer] = useState(0);
@@ -251,9 +247,9 @@ export default function SecurityArchitecture() {
   // Where the scroll says the request should be. The timeline drives this
   // rather than the element, so a held selection can take the element over
   // without the scrub being disabled and left stale.
-  const beamPos = useRef({ cy: travelFrom(NARROW), opacity: 0 });
+  const beamPos = useRef({ cy: travelFrom(PLATES), opacity: 0 });
   /** What is actually drawn. */
-  const beamRender = useRef({ cy: travelFrom(NARROW) });
+  const beamRender = useRef({ cy: travelFrom(PLATES) });
   /** Distance between the drawn position and the scroll's own, captured the
    *  moment control returns and then kept. Without it the request eases
    *  toward wherever the scroll target sat when the layer was picked —
@@ -261,7 +257,7 @@ export default function SecurityArchitecture() {
   const beamOffset = useRef(0);
   /** How far down the request may go. Tweened rather than switched so that
    *  refusing pulls it back up to policy instead of snapping. */
-  const ceiling = useRef({ v: travelTo(NARROW) });
+  const ceiling = useRef({ v: travelTo(PLATES) });
   /** How far the stack has closed up, 1 being open. Scrubbed by the same
    *  timeline that walks the request down, so the two share one progress. */
   const squeeze = useRef({ s: 1 });
@@ -470,7 +466,15 @@ export default function SecurityArchitecture() {
         // own: scrubbed against the drawing, not the section — anchored to
         // the section it began travelling while only the heading was on
         // screen, so most of its journey happened out of sight.
-        const stack = section.querySelector("[data-stack]") ?? section;
+        /* The drawing itself, not the block that holds it. Below lg the
+           register is in the flow under the drawing rather than absolutely
+           placed beside it, so [data-stack] is the drawing plus seven
+           hundred pixels of list — and a scrub anchored to that box spends
+           most of its range with the plates already scrolled off the top.
+           Which is why the animation ran to the end on a phone with the last
+           two plates out of sight. Wide, the register is absolute and adds
+           no height, so this is the same box it always was. */
+        const stack = section.querySelector("[data-drawing]") ?? section;
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: stack,
@@ -665,7 +669,13 @@ export default function SecurityArchitecture() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Wide, this sits at the far end of the authorisation's own row.
+              Below that it wraps onto a line of its own, and a control on its
+              own line has no business hugging the left edge when the drawing
+              it replays is centred — so it centres with the plates. On a
+              phone the label and the pill will not sit together in 327px
+              without the pill running into the margin, so they stack. */}
+          <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:w-auto lg:justify-end">
             <span className="type-label text-(--faint)">Replay as</span>
             {/* One pill that travels, rather than a background handed from
                 one button to the other. It is measured off the buttons rather
@@ -724,6 +734,7 @@ export default function SecurityArchitecture() {
         <div data-stack className="relative mt-12">
           <svg
             viewBox={`0 0 ${geo.VB_W} ${geo.VB_H}`}
+            data-drawing
             className="w-full lg:w-[44%]"
             role="img"
             aria-label="Isometric diagram: application, identity, policy, ledger and rails layers stacked in order"
@@ -854,12 +865,11 @@ export default function SecurityArchitecture() {
                       className="transition-[fill-opacity] duration-500"
                     />
                     {/* Set in the plane of the face, the way a drawing would
-                        letter it — but only where there is a face to letter.
-                        In the tight stack the plates overlap until the clear
-                        band is thinner than the word, and the register
-                        directly beneath already names every layer. */}
-                    {wide && (
-                      <text
+                        letter it. This used to be wide-only, because the
+                        narrow stack overlapped until the clear band was
+                        thinner than the word — a problem that came with the
+                        second geometry and left with it. */}
+                    <text
                         transform={`matrix(1 0.5 -1 0.5 ${geo.CX} ${cy})`}
                         x={faceX}
                         y={faceY}
@@ -872,10 +882,9 @@ export default function SecurityArchitecture() {
                           unreached ? 0.2 : active ? 0.9 : passed ? 0.6 : 0.34
                         }
                         className="transition-all duration-500"
-                      >
-                        {layer.face}
-                      </text>
-                    )}
+                    >
+                      {layer.face}
+                    </text>
                     <polygon
                       points={diamond(geo.CX, cy, geo.HW, geo.HH)}
                       fill="none"
