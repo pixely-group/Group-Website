@@ -197,14 +197,29 @@
     animation: wm-blink 1.1s steps(1) infinite;
   }
 }
+/* The caret blinks only when the full name is on show and untouched.
+   Everything else stills it: a hand on the logo, letters still being
+   typed, the gathered bar where the word has closed to P., and the
+   compact menu holding at P. — a lone P with a flashing dot reads as a
+   fault, not a caret. */
+.wordmark:hover .wm-caret,
+.wm-caret.wm-typing,
+.nav-ground[data-wm-compact] .wm-caret,
+.nav-ground[data-wm-short] .wm-caret {
+  animation: none;
+}
 
 /* The wordmark's own dot is the travelling marker's home. While the marker
    is away at a menu item the home stays empty — opacity, not display, so it
    keeps reserving its place in the word for the return. Scoped to the nav
-   ground: the footer's wordmark keeps its dot regardless. */
-.nav-ground[data-dot-away] .wordmark-home {
-  opacity: 0;
-  transition: opacity 0.15s linear;
+   ground, so the footer's wordmark keeps its dot regardless — and to the
+   widths where the menu items exist at all: below lg there is nowhere for
+   the dot to go, so it never leaves the word. */
+@media (width >= 64rem) {
+  .nav-ground[data-dot-away] .wordmark-home {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+  }
 }
 
 /* The wordmark's tail — the IXELY between the P and the dot. Collapses as

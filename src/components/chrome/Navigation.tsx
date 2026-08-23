@@ -101,20 +101,19 @@ export const NAV_GEOMETRY = {
  * chapter the bar is riding over, the same way the nav's marker dot does.
  */
 export function Wordmark({ className = "" }: { className?: string }) {
-  /* The logo is a line being typed. P and the dot are always there — the
-     server renders exactly that, so the first paint is P. — and after a
-     beat the dot types the rest of the name. Hovering erases back down to
-     the P, letter by letter, the dot backing over them; leaving types them
-     out again. The dot blinks like the caret it is.
+  /* The logo is a line being typed, once. P and the dot are always there —
+     the server renders exactly that, so the first paint is P. — and after a
+     beat the dot types the rest of the name and rests. The dot blinks like
+     the caret it is; hovering the logo stills it (CSS, not state), and
+     that is all hover does.
 
      The typed layer sits on a ghost of the full word, so the bar never
-     moves: the footprint is always PIXELY-and-dot, whatever is currently
-     typed. Both tails fold with --nav-p, so the gathered pill still closes
-     to P. — the ghost gives back the space exactly as the letters go.
-
-     The typing stands down in two places: while the travelling dot is away
-     at a menu item (an erase with no pen is just letters vanishing), and
-     while the compact menu is open, where the logo holds at P. */
+     moves while the name is typed: the footprint is always PIXELY-and-dot.
+     Both tails fold with --nav-p, so the gathered pill still closes to P.
+     — the ghost gives back the space exactly as the letters go. Below lg
+     the travelling marker has no menu items to visit, so the dot never
+     leaves the word there — that part lives in the stylesheet, scoped to
+     the widths where the links exist. */
   const TAIL = "ixely";
   const [shown, setShown] = useState(0);
   const shownRef = useRef(0);
@@ -165,25 +164,6 @@ export function Wordmark({ className = "" }: { className?: string }) {
     };
   }, [run, TAIL.length]);
 
-  /** The states in which the wordmark holds still. */
-  const held = () => {
-    const ground = hostRef.current?.closest(".nav-ground");
-    return (
-      !!ground &&
-      (ground.hasAttribute("data-dot-away") ||
-        ground.hasAttribute("data-wm-short"))
-    );
-  };
-  const enter = () => {
-    if (held() || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-      return;
-    run(0);
-  };
-  const leave = () => {
-    if (held()) return;
-    run(TAIL.length);
-  };
-
   const dotStyle = {
     width: "0.17em",
     height: "0.17em",
@@ -193,8 +173,6 @@ export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span
       ref={hostRef}
-      onPointerEnter={enter}
-      onPointerLeave={leave}
       className={`wordmark type-headline relative inline-flex items-baseline text-[1.1rem] tracking-[0.06em] ${className}`}
     >
       <span className="sr-only">Pixely</span>
@@ -213,7 +191,9 @@ export function Wordmark({ className = "" }: { className?: string }) {
         P<span className="wordmark-tail">{TAIL.slice(0, shown)}</span>
         <span
           data-wm-dot
-          className="wordmark-home wm-caret inline-block bg-accent"
+          className={`wordmark-home wm-caret inline-block bg-accent ${
+            shown < TAIL.length ? "wm-typing" : ""
+          }`}
           style={dotStyle}
         />
       </span>
@@ -352,6 +332,14 @@ export default function Navigation() {
       if (menuFrozen.current) return;
       navP.current = p;
       header.style.setProperty("--nav-p", p.toFixed(4));
+      /* The tail's letters have faded by 0.75 (their opacity is
+         1.5 - 2p), so from here the logo reads as P. alone — and the
+         caret only blinks under the full name, so the stylesheet needs to
+         know. Toggled, not set every frame. */
+      const pOnly = p >= 0.75;
+      if (pOnly !== header.hasAttribute("data-wm-compact")) {
+        header.toggleAttribute("data-wm-compact", pOnly);
+      }
       // Past the point where it has faded out. Compared against a ref because
       // this runs on every scrubbed frame.
       const gone = p > 0.86;
