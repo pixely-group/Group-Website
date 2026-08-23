@@ -23,15 +23,29 @@ const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   loading: () => <HeroPoster />,
 });
 
-/** The scroll cue. Rendered twice and shown once: below sm it rides beside
- *  the buttons, from sm up it sits under the mission pillars on the page's
- *  bottom edge. Two nodes rather than one moved by CSS because the two homes
- *  are in different branches of the meta row, and the thing it draws is a
- *  pure CSS keyframe — no state, no measurement, nothing to keep in sync. */
-function ScrollHint({ className = "" }: { className?: string }) {
+/** The scroll cue. Rendered twice and shown once: below sm it stands on end
+ *  in the gutter beside the phone, from sm up it lies flat under the mission
+ *  pillars on the page's bottom edge. Two nodes rather than one moved by CSS
+ *  because the two homes are in different branches of the section, and the
+ *  thing it draws is a pure CSS keyframe — no state, no measurement, nothing
+ *  to keep in sync. Turning it costs the word a writing-mode and nothing
+ *  else: the rule is 1px wide and reads the same either way. */
+function ScrollHint({
+  className = "",
+  vertical = false,
+}: {
+  className?: string;
+  vertical?: boolean;
+}) {
   return (
-    <div className={`items-center gap-3 ${className}`}>
-      <span className="type-label text-(--faint)">Scroll</span>
+    <div
+      className={`items-center gap-3 ${vertical ? "flex-col" : ""} ${className}`}
+    >
+      <span
+        className={`type-label text-(--faint) ${vertical ? "[writing-mode:vertical-rl]" : ""}`}
+      >
+        Scroll
+      </span>
       <span className="scroll-hint relative h-10 w-px overflow-hidden bg-(--line)">
         <span className="absolute inset-x-0 h-1/2 bg-accent" />
       </span>
@@ -283,25 +297,23 @@ export default function Hero() {
               verification and intelligent financial services, built for
               Algeria.
             </p>
-            {/* Below sm the two buttons stack — they always did, there is no
-                room for them side by side on a 375px screen — but they used
-                to stack ragged, 146 wide over 224. w-fit sizes the column to
-                the longer label and items-stretch gives that width to both.
-                From sm up they fit on one line and the row returns.
+            {/* Below sm the two buttons stack — there is no room for 147 and
+                224 side by side on a 375px screen — and w-fit plus
+                items-stretch gives them both the longer label's width. The
+                column then centres: the eyebrow, headline and paragraph all
+                run the full measure, so the buttons and the phone are the
+                only things in the hero narrow enough to sit visibly off
+                centre, and mx-auto puts the pair on the page's axis.
 
-                The scroll cue rides on the right of that column: the buttons
-                only need 224 of the 327 available, and the cue was costing a
-                row of its own underneath. */}
-            <div className="mt-6 flex items-end justify-between gap-6 sm:block">
-              <div className="flex w-fit flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-                <MagneticButton href="#start" size="md">
-                  Get started
-                </MagneticButton>
-                <MagneticButton href="#product" variant="outline" size="md">
-                  Explore the platform
-                </MagneticButton>
-              </div>
-              <ScrollHint className="flex shrink-0 sm:hidden" />
+                From sm up they fit on one line and the ranged-left wrapping
+                row returns. */}
+            <div className="mx-auto mt-6 flex w-fit flex-col items-stretch gap-3 sm:mx-0 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+              <MagneticButton href="#start" size="md">
+                Get started
+              </MagneticButton>
+              <MagneticButton href="#product" variant="outline" size="md">
+                Explore the platform
+              </MagneticButton>
             </div>
           </div>
 
@@ -342,10 +354,12 @@ export default function Hero() {
             leaves and the device hangs from its top at a height of its own,
             free to exceed it.
 
-            Right-aligned, not centred. Every other line in the hero is flush
-            to the left margin and the device was floating 45px off it, on no
-            grid at all — and the wide layout already says copy left, phone
-            right. Its right edge now lands on the same margin the text does.
+            Centred below sm, right-aligned from sm up. On a phone the copy
+            all runs the full measure, so the device and the buttons are the
+            only things narrow enough to read as off centre, and they share
+            the page's axis. On a tablet the pillars and the cue hold a right
+            column and the device joins it, landing its right edge on the
+            same margin they keep.
 
             The band it used to rise into is gone: the scroll cue moved up
             beside the buttons, so below sm the copy now ends at the buttons
@@ -358,7 +372,18 @@ export default function Hero() {
             renders this. */}
         {!beside && (
           <div className="relative mt-[clamp(44px,7.9vh,64px)] min-h-[120px] flex-1 sm:mt-[clamp(20px,4.4vh,36px)]">
-            <div className="absolute inset-x-0 top-0 flex justify-end">
+            {/* The cue stands in the gutter the centred phone leaves. A 237
+                phone on a 327 measure leaves 45px either side and nothing to
+                put in it; on end, the cue is ~14 wide and costs no height at
+                all — where anything on the centre axis would have cost 60
+                and broken the axis the buttons and phone now share. Pinned
+                to the slot's top, so it sits level with the phone's shoulder
+                and well clear of the seam fade at the fold. */}
+            <ScrollHint
+              vertical
+              className="absolute top-0 left-0 flex sm:hidden"
+            />
+            <div className="absolute inset-x-0 top-0 flex justify-center sm:justify-end">
               <HeroDevice
                 className="h-[clamp(400px,62vh,640px)]"
                 shift={0}
