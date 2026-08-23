@@ -101,23 +101,120 @@ export const NAV_GEOMETRY = {
  * chapter the bar is riding over, the same way the nav's marker dot does.
  */
 export function Wordmark({ className = "" }: { className?: string }) {
+  /* The logo is a line being typed. P and the dot are always there — the
+     server renders exactly that, so the first paint is P. — and after a
+     beat the dot types the rest of the name. Hovering erases back down to
+     the P, letter by letter, the dot backing over them; leaving types them
+     out again. The dot blinks like the caret it is.
+
+     The typed layer sits on a ghost of the full word, so the bar never
+     moves: the footprint is always PIXELY-and-dot, whatever is currently
+     typed. Both tails fold with --nav-p, so the gathered pill still closes
+     to P. — the ghost gives back the space exactly as the letters go.
+
+     The typing stands down in two places: while the travelling dot is away
+     at a menu item (an erase with no pen is just letters vanishing), and
+     while the compact menu is open, where the logo holds at P. */
+  const TAIL = "ixely";
+  const [shown, setShown] = useState(0);
+  const shownRef = useRef(0);
+  const targetRef = useRef(TAIL.length);
+  const timer = useRef(0);
+  const hostRef = useRef<HTMLSpanElement>(null);
+
+  /* The stepper lives in a ref so the timeout chain can call itself
+     without the closure-ordering knot a self-referencing callback ties. */
+  const stepRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    stepRef.current = () => {
+      const d = targetRef.current - shownRef.current;
+      if (d === 0) return;
+      shownRef.current += Math.sign(d);
+      setShown(shownRef.current);
+      // Typing is deliberate, erasing is quicker — the same asymmetry the
+      // hero's rotating word keeps.
+      timer.current = window.setTimeout(() => stepRef.current(), d > 0 ? 92 : 48);
+    };
+  }, []);
+  const run = useCallback((target: number) => {
+    targetRef.current = target;
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => stepRef.current(), 40);
+  }, []);
+
+  useEffect(() => {
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    // Reduced motion gets the full name straight away; otherwise a blink's
+    // worth of caret, then the typing.
+    const t = window.setTimeout(
+      () => {
+        if (reduced) {
+          shownRef.current = TAIL.length;
+          setShown(TAIL.length);
+        } else {
+          run(TAIL.length);
+        }
+      },
+      reduced ? 0 : 700,
+    );
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(timer.current);
+    };
+  }, [run, TAIL.length]);
+
+  /** The states in which the wordmark holds still. */
+  const held = () => {
+    const ground = hostRef.current?.closest(".nav-ground");
+    return (
+      !!ground &&
+      (ground.hasAttribute("data-dot-away") ||
+        ground.hasAttribute("data-wm-short"))
+    );
+  };
+  const enter = () => {
+    if (held() || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+    run(0);
+  };
+  const leave = () => {
+    if (held()) return;
+    run(TAIL.length);
+  };
+
+  const dotStyle = {
+    width: "0.17em",
+    height: "0.17em",
+    marginLeft: "0.12em",
+  } as const;
+
   return (
     <span
-      className={`wordmark type-headline inline-flex items-baseline text-[1.1rem] tracking-[0.06em] ${className}`}
+      ref={hostRef}
+      onPointerEnter={enter}
+      onPointerLeave={leave}
+      className={`wordmark type-headline relative inline-flex items-baseline text-[1.1rem] tracking-[0.06em] ${className}`}
     >
       <span className="sr-only">Pixely</span>
-      <span aria-hidden style={{ display: "contents" }}>
-        {/* The word is one clipped wrapper so the load and hover animation
-            can write it: the wrapper opens from zero width and the dot —
-            sitting after it in the same flex line — is pushed rightward as
-            the letters appear, which reads as the dot laying them down. */}
-        <span className="wordmark-word inline-flex items-baseline">
-          P<span className="wordmark-tail">ixely</span>
-        </span>
+      {/* The ghost: the full word's footprint, invisible, so nothing beside
+          the logo ever moves while letters come and go. Its tail folds with
+          the bar like the live one. */}
+      <span aria-hidden className="invisible inline-flex items-baseline">
+        P<span className="wordmark-tail">{TAIL}</span>
+        <span className="inline-block" style={dotStyle} />
+      </span>
+      {/* The live line, typed over the ghost. */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 inline-flex items-baseline"
+      >
+        P<span className="wordmark-tail">{TAIL.slice(0, shown)}</span>
         <span
           data-wm-dot
-          className="wordmark-home inline-block bg-accent"
-          style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
+          className="wordmark-home wm-caret inline-block bg-accent"
+          style={dotStyle}
         />
       </span>
     </span>
@@ -714,7 +811,10 @@ export default function Navigation() {
                 style={{ opacity: 0 }}
                 className="pointer-events-none absolute top-0 left-0 z-10 bg-accent"
               />
-              <ul className="flex items-center gap-9">
+              {/* gap-11, up from 9: the logo's ghost holds the bar still
+                  while it types, and the erased state leaves the row lighter
+                  on the left — the items take the room as air. */}
+              <ul className="flex items-center gap-11">
                 {NAV_LINKS.map((link) => {
                   const active = activeHref === link.href;
                   return (

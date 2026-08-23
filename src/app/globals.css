@@ -179,41 +179,22 @@
 /* Switched, not crossed. Used at both ends of the menu, where the change
    happens under something covering the bar and easing through the mid-tones
    would be the one moment the bar cannot be read. */
-/* The wordmark writes itself: the word's wrapper opens from nothing, and
-   the dot — next in the flex line — is pushed rightward as the letters
-   appear, the pen leaving the word behind it. It runs once on load, dot
-   first (fill-mode backwards holds width 0 through the delay, so the first
-   paint is the dot alone), and once per hover: the hover rule swaps in an
-   identical animation under a second name, which restarts on every entry
-   and, because its final frame is the resting state, resets invisibly on
-   leave. Gathered, the tail inside stays folded, so the same gesture
-   writes only the P. */
-@keyframes wm-write-load {
-  from {
-    max-width: 0;
+/* The logo's caret. The dot blinks the way a cursor does — steps, not a
+   fade — and the blink is visibility, not opacity, so the travelling-dot
+   handoff (which owns opacity) composes with it instead of fighting it. */
+@keyframes wm-blink {
+  0%,
+  55% {
+    visibility: visible;
   }
-  to {
-    max-width: 4.6em;
+  56%,
+  100% {
+    visibility: hidden;
   }
-}
-@keyframes wm-write-hover {
-  from {
-    max-width: 0;
-  }
-  to {
-    max-width: 4.6em;
-  }
-}
-.wordmark-word {
-  overflow: clip;
-  max-width: 4.6em;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .wordmark-word {
-    animation: wm-write-load 0.8s var(--ease-out-expo) 0.35s both;
-  }
-  .wordmark:hover .wordmark-word {
-    animation: wm-write-hover 0.8s var(--ease-out-expo) both;
+  .wm-caret {
+    animation: wm-blink 1.1s steps(1) infinite;
   }
 }
 
