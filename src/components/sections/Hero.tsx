@@ -23,6 +23,22 @@ const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   loading: () => <HeroPoster />,
 });
 
+/** The scroll cue. Rendered twice and shown once: below sm it rides beside
+ *  the buttons, from sm up it sits under the mission pillars on the page's
+ *  bottom edge. Two nodes rather than one moved by CSS because the two homes
+ *  are in different branches of the meta row, and the thing it draws is a
+ *  pure CSS keyframe — no state, no measurement, nothing to keep in sync. */
+function ScrollHint({ className = "" }: { className?: string }) {
+  return (
+    <div className={`items-center gap-3 ${className}`}>
+      <span className="type-label text-(--faint)">Scroll</span>
+      <span className="scroll-hint relative h-10 w-px overflow-hidden bg-(--line)">
+        <span className="absolute inset-x-0 h-1/2 bg-accent" />
+      </span>
+    </div>
+  );
+}
+
 /** Static fallback: reduced motion, WebGL unavailable, or chunk loading. */
 function HeroPoster() {
   return (
@@ -267,19 +283,31 @@ export default function Hero() {
               verification and intelligent financial services, built for
               Algeria.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <MagneticButton href="#start" size="md">
-                Get started
-              </MagneticButton>
-              <MagneticButton href="#product" variant="outline" size="md">
-                Explore the platform
-              </MagneticButton>
+            {/* Below sm the two buttons stack — they always did, there is no
+                room for them side by side on a 375px screen — but they used
+                to stack ragged, 146 wide over 224. w-fit sizes the column to
+                the longer label and items-stretch gives that width to both.
+                From sm up they fit on one line and the row returns.
+
+                The scroll cue rides on the right of that column: the buttons
+                only need 224 of the 327 available, and the cue was costing a
+                row of its own underneath. */}
+            <div className="mt-6 flex items-end justify-between gap-6 sm:block">
+              <div className="flex w-fit flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                <MagneticButton href="#start" size="md">
+                  Get started
+                </MagneticButton>
+                <MagneticButton href="#product" variant="outline" size="md">
+                  Explore the platform
+                </MagneticButton>
+              </div>
+              <ScrollHint className="flex shrink-0 sm:hidden" />
             </div>
           </div>
 
           <div
             data-hero-fade
-            className="flex items-end justify-between gap-10 opacity-0 md:flex-col md:items-end md:gap-5"
+            className="hidden items-end justify-between gap-10 opacity-0 sm:flex md:flex-col md:items-end md:gap-5"
           >
             {/* The three mission pillars from the deck. There are no
                 published figures for Pixely, and inventing them for a real
@@ -297,12 +325,7 @@ export default function Hero() {
               <br />
               Trust &amp; security
             </p>
-            <div className="flex items-center gap-3">
-              <span className="type-label text-(--faint)">Scroll</span>
-              <span className="scroll-hint relative h-10 w-px overflow-hidden bg-(--line)">
-                <span className="absolute inset-x-0 h-1/2 bg-accent" />
-              </span>
-            </div>
+            <ScrollHint className="flex" />
           </div>
         </div>
 
@@ -324,18 +347,17 @@ export default function Hero() {
             grid at all — and the wide layout already says copy left, phone
             right. Its right edge now lands on the same margin the text does.
 
-            Pulled up below sm. The scroll hint is the only thing in its row
-            once the pillars drop out, so it holds the left 87px of a 375px
-            screen and leaves 288 empty beside it. The device rises into that
-            band — its left edge sits at 114, clear of the hint — which is
-            worth about 90px of phone, a quarter of the fold instead of not
-            quite a fifth. From sm up the pillars are back in that row and
-            the space is spoken for, so it keeps its gap.
+            The band it used to rise into is gone: the scroll cue moved up
+            beside the buttons, so below sm the copy now ends at the buttons
+            and the negative margin that bought that height was landing the
+            phone 48px on top of them. It takes a gap instead, and a wider
+            one than the 24px it had — the phone reads as sitting below the
+            call to action rather than crowding it.
 
             Wide-and-landscape has the travelling phone instead and never
             renders this. */}
         {!beside && (
-          <div className="relative -mt-[clamp(34px,5.9vh,48px)] min-h-[120px] flex-1 sm:mt-[clamp(20px,4.4vh,36px)]">
+          <div className="relative mt-[clamp(44px,7.9vh,64px)] min-h-[120px] flex-1 sm:mt-[clamp(20px,4.4vh,36px)]">
             <div className="absolute inset-x-0 top-0 flex justify-end">
               <HeroDevice
                 className="h-[clamp(400px,62vh,640px)]"
