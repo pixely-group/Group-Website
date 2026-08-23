@@ -727,12 +727,16 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  /* 0.34 was called too small and 0.44 too big, so it sits between them.
-     Square now, not round: the brand's dot is the wordmark's full stop —
-     the lit pixel — and every dot on the site is the same mark at a
-     different size. */
-  width: 0.38em;
-  height: 0.38em;
+  /* Square, not round: the brand's dot is the wordmark's full stop — the
+     lit pixel — and every dot on the site is the same mark at a different
+     size. The size is the round caret's history correcting itself: as a
+     circle, 0.34 was called too small and 0.44 too big, so it sat at 0.38.
+     A square of the same width carries more ink than a circle (a circle
+     fills 78% of its box), so the square at 0.38 read heavier than the
+     round one ever did — 0.34 is the area-equivalent square of the 0.38
+     circle, and lands the weight the 0.38 was chosen for. */
+  width: 0.34em;
+  height: 0.34em;
   /* 0.08 sat too close to the last letter — the dot read as part of the
      word rather than as its full stop. */
   margin-left: 0.14em;
