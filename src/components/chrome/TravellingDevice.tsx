@@ -189,11 +189,10 @@ export default function TravellingDevice() {
 
        The band is the full viewport and the device is centred in it — its
        centre is the screen's centre at every browser height, at full size.
-       No viewport-derived cap: shrinking the phone to buy clearance was
-       tried and rejected. What gives way instead is the hero's bottom-right
-       mission pillars, which hide below the height where a full-size
-       centred phone would cross them (their rule, in Hero.tsx); the scroll
-       hint beside them sits right of the phone's edge and never collides. */
+       No viewport-derived cap, and nothing hidden to make room: shrinking
+       the phone was rejected and so was hiding the hero's mission pillars.
+       On shorter windows those lines pass beneath the phone, which floats
+       over the hero on its own layer — layering, not collision. */
     <div className="pointer-events-none fixed inset-y-0 right-[12.4%] z-30 hidden items-center lg:flex">
       <div
         ref={holderRef}

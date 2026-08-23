@@ -268,12 +268,13 @@ export default function Hero() {
             {/* The three mission pillars from the deck. There are no
                 published figures for Pixely, and inventing them for a real
                 company is not a design decision to make quietly. */}
-            {/* The phone centres in the viewport at full size, and its
-                bottom reaches vh/2 + 324. These lines start 194 from the
-                bottom, so they collide on any window shorter than ~1068px —
-                below that they stand down rather than shrink the phone.
-                The scroll hint stays: it sits right of the phone's edge. */}
-            <p className="type-label hidden leading-relaxed text-(--faint) [@media(max-height:1067px)]:!hidden sm:block md:text-right">
+            {/* Always on. These three spent a while being hidden or shrunk
+                around to protect them from the phone, and every cure was
+                worse than the disease: the phone floats above the hero on
+                its own layer, so on shorter windows the lines simply run
+                under it — faint meta tucked beneath a floating object, not
+                a collision. */}
+            <p className="type-label hidden leading-relaxed text-(--faint) sm:block md:text-right">
               Financial inclusion
               <br />
               Intelligent innovation
