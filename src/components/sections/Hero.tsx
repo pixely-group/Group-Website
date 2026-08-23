@@ -208,11 +208,11 @@ export default function Hero() {
 
         <h1
           className="type-display text-hero -ml-[0.06em] opacity-0 lg:pr-[30%] lg:text-hero-aside"
-          aria-label="Pixely — make money move instantly, securely, your way"
+          aria-label="Pixely — we make money move instantly, securely, your way"
         >
           <span className="-mb-[0.07em] block overflow-hidden pb-[0.09em]">
             <span data-hero-line className="block">
-              Make money
+              We make money
             </span>
           </span>
           <span className="-mb-[0.19em] block overflow-hidden pb-[0.25em]">

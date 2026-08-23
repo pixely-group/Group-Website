@@ -413,9 +413,13 @@ export default function Navigation() {
          an interrupted glide correct itself instead of holding a stale
          answer. */
       if (glideTo.current) return;
-      /* Two fifths down: high enough that a section counts once it is the
-         thing being read, rather than only when it fills the screen. */
-      const line = window.innerHeight * 0.4;
+      /* The reading line. It sat at 0.4 and lit sections early: a section
+         counted while it only filled the lower 60% of the screen, and since
+         every chapter opens with ~15vh of its own padding, the marker moved
+         before the reader had seen anything of it. At 0.22 a section must
+         hold nearly four fifths of the screen to take the marker — past its
+         opening padding and into its actual matter. */
+      const line = window.innerHeight * 0.22;
       let current: string | null = null;
       for (const t of targets) {
         if (t.el.getBoundingClientRect().top <= line) current = t.href;
