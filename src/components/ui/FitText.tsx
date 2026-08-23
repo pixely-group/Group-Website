@@ -14,7 +14,6 @@ export default function FitText({
   children,
   className = "",
   letterClassName,
-  fitTo,
   after,
 }: {
   children: string;
@@ -24,14 +23,9 @@ export default function FitText({
    *  span also carries its character as data-ch, so CSS can restate it in
    *  pseudo-elements. */
   letterClassName?: string;
-  /** Fit against this string instead of the children: the font size is the
-   *  one that would span the container with `fitTo`, and the children render
-   *  at it. This is how the footer shows P. at exactly the size its P had
-   *  inside PIXELY — the reference is the long form, the render is the
-   *  short. */
-  fitTo?: string;
   /** Rendered inside the fitted line, after the letters — for marks that are
-   *  not characters, like the brand's square full stop. */
+   *  not characters, like the brand's square full stop. The measurement
+   *  includes it, since it sits in the measured span and is sized in em. */
   after?: React.ReactNode;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -44,25 +38,10 @@ export default function FitText({
 
     const REFERENCE_PX = 100;
     const fit = () => {
-      let natural: number;
-      if (fitTo) {
-        /* Measured on a probe rather than by swapping the live text out —
-           the letters carry spans and the `after` mark, and textContent
-           would flatten them. */
-        const probe = document.createElement("span");
-        probe.className = text.className;
-        probe.style.cssText =
-          "position:absolute;visibility:hidden;font-size:100px";
-        probe.textContent = fitTo;
-        host.appendChild(probe);
-        natural = probe.getBoundingClientRect().width;
-        probe.remove();
-      } else {
-        text.style.fontSize = `${REFERENCE_PX}px`;
-        // `w-max` matters: as a plain block the span would report the
-        // container's width, making the ratio always 1 and the fit a no-op.
-        natural = text.getBoundingClientRect().width;
-      }
+      text.style.fontSize = `${REFERENCE_PX}px`;
+      // `w-max` matters: as a plain block the span would report the
+      // container's width, making the ratio always 1 and the fit a no-op.
+      const natural = text.getBoundingClientRect().width;
       if (!natural) return;
       text.style.fontSize = `${(host.clientWidth / natural) * REFERENCE_PX}px`;
     };
@@ -79,7 +58,7 @@ export default function FitText({
       cancelled = true;
       ro.disconnect();
     };
-  }, [children, fitTo]);
+  }, [children]);
 
   return (
     <div ref={hostRef} className="w-full">

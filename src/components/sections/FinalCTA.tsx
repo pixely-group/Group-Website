@@ -78,7 +78,12 @@ export default function FinalCTA() {
           <span className="block overflow-hidden pb-[0.06em]">
             <span data-cta-line className="block">
               moves money
-              <span className="text-accent">.</span>
+              {/* The brand's full stop, not the font's: the same square
+                  pixel that ends the wordmark, at display scale. */}
+              <span
+                aria-hidden
+                className="ml-[0.07em] inline-block size-[0.17em] bg-accent"
+              />
             </span>
           </span>
         </h2>

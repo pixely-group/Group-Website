@@ -179,6 +179,53 @@
 /* Switched, not crossed. Used at both ends of the menu, where the change
    happens under something covering the bar and easing through the mid-tones
    would be the one moment the bar cannot be read. */
+/* The wordmark writes itself: the word's wrapper opens from nothing, and
+   the dot — next in the flex line — is pushed rightward as the letters
+   appear, the pen leaving the word behind it. It runs once on load, dot
+   first (fill-mode backwards holds width 0 through the delay, so the first
+   paint is the dot alone), and once per hover: the hover rule swaps in an
+   identical animation under a second name, which restarts on every entry
+   and, because its final frame is the resting state, resets invisibly on
+   leave. Gathered, the tail inside stays folded, so the same gesture
+   writes only the P. */
+@keyframes wm-write-load {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: 4.6em;
+  }
+}
+@keyframes wm-write-hover {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: 4.6em;
+  }
+}
+.wordmark-word {
+  overflow: clip;
+  max-width: 4.6em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wordmark-word {
+    animation: wm-write-load 0.8s var(--ease-out-expo) 0.35s both;
+  }
+  .wordmark:hover .wordmark-word {
+    animation: wm-write-hover 0.8s var(--ease-out-expo) both;
+  }
+}
+
+/* The wordmark's own dot is the travelling marker's home. While the marker
+   is away at a menu item the home stays empty — opacity, not display, so it
+   keeps reserving its place in the word for the return. Scoped to the nav
+   ground: the footer's wordmark keeps its dot regardless. */
+.nav-ground[data-dot-away] .wordmark-home {
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+
 /* The wordmark's tail — the IXELY between the P and the dot. Collapses as
    the bar gathers (or the instant the menu opens), leaving P. behind. The
    3.6em ceiling only starts to bite once it crosses the letters' real width,
@@ -683,11 +730,13 @@ html[data-cursor="on"] * {
    baseline where the period was. */
 @utility caret-dot {
   display: inline-block;
-  /* 0.34 was called too small and 0.44 too big, so it sits between them. */
+  /* 0.34 was called too small and 0.44 too big, so it sits between them.
+     Square now, not round: the brand's dot is the wordmark's full stop —
+     the lit pixel — and every dot on the site is the same mark at a
+     different size. */
   width: 0.38em;
   height: 0.38em;
   margin-left: 0.08em;
-  border-radius: 50%;
   background: currentColor;
   vertical-align: baseline;
 }

@@ -1124,7 +1124,7 @@ export default function SecurityArchitecture() {
                     declined && activeLayer >= BLOCK_AT ? REFUSED : ACCENT,
                   transition: "background-color 300ms linear",
                 }}
-                className="pointer-events-none absolute top-0 left-0 z-10 rounded-full"
+                className="pointer-events-none absolute top-0 left-0 z-10"
               />
               {LAYERS.map((layer, i) => {
                 const refusedHere = declined && i === BLOCK_AT;

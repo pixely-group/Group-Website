@@ -38,12 +38,9 @@ const INK = 40;
 
 export default function WordmarkTrace({
   text,
-  fitTo,
   dot = false,
 }: {
   text: string;
-  /** Size the letters as if this string spanned the line — see FitText. */
-  fitTo?: string;
   /** End the line with the brand's square full stop. Always in accent, never
    *  traced: it is the lit pixel, and it is already lit. The trace canvas
    *  only inks characters, so the pointer passing over the square correctly
@@ -261,7 +258,6 @@ export default function WordmarkTrace({
       <FitText
         className="type-display leading-[0.78] select-none"
         letterClassName="wordmark-letter"
-        fitTo={fitTo}
         after={
           dot ? (
             <span

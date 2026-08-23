@@ -244,7 +244,7 @@ export default function CustomCursor() {
           top: -CURSOR_DOT_PX / 2,
           left: -CURSOR_DOT_PX / 2,
         }}
-        className="absolute rounded-full bg-(--cursor-color) transition-[background-color] duration-150 ease-(--ease-cross)"
+        className="absolute bg-(--cursor-color) transition-[background-color] duration-150 ease-(--ease-cross)"
       />
       <div
         ref={ringRef}

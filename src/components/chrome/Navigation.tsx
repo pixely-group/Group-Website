@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { CURSOR_DOT_LINK_PX } from "@/components/chrome/CustomCursor";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
@@ -104,13 +103,20 @@ export const NAV_GEOMETRY = {
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`type-headline inline-flex items-baseline text-[0.95rem] tracking-[0.06em] ${className}`}
+      className={`wordmark type-headline inline-flex items-baseline text-[1.1rem] tracking-[0.06em] ${className}`}
     >
       <span className="sr-only">Pixely</span>
       <span aria-hidden style={{ display: "contents" }}>
-        P<span className="wordmark-tail">ixely</span>
+        {/* The word is one clipped wrapper so the load and hover animation
+            can write it: the wrapper opens from zero width and the dot —
+            sitting after it in the same flex line — is pushed rightward as
+            the letters appear, which reads as the dot laying them down. */}
+        <span className="wordmark-word inline-flex items-baseline">
+          P<span className="wordmark-tail">ixely</span>
+        </span>
         <span
-          className="inline-block bg-accent"
+          data-wm-dot
+          className="wordmark-home inline-block bg-accent"
           style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
         />
       </span>
@@ -486,31 +492,81 @@ export default function Navigation() {
     glide(href, el);
   };
 
-  // A single marker that moves to whichever entry is selected. Five dots
-  // fading in and out cannot show the journey between them.
+  /* One dot with two states: at rest it IS the wordmark's full stop, and
+     when a section is active it leaves the logo and stands beside that menu
+     item. The in-flow dot in the wordmark is the "home" — real layout, so it
+     rides every wordmark animation — and this marker is the traveller. The
+     handoff is a crossfade at the same coordinates, so there is never a
+     frame with two dots or none. */
   const placeDot = useCallback((href: string | null, glide: boolean) => {
     const dot = dotRef.current;
     const nav = navRef.current;
-    if (!dot || !nav) return;
+    const header = headerRef.current;
+    if (!dot || !nav || !header) return;
+    const home = header.querySelector<HTMLElement>("[data-wm-dot]");
+    if (!home) return;
 
-    const index = NAV_LINKS.findIndex((l) => l.href === href);
-    if (index < 0) {
-      gsap.to(dot, { opacity: 0, duration: 0.2, overwrite: true });
-      return;
-    }
-    const link = nav.querySelectorAll("a")[index];
-    if (!link) return;
-
-    const navBox = nav.getBoundingClientRect();
-    const box = link.getBoundingClientRect();
-    const x = box.left - navBox.left - 12;
-    const y = box.top - navBox.top + box.height / 2 - CURSOR_DOT_LINK_PX / 2;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+    const navBox = nav.getBoundingClientRect();
+    const homeBox = home.getBoundingClientRect();
+    const size = Math.max(2, homeBox.width);
+    gsap.set(dot, { width: size, height: size });
 
-    // Travel only from a known position; the first selection should appear
-    // in place rather than fly in from the corner.
+    const index = NAV_LINKS.findIndex((l) => l.href === href);
+
+    if (index < 0) {
+      // Going home. Glide back to the wordmark, then hand over to the
+      // in-flow dot and step aside. The click that sends the page to the
+      // top also gathers or opens the bar mid-flight, so the coordinates
+      // measured at launch can be stale by landing — re-measure there,
+      // snap the last pixel, and only then swap.
+      const land = () => {
+        const nb = nav.getBoundingClientRect();
+        const hb = home.getBoundingClientRect();
+        gsap.set(dot, { x: hb.left - nb.left, y: hb.top - nb.top });
+        header.removeAttribute("data-dot-away");
+        gsap.to(dot, { opacity: 0, duration: 0.15, overwrite: true });
+      };
+      if (glide && dotPlaced.current && !reduced) {
+        gsap.to(dot, {
+          x: homeBox.left - navBox.left,
+          y: homeBox.top - navBox.top,
+          duration: 0.55,
+          ease: "expo.out",
+          overwrite: true,
+          onComplete: land,
+        });
+      } else {
+        land();
+      }
+      return;
+    }
+
+    const link = nav.querySelectorAll("a")[index];
+    if (!link) return;
+    const target = () => {
+      const nb = nav.getBoundingClientRect();
+      const box = link.getBoundingClientRect();
+      return {
+        x: box.left - nb.left - 12,
+        y: box.top - nb.top + box.height / 2 - size / 2,
+      };
+    };
+    const { x, y } = target();
+
+    // Leaving home: appear exactly over the wordmark's dot as it hides,
+    // then travel. From a link, just travel.
+    const away = header.hasAttribute("data-dot-away");
+    if (!away) {
+      header.setAttribute("data-dot-away", "");
+      gsap.set(dot, {
+        x: homeBox.left - navBox.left,
+        y: homeBox.top - navBox.top,
+        opacity: 1,
+      });
+    }
     if (glide && dotPlaced.current && !reduced) {
       gsap.to(dot, {
         x,
@@ -519,6 +575,10 @@ export default function Navigation() {
         duration: 0.55,
         ease: "expo.out",
         overwrite: true,
+        // The bar gathers while the page glides, and the launch-time
+        // numbers go stale with it. Nav-internal drift is small; the snap
+        // clears the residue.
+        onComplete: () => gsap.set(dot, target()),
       });
     } else {
       gsap.set(dot, { x, y });
@@ -639,16 +699,20 @@ export default function Navigation() {
               aria-label="Primary"
               className="relative hidden lg:block"
             >
-              {/* Sized from the cursor's dot as it renders beside a link. */}
+              {/* The travelling dot: the wordmark's own full stop, off on an
+                  errand. It lives INSIDE the nav list on purpose — the
+                  list's internal layout is constant while the bar gathers,
+                  so a dot parked beside a link cannot drift as the chrome
+                  condenses around it. The wordmark sits outside, but the
+                  nav is unclipped, so the trip home is just a negative x.
+                  Square, because the brand's dot is the lit pixel, and
+                  sized at placement from the wordmark's real dot so the
+                  handoff between the two is seamless. */}
               <span
                 ref={dotRef}
                 aria-hidden
-                style={{
-                  width: CURSOR_DOT_LINK_PX,
-                  height: CURSOR_DOT_LINK_PX,
-                  opacity: 0,
-                }}
-                className="pointer-events-none absolute top-0 left-0 rounded-full bg-accent"
+                style={{ opacity: 0 }}
+                className="pointer-events-none absolute top-0 left-0 z-10 bg-accent"
               />
               <ul className="flex items-center gap-9">
                 {NAV_LINKS.map((link) => {
