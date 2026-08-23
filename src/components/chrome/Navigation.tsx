@@ -656,7 +656,13 @@ export default function Navigation() {
         opacity: 1,
       });
     }
-    if (glide && dotPlaced.current && !reduced) {
+    /* Glide whenever motion is wanted and allowed. This used to also ask
+       dotPlaced — "the first selection should appear in place rather than
+       fly in from the corner" — which predates the home: a departure now
+       always has a known origin, because the block above just parked the
+       marker on the wordmark's own dot. Keeping the guard meant the very
+       first journey after load teleported, and only the second travelled. */
+    if (glide && !reduced) {
       gsap.to(dot, {
         x,
         y,
