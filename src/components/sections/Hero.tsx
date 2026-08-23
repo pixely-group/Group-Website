@@ -3,11 +3,20 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { HeroBus } from "@/components/three/HeroScene";
+
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
-import { useReducedMotion } from "@/lib/hooks";
+
+import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 import RotatingWord from "@/components/ui/RotatingWord";
+
+/* The same device the travelling wrapper flies on wide screens, mounted
+   straight into the hero for every other viewport. Client-only, like every
+   other mount of it: the wallet inside reads a media query on mount. */
+const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
+  ssr: false,
+});
 
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
@@ -67,6 +76,13 @@ export default function Hero() {
   });
   const [active, setActive] = useState(true);
   const reduced = useReducedMotion();
+  /* The inverse of the travelling device's own gate. Mounted rather than
+     hidden: a display:none device still builds a wallet, runs a tilt loop
+     and holds timers, and at desktop that is a second full phone nobody
+     sees. */
+  const beside = useMediaQuery(
+    "(min-width: 1024px) and (orientation: landscape)",
+  );
   const lenis = useLenis();
 
   // Pointer → NDC for the scene + subtle content parallax.
@@ -197,6 +213,30 @@ export default function Hero() {
         ref={contentRef}
         className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 md:pb-16 lg:px-14 lg:pb-20"
       >
+        {/* The phone, on every viewport that is not wide-and-landscape.
+            The hero anchors its copy to the bottom, so its upper region is
+            empty — this takes it. flex-1 rather than a fixed height, so the
+            device is sized by whatever the copy leaves: modest on a small
+            phone, generous on a tablet held upright, and never overlapping
+            a word. min-h-0 because a flex child will not shrink below its
+            content without it, and the device's aspect ratio is content.
+
+            Headroom from sm up only. The bar's row ends at 88 and the
+            device sits under it in the stack, so on a tablet its top
+            corner passed beneath the Login pill — 104 clears it. A phone
+            bar carries no trailing pill and the device is narrow and
+            centred there, so it passes between the wordmark and the burger
+            untouched; charging it the same 104 took it from 249 tall to
+            157, which is the difference between a device and a trinket.
+
+            Wide-and-landscape keeps the travelling phone, which is fixed,
+            flies down beside the copy and would have nothing to do here. */}
+        {!beside && (
+          <div className="relative flex min-h-0 flex-1 items-center justify-center pt-3 pb-7 sm:pt-[104px]">
+            <HeroDevice className="h-full max-h-[620px]" shift={0} />
+          </div>
+        )}
+
         <p
           data-hero-fade
           className="type-label mb-7 text-(--muted) opacity-0"

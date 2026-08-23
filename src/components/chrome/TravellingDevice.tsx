@@ -63,7 +63,13 @@ export default function TravellingDevice() {
   const [enterFrom, setEnterFrom] = useState<"left" | "right" | null>(null);
   const reduced = useReducedMotion();
   /** Below lg there is no column to start from and no room to travel. */
-  const enabled = useMediaQuery("(min-width: 1024px)");
+  /* The travelling phone is the wide-and-landscape experience: it flies
+     down a column beside the copy, which only exists when there is a column
+     beside the copy. Portrait — including a 1024pt tablet held upright —
+     gets the hero's own inline device instead. Same rule the globe keeps. */
+  const enabled = useMediaQuery(
+    "(min-width: 1024px) and (orientation: landscape)",
+  );
   const roomy = useMediaQuery("(min-width: 1280px)");
 
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function TravellingDevice() {
        the phone was rejected and so was hiding the hero's mission pillars.
        On shorter windows those lines pass beneath the phone, which floats
        over the hero on its own layer — layering, not collision. */
-    <div className="pointer-events-none fixed inset-y-0 right-[12.4%] z-30 hidden items-center lg:flex">
+    <div className="pointer-events-none fixed inset-y-0 right-[12.4%] z-30 hidden items-center beside:flex">
       <div
         ref={holderRef}
         className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[648px]"
