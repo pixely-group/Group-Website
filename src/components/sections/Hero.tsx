@@ -317,11 +317,26 @@ export default function Hero() {
 
             Absolute inside a flex-1 slot: the slot claims whatever the copy
             leaves and the device hangs from its top at a height of its own,
-            free to exceed it. Wide-and-landscape has the travelling phone
-            instead and never renders this. */}
+            free to exceed it.
+
+            Right-aligned, not centred. Every other line in the hero is flush
+            to the left margin and the device was floating 45px off it, on no
+            grid at all — and the wide layout already says copy left, phone
+            right. Its right edge now lands on the same margin the text does.
+
+            Pulled up below sm. The scroll hint is the only thing in its row
+            once the pillars drop out, so it holds the left 87px of a 375px
+            screen and leaves 288 empty beside it. The device rises into that
+            band — its left edge sits at 114, clear of the hint — which is
+            worth about 90px of phone, a quarter of the fold instead of not
+            quite a fifth. From sm up the pillars are back in that row and
+            the space is spoken for, so it keeps its gap.
+
+            Wide-and-landscape has the travelling phone instead and never
+            renders this. */}
         {!beside && (
-          <div className="relative mt-[clamp(20px,4.4vh,36px)] min-h-[120px] flex-1">
-            <div className="absolute inset-x-0 top-0 flex justify-center">
+          <div className="relative -mt-[clamp(34px,5.9vh,48px)] min-h-[120px] flex-1 sm:mt-[clamp(20px,4.4vh,36px)]">
+            <div className="absolute inset-x-0 top-0 flex justify-end">
               <HeroDevice
                 className="h-[clamp(400px,62vh,640px)]"
                 shift={0}
