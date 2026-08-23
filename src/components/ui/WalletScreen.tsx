@@ -518,6 +518,13 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
    it started and 1.59 in the hand. */
 const CARD_H = 204;
 const CARD_STEP = 86;
+/* The same cards at a wallet's spacing rather than a fan's: enough of each
+   one showing to count them, the front one whole. Measured against the room
+   the sheet uncovers — the quick actions end at 322 and the bottom snap is
+   630, so the label sits at 344 and 2 x 22 + 204 of stack lands at 620, ten
+   clear of the sheet. Anything looser and the last card is cut by it. */
+const CARD_PEEK = 22;
+const DRAWER_TOP = 344;
 
 /** The EMV contactless indicator, as it is printed on a card: four arcs
  *  about one centre, opening right, the innermost a short stub and each one
@@ -535,6 +542,95 @@ const CARDS = [
   { id: "savings", name: "Pixely Savings", num: "2203", bal: "96 500,00", cur: "DZD",
     tint: "linear-gradient(135deg,#1d6a4f 0%,#124034 45%,#05100c 100%)", label: "Savings" },
 ];
+
+/** One card, drawn once. The fan on the Cards screen and the stack behind
+ *  the transaction sheet are the same object at two spacings, so the face
+ *  lives here and each caller supplies only where it sits and how it layers. */
+function CardFace({
+  card,
+  c,
+  atFront,
+  off,
+  nfcMuted,
+  onPress,
+  className = "",
+  style,
+  tabIndex,
+}: {
+  card: (typeof CARDS)[number];
+  c: C;
+  atFront: boolean;
+  off: boolean;
+  nfcMuted: boolean;
+  onPress: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+  tabIndex?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      aria-pressed={atFront}
+      aria-label={`${card.name}, ${card.label.toLowerCase()} card${off ? ", frozen" : ""}`}
+      data-cursor="link"
+      className={className}
+      tabIndex={tabIndex}
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        height: CARD_H,
+        borderRadius: 22,
+        padding: 18,
+        textAlign: "left",
+        background: card.tint,
+        boxShadow: atFront
+          ? `0 28px 52px -18px ${c.SHADOW}`
+          : `0 20px 40px -18px ${c.SHADOW}`,
+        border: "1px solid rgba(236,233,225,0.14)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        /* Frozen is a state you can see on the card, not a word in a list
+           somewhere else. */
+        filter: off ? "saturate(0.2) brightness(0.72)" : "none",
+        transition:
+          "top 460ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease, filter 320ms ease",
+        ...style,
+      }}
+    >
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
+              <div>
+                <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(236,233,225,0.62)" }}>
+                  {off ? "FROZEN" : card.label.toUpperCase()}
+                </p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
+              </div>
+              {/* Contactless, drawn rather than iconified. Dimmed rather
+                  than removed when the card's contactless is switched off,
+                  which is the one thing here that is not as it was. */}
+              {/* 32, by steps from 20. The arcs scale with the box, so
+                  the stroke thickens with them and the mark keeps its
+                  weight rather than thinning into wire as it grows. */}
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden
+                   style={{ opacity: nfcMuted ? 0.28 : 1, transition: "opacity 260ms ease" }}>
+                {[6, 10, 14].map((r, k) => (
+                  <path key={r} d={`M${8 + k * 3} 7a7 7 0 0 1 0 10`} stroke="rgba(236,233,225,0.55)" strokeWidth="1.6" strokeLinecap="round" />
+                ))}
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
+                •••• •••• •••• {card.num}
+              </p>
+              <p style={{ fontSize: 19, fontWeight: 700, color: "#ece9e1", marginTop: 6, letterSpacing: "-0.02em" }}>
+                {card.bal} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{card.cur}</span>
+              </p>
+            </div>
+    </button>
+  );
+}
 
 /** The wallet as the device shows it once it has turned to face the reader. */
 function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
@@ -595,72 +691,24 @@ function CardsScreen({ c, pushIn }: { c: C; pushIn: string }) {
           const atFront = i === front;
           const off = !!frozen[card.id];
           return (
-            <button
+            <CardFace
               key={card.id}
-              type="button"
-              onClick={() => setFront(i)}
-              aria-pressed={atFront}
-              aria-label={`${card.name}, ${card.label.toLowerCase()} card${off ? ", frozen" : ""}`}
-              data-cursor="link"
+              card={card}
+              c={c}
+              atFront={atFront}
+              off={off}
+              nfcMuted={!!nfcOff[card.id]}
+              onPress={() => setFront(i)}
               className={pushIn}
               style={{
-                position: "absolute",
                 top: slot * CARD_STEP,
-                left: 0,
-                right: 0,
-                height: CARD_H,
                 zIndex: slot,
                 /* Dealt in from the right, one after another. The ease has a
                    long tail rather than a bounce: these are cards being laid
                    down, not springs. */
                 animationDelay: `${90 + i * 110}ms`,
-                borderRadius: 22,
-                padding: 18,
-                textAlign: "left",
-                background: card.tint,
-                boxShadow: atFront
-                  ? `0 28px 52px -18px ${c.SHADOW}`
-                  : `0 20px 40px -18px ${c.SHADOW}`,
-                border: "1px solid rgba(236,233,225,0.14)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                /* Frozen is a state you can see on the card, not a word in a
-                   list somewhere else. */
-                filter: off ? "saturate(0.2) brightness(0.72)" : "none",
-                transition:
-                  "top 460ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease, filter 320ms ease",
               }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
-                <div>
-                  <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "rgba(236,233,225,0.62)" }}>
-                    {off ? "FROZEN" : card.label.toUpperCase()}
-                  </p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: "#ece9e1", marginTop: 4 }}>{card.name}</p>
-                </div>
-                {/* Contactless, drawn rather than iconified. Dimmed rather
-                    than removed when the card's contactless is switched off,
-                    which is the one thing here that is not as it was. */}
-                {/* 32, by steps from 20. The arcs scale with the box, so
-                    the stroke thickens with them and the mark keeps its
-                    weight rather than thinning into wire as it grows. */}
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden
-                     style={{ opacity: nfcOff[card.id] ? 0.28 : 1, transition: "opacity 260ms ease" }}>
-                  {[6, 10, 14].map((r, k) => (
-                    <path key={r} d={`M${8 + k * 3} 7a7 7 0 0 1 0 10`} stroke="rgba(236,233,225,0.55)" strokeWidth="1.6" strokeLinecap="round" />
-                  ))}
-                </svg>
-              </div>
-              <div>
-                <p style={{ fontSize: 12, color: "rgba(236,233,225,0.55)", letterSpacing: "0.18em" }}>
-                  •••• •••• •••• {card.num}
-                </p>
-                <p style={{ fontSize: 19, fontWeight: 700, color: "#ece9e1", marginTop: 6, letterSpacing: "-0.02em" }}>
-                  {card.bal} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{card.cur}</span>
-                </p>
-              </div>
-            </button>
+            />
           );
         })}
       </div>
@@ -765,9 +813,20 @@ export default function WalletScreen({
   }
   const openTx = (tx: Tx) => setView({ name: "tx", tx });
   const [snap, setSnap] = useState(1);
+  /* Which card is on top of the stack behind the sheet. Its own state: the
+     Cards screen is a different screen with a different instance, and the
+     two are not the same wallet being looked at twice. */
+  const [held, setHeld] = useState(0);
   const [dragTop, setDragTop] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ id: number; startY: number; startTop: number } | null>(null);
+  const drag = useRef<{ id: number; startY: number; startTop: number; moved: boolean } | null>(null);
+  /* A pointerup on the element the pointerdown started on still produces a
+     click, so the handle's tap-to-cycle fired at the end of every drag and
+     cycled straight past whatever the drag had just chosen — drag the sheet
+     down to the cards and it carried on to the next snap and hid them again.
+     Set when the pointer actually travelled, cleared at the start of the next
+     gesture so a cancelled drag cannot swallow a later tap. */
+  const draggedRef = useRef(false);
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -776,11 +835,18 @@ export default function WalletScreen({
   }, [copied]);
 
   const sheetTop = dragTop ?? SNAPS[snap];
+  /* Open once the sheet is past halfway to the bottom snap, so the cards take
+     the pointer at the point they are worth aiming at — and never while they
+     are painted under the transactions, where a click would land on a card
+     nobody can see. */
+  const cardsOpen = sheetTop > (SNAPS[1] + SNAPS[2]) / 2;
+  const cardOrder = [held, ...CARDS.map((_, i) => i).filter((i) => i !== held)];
   const scaleOf = () => (rootRef.current?.getBoundingClientRect().height ?? SCREEN_H) / SCREEN_H;
 
   const onDragStart = (e: React.PointerEvent) => {
     const s = scaleOf();
-    drag.current = { id: e.pointerId, startY: e.clientY / s, startTop: sheetTop };
+    drag.current = { id: e.pointerId, startY: e.clientY / s, startTop: sheetTop, moved: false };
+    draggedRef.current = false;
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {
@@ -791,13 +857,16 @@ export default function WalletScreen({
   const onDragMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
-    const next = d.startTop + (e.clientY / scaleOf() - d.startY);
+    const delta = e.clientY / scaleOf() - d.startY;
+    if (Math.abs(delta) > 4) d.moved = true;
+    const next = d.startTop + delta;
     setDragTop(Math.min(SNAPS[SNAPS.length - 1], Math.max(SNAPS[0], next)));
   };
   const onDragEnd = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     drag.current = null;
+    draggedRef.current = d.moved;
     const landed = dragTop ?? sheetTop;
     let best = 0;
     SNAPS.forEach((v: number, i: number) => {
@@ -882,6 +951,57 @@ export default function WalletScreen({
               <QuickAction label="Receive" d="M13.5 6.5 6.5 13.5M12.5 13.5h-6v-6" c={c} onPress={() => setView({ name: "receive" })} />
               <QuickAction label="Top Up" d="M10 4.5v11M4.5 10h11" c={c} onPress={() => setView({ name: "topup" })} />
             </div>
+
+            {/* The cards, lying under the transaction sheet. Nothing here
+                moves: the sheet does, and pulling it down uncovers them —
+                which is what the handle was always for, it just had an empty
+                panel to reveal. At the resting snap the sheet's edge is at
+                336 and this starts at 344, so none of it shows until asked
+                for, and pulling the sheet back up puts it away.
+
+                zIndex 0 rather than none. The cards layer among themselves,
+                and the sheet carries no z-index at all — without a stacking
+                context of its own the stack would climb straight through the
+                transactions and sit on top of them. */}
+            <div
+              aria-hidden={!cardsOpen}
+              style={{
+                position: "absolute",
+                top: DRAWER_TOP,
+                left: 20,
+                right: 20,
+                zIndex: 0,
+                pointerEvents: cardsOpen ? "auto" : "none",
+              }}
+            >
+              <p style={{ fontSize: 12, letterSpacing: "0.08em", color: c.MUTED }}>
+                VIRTUAL CARDS
+              </p>
+              <div
+                style={{
+                  position: "relative",
+                  marginTop: 12,
+                  height: (CARDS.length - 1) * CARD_PEEK + CARD_H,
+                }}
+              >
+                {CARDS.map((card, i) => {
+                  const slot = cardOrder.indexOf(i);
+                  return (
+                    <CardFace
+                      key={card.id}
+                      card={card}
+                      c={c}
+                      atFront={i === held}
+                      off={false}
+                      nfcMuted={false}
+                      onPress={() => setHeld(i)}
+                      tabIndex={cardsOpen ? 0 : -1}
+                      style={{ top: slot * CARD_PEEK, zIndex: CARDS.length - slot }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div
@@ -892,8 +1012,14 @@ export default function WalletScreen({
               type="button"
               onPointerDown={onDragStart} onPointerMove={onDragMove}
               onPointerUp={onDragEnd} onPointerCancel={onDragEnd}
-              onClick={() => setSnap((v) => (v + 1) % SNAPS.length)}
-              aria-label="Drag to resize the transaction list" data-cursor="link"
+              onClick={() => {
+                if (draggedRef.current) {
+                  draggedRef.current = false;
+                  return;
+                }
+                setSnap((v) => (v + 1) % SNAPS.length);
+              }}
+              aria-label="Drag to resize the transaction list and show your cards" data-cursor="link"
               className="flex h-[30px] w-full touch-none items-center justify-center"
             >
               <span className="h-[5px] w-[40px] rounded-full" style={{ background: c.HANDLE }} />

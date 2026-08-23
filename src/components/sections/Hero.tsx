@@ -23,9 +23,12 @@ const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   loading: () => <HeroPoster />,
 });
 
-/** The scroll cue. Rendered twice and shown once: below sm it stands on end
- *  in the gutter beside the phone, from sm up it lies flat under the mission
- *  pillars on the page's bottom edge. Two nodes rather than one moved by CSS
+/** The scroll cue. Rendered twice and shown once: wherever the phone sits in
+ *  the hero's own flow it stands on end in the gutter beside it — centred on
+ *  a handset, so the gutter is either side; right-aligned on a tablet, so the
+ *  gutter is the left one under the buttons. Only the wide layout, whose
+ *  phone is a fixed object on another layer entirely, keeps the flat one
+ *  under the mission pillars on the page's bottom edge. Two nodes rather than one moved by CSS
  *  because the two homes are in different branches of the section, and the
  *  thing it draws is a pure CSS keyframe — no state, no measurement, nothing
  *  to keep in sync. Turning it costs the word a writing-mode and nothing
@@ -337,7 +340,7 @@ export default function Hero() {
               <br />
               Trust &amp; security
             </p>
-            <ScrollHint className="flex" />
+            <ScrollHint className="hidden beside:flex" />
           </div>
         </div>
 
@@ -372,16 +375,21 @@ export default function Hero() {
             renders this. */}
         {!beside && (
           <div className="relative mt-[clamp(44px,7.9vh,64px)] min-h-[120px] flex-1 sm:mt-[clamp(20px,4.4vh,36px)]">
-            {/* The cue stands in the gutter the centred phone leaves. A 237
-                phone on a 327 measure leaves 45px either side and nothing to
-                put in it; on end, the cue is ~14 wide and costs no height at
-                all — where anything on the centre axis would have cost 60
-                and broken the axis the buttons and phone now share. Pinned
-                to the slot's top, so it sits level with the phone's shoulder
-                and well clear of the seam fade at the fold. */}
+            {/* The cue stands in the gutter the phone leaves. A 237 phone
+                centred on a 327 measure leaves 45px either side and nothing
+                to put in it; on end, the cue is 11 wide and costs no height
+                at all — where anything on the centre axis would have cost 60
+                and broken the axis the buttons and phone now share.
+
+                left-0 serves both layouts because the slot spans the full
+                measure: on a handset that is the left of two equal gutters,
+                and on a tablet, where the phone is right-aligned to the
+                pillars, it is the whole left side under the buttons. Pinned
+                to the slot's top either way, so it sits level with the
+                phone's shoulder and clear of the seam fade at the fold. */}
             <ScrollHint
               vertical
-              className="absolute top-0 left-0 flex sm:hidden"
+              className="absolute top-0 left-0 flex"
             />
             <div className="absolute inset-x-0 top-0 flex justify-center sm:justify-end">
               <HeroDevice
