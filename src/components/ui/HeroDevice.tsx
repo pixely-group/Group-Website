@@ -116,11 +116,16 @@ export default function HeroDevice({
 
     const target = { x: 0, y: 0 };
     const eased = { x: 0, y: 0 };
+    /* Where the pointer last was, kept so the frame loop can re-ask the
+       question. Deciding hover inside the move handler alone was the bug:
+       during the scroll the device travels several hundred pixels under a
+       pointer that never moves, so the answer went stale the moment the two
+       stopped agreeing. */
+    const at = { x: 0, y: 0, seen: false };
     const onMove = (e: PointerEvent) => {
-      const box = stageRef.current?.getBoundingClientRect();
-      hovering.current = !!box
-        && e.clientX >= box.left && e.clientX <= box.right
-        && e.clientY >= box.top && e.clientY <= box.bottom;
+      at.x = e.clientX;
+      at.y = e.clientY;
+      at.seen = true;
       // Kept current even while frozen, so leaving eases from where the
       // pointer is rather than snapping back to where it was.
       target.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -128,17 +133,44 @@ export default function HeroDevice({
     };
     window.addEventListener("pointermove", onMove, { passive: true });
 
+    /* One rect per frame at most, and only when the answer can have changed
+       — the pointer moved, or the page did. Idle, it reads nothing. */
+    let lastX = NaN;
+    let lastY = NaN;
+    let lastScroll = NaN;
+    const testHover = () => {
+      if (!at.seen) return;
+      const scroll = window.scrollY;
+      if (at.x === lastX && at.y === lastY && scroll === lastScroll) return;
+      lastX = at.x;
+      lastY = at.y;
+      lastScroll = scroll;
+      const box = stageRef.current?.getBoundingClientRect();
+      hovering.current =
+        !!box &&
+        at.x >= box.left && at.x <= box.right &&
+        at.y >= box.top && at.y <= box.bottom;
+    };
+
     let elapsed = 0;
     const draw = (_t: number, dt: number) => {
-      // Frozen: neither the pointer nor the idle drift advances, so whatever
-      // you are aiming at stays where it is.
-      if (hovering.current) return;
-      elapsed += dt / 1000;
-      // Frame-rate independent: a fixed per-frame fraction would chase
-      // faster on a 120Hz display than on a 60Hz one.
-      const k = 1 - Math.pow(0.004, dt / 1000);
-      eased.x += (target.x - eased.x) * k;
-      eased.y += (target.y - eased.y) * k;
+      testHover();
+
+      /* Frozen: neither the pointer nor the idle drift advances, so whatever
+         you are aiming at stays where it is. Only those two stop — the frame
+         still writes, because the transform also carries the scroll's own
+         squaring-up and that belongs to the page, not to the pointer.
+         Returning here instead left the device holding whatever angle it had
+         when the pointer arrived while the scroll went on without it, and it
+         jumped to catch up the moment the freeze lifted. */
+      if (!hovering.current) {
+        elapsed += dt / 1000;
+        // Frame-rate independent: a fixed per-frame fraction would chase
+        // faster on a 120Hz display than on a 60Hz one.
+        const k = 1 - Math.pow(0.004, dt / 1000);
+        eased.x += (target.x - eased.x) * k;
+        eased.y += (target.y - eased.y) * k;
+      }
 
       // Everything the device does at rest is scaled out together as the
       // scroll squares it up, so at 1 the transform is exactly identity
