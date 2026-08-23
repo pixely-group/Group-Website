@@ -211,32 +211,8 @@ export default function Hero() {
 
       <div
         ref={contentRef}
-        className="relative z-(--z-content) flex h-full flex-col justify-end px-6 pb-9 sm:px-10 md:pb-16 lg:px-14 lg:pb-20"
+        className="relative z-(--z-content) flex h-full flex-col justify-start px-6 pt-[clamp(84px,12.8vh,104px)] pb-9 sm:px-10 md:pb-16 lg:px-14 lg:pb-20 beside:justify-end beside:pt-0"
       >
-        {/* The phone, on every viewport that is not wide-and-landscape.
-            The hero anchors its copy to the bottom, so its upper region is
-            empty — this takes it. flex-1 rather than a fixed height, so the
-            device is sized by whatever the copy leaves: modest on a small
-            phone, generous on a tablet held upright, and never overlapping
-            a word. min-h-0 because a flex child will not shrink below its
-            content without it, and the device's aspect ratio is content.
-
-            Headroom from sm up only. The bar's row ends at 88 and the
-            device sits under it in the stack, so on a tablet its top
-            corner passed beneath the Login pill — 104 clears it. A phone
-            bar carries no trailing pill and the device is narrow and
-            centred there, so it passes between the wordmark and the burger
-            untouched; charging it the same 104 took it from 249 tall to
-            157, which is the difference between a device and a trinket.
-
-            Wide-and-landscape keeps the travelling phone, which is fixed,
-            flies down beside the copy and would have nothing to do here. */}
-        {!beside && (
-          <div className="relative flex min-h-0 flex-1 items-center justify-center pt-3 pb-7 sm:pt-[104px]">
-            <HeroDevice className="h-full max-h-[620px]" shift={0} />
-          </div>
-        )}
-
         <p
           data-hero-fade
           className="type-label mb-7 text-(--muted) opacity-0"
@@ -278,7 +254,7 @@ export default function Hero() {
           </span>
         </h1>
 
-        <div className="mt-10 flex flex-col gap-8 border-t border-(--line) pt-7 md:flex-row md:items-end md:justify-between">
+        <div className="mt-[clamp(22px,4.9vh,40px)] flex flex-col gap-8 border-t border-(--line) pt-[clamp(16px,3.4vh,28px)] md:flex-row md:items-end md:justify-between">
           {/* Lifted off the row's baseline once the two columns sit side by
               side. The band aligns them flush at the foot, which put the
               buttons level with the scroll hint — and that hint belongs on
@@ -329,7 +305,44 @@ export default function Hero() {
             </div>
           </div>
         </div>
+
+        {/* The device, on every viewport that is not wide-and-landscape.
+            It goes under the copy and runs off the bottom of the fold — the
+            section clips it — which is the whole idea: a phone shown whole
+            on a phone has to shrink to fit, and the first attempt at this
+            put a 117px-wide device on a 375px screen with its screen at
+            0.28 scale. Illegible, and a toy. Cropped, the same device is
+            240 wide at 0.6, its balance and quick actions read at a glance,
+            and the cut edge does the job the scroll hint does.
+
+            Absolute inside a flex-1 slot: the slot claims whatever the copy
+            leaves and the device hangs from its top at a height of its own,
+            free to exceed it. Wide-and-landscape has the travelling phone
+            instead and never renders this. */}
+        {!beside && (
+          <div className="relative mt-[clamp(20px,4.4vh,36px)] min-h-[120px] flex-1">
+            <div className="absolute inset-x-0 top-0 flex justify-center">
+              <HeroDevice
+                className="h-[clamp(400px,62vh,640px)]"
+                shift={0}
+              />
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* The seam. The device runs off the bottom of the fold and the section
+          clips it, which left a hard horizontal slice through the wallet —
+          it read as a broken render, not a crop. #manifesto below sits on the
+          identical ground (10,10,11), so a gradient to that exact colour lets
+          the phone dissolve into the join instead of being cut at it. Same z
+          as the content column, later in the DOM, so it paints over. */}
+      {!beside && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-(--z-content) h-[clamp(44px,9.9vh,80px)] bg-[linear-gradient(to_bottom,transparent,#0a0a0b_92%)]"
+        />
+      )}
     </section>
   );
 }
