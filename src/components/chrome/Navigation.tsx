@@ -413,16 +413,23 @@ export default function Navigation() {
          an interrupted glide correct itself instead of holding a stale
          answer. */
       if (glideTo.current) return;
-      /* The reading line. It sat at 0.4 and lit sections early: a section
-         counted while it only filled the lower 60% of the screen, and since
-         every chapter opens with ~15vh of its own padding, the marker moved
-         before the reader had seen anything of it. At 0.22 a section must
-         hold nearly four fifths of the screen to take the marker — past its
-         opening padding and into its actual matter. */
-      const line = window.innerHeight * 0.22;
+      /* A section takes the marker when it has actually arrived: its top
+         under the bar, the previous chapter gone. This line has been walked
+         down twice — 0.4 lit items while a section filled barely half the
+         screen, 0.22 still lit them while only the section's own ~15vh of
+         opening padding had crossed — and both were rationalised as reading
+         lines. The honest rule is the simple one: you are in a section when
+         it is at the top of your screen. */
+      const line = 96;
       let current: string | null = null;
       for (const t of targets) {
         if (t.el.getBoundingClientRect().top <= line) current = t.href;
+      }
+      /* The last chapter may be shorter than the screen, so its top can
+         never reach the line — at the foot of the page it wins anyway. */
+      const doc = document.documentElement;
+      if (window.scrollY + window.innerHeight >= doc.scrollHeight - 2) {
+        current = targets[targets.length - 1].href;
       }
       if (current !== last) {
         last = current;

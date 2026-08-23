@@ -187,23 +187,17 @@ export default function TravellingDevice() {
     /* Matches the column the hero held it in. Under the navigation, which it
        passes beneath on its way off the top.
 
-       The band is the full viewport and the device is centred in it, so the
-       phone's centre is the screen's centre at every browser height. The
-       asymmetric 128/192 insets this used to carry always parked it a
-       little high, which read as hanging off the bar. What made the
-       asymmetry feel necessary — the bar above (~88 wanted) and the hero's
-       bottom-right block below (the mission pillars and the scroll hint,
-       ~210 wanted) — is paid for by the cap instead: min(cap, 100svh − 436)
-       holds 218px clear on each side symmetrically, enough for the taller
-       obstacle with the bar's side coming out generous. On a short window
-       the phone gives up size to stay centred, which is the trade centring
-       asks for — and under 940px of height the hero's mission pillars stand
-       down (their own rule, in Hero.tsx), the scroll hint becomes the
-       bottom obstacle, and the clearance relaxes to 162 a side. */
+       The band is the full viewport and the device is centred in it — its
+       centre is the screen's centre at every browser height, at full size.
+       No viewport-derived cap: shrinking the phone to buy clearance was
+       tried and rejected. What gives way instead is the hero's bottom-right
+       mission pillars, which hide below the height where a full-size
+       centred phone would cross them (their rule, in Hero.tsx); the scroll
+       hint beside them sits right of the phone's edge and never collides. */
     <div className="pointer-events-none fixed inset-y-0 right-[12.4%] z-30 hidden items-center lg:flex">
       <div
         ref={holderRef}
-        className="pointer-events-auto relative h-full max-h-[min(560px,calc(100svh-436px))] xl:max-h-[min(648px,calc(100svh-436px))] [@media(max-height:939px)]:max-h-[min(648px,calc(100svh-324px))]"
+        className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[648px]"
         /* The device hangs in an out-of-flow child, so this box has nothing to
            take its width from and collapses to zero — which silently breaks
            the centring, since that is solved from this box's midpoint. */
