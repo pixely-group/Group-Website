@@ -60,8 +60,16 @@ type C = Record<string, string>;
 const font = "var(--font-nunito)";
 const SCREEN_H = 874;
 /** The template's SplitView stops: under the header, under the quick
- *  actions, and as low as the tab bar allows. It opens at the middle. */
-const SNAPS = [150, 336, 630] as const;
+ *  actions, and as low as the tab bar allows. It opens at the middle.
+ *
+ *  The bottom stop was 630, which left the sheet halfway down the screen
+ *  and the panel it uncovers too short to hold a section. A wallet that
+ *  does this drops its sheet until only the handle and its own heading row
+ *  are left showing, with the tab bar floating over them — about 87% of the
+ *  way down. 744 puts the handle at 774 and the heading row at 774-814,
+ *  which is exactly that, and it hands the panel behind 392px to work in
+ *  instead of 286. */
+const SNAPS = [150, 336, 744] as const;
 
 type Tx = {
   name: string;
@@ -518,13 +526,19 @@ function TxScreen({ tx, onBack, c }: { tx: Tx; onBack: () => void; c: C }) {
    it started and 1.59 in the hand. */
 const CARD_H = 204;
 const CARD_STEP = 86;
-/* The same cards at a wallet's spacing rather than a fan's: enough of each
-   one showing to count them, the front one whole. Measured against the room
-   the sheet uncovers — the quick actions end at 322 and the bottom snap is
-   630, so the label sits at 344 and 2 x 22 + 204 of stack lands at 620, ten
-   clear of the sheet. Anything looser and the last card is cut by it. */
-const CARD_PEEK = 22;
-const DRAWER_TOP = 344;
+/* The same cards at a wallet's spacing rather than a fan's 86. The front card
+   covers the tops of the ones under it, so what a peek shows is each card's
+   bottom — its balance line — and 44 is what that line needs. At 22 the peek
+   fell inside the card's own 18 of padding and showed nothing but an edge,
+   which is a stack you can count rather than read.
+
+   Measured against the room the sheet now uncovers. The quick actions end at
+   322 and the reference leaves about 30 before its heading, so the panel
+   starts at 352; a heading row of 36 and 2 x 44 + 204 of stack put the last
+   card at 694, fifty clear of the sheet at 744. And 352 is below the resting
+   stop of 336, so none of it shows until it is asked for. */
+const CARD_PEEK = 44;
+const DRAWER_TOP = 352;
 
 /** The EMV contactless indicator, as it is printed on a card: four arcs
  *  about one centre, opening right, the innermost a short stub and each one
@@ -956,7 +970,7 @@ export default function WalletScreen({
                 moves: the sheet does, and pulling it down uncovers them —
                 which is what the handle was always for, it just had an empty
                 panel to reveal. At the resting snap the sheet's edge is at
-                336 and this starts at 344, so none of it shows until asked
+                336 and this starts at 352, so none of it shows until asked
                 for, and pulling the sheet back up puts it away.
 
                 zIndex 0 rather than none. The cards layer among themselves,
@@ -974,13 +988,25 @@ export default function WalletScreen({
                 pointerEvents: cardsOpen ? "auto" : "none",
               }}
             >
-              <p style={{ fontSize: 12, letterSpacing: "0.08em", color: c.MUTED }}>
-                VIRTUAL CARDS
-              </p>
+              {/* The same heading row the sheet below uses for its own
+                  section — 17/600 and a pill on the right — rather than the
+                  website's letterspaced micro-label, which was the page's
+                  voice leaking into a screen that has its own. */}
+              <div className="flex items-center justify-between">
+                <p style={{ fontSize: 17, fontWeight: 600, color: c.MUTED }}>
+                  Virtual Cards
+                </p>
+                <span
+                  className="rounded-full px-[16px] py-[8px]"
+                  style={{ fontSize: 14, fontWeight: 600, color: c.FG, background: c.SURFACE }}
+                >
+                  Manage
+                </span>
+              </div>
               <div
                 style={{
                   position: "relative",
-                  marginTop: 12,
+                  marginTop: 14,
                   height: (CARDS.length - 1) * CARD_PEEK + CARD_H,
                 }}
               >
