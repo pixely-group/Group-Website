@@ -382,7 +382,15 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  line-height: 1;
+  /* Set solid, this was only ever right for a label that fits on one line —
+     and at 375 twenty-nine of them do not. Two lines of 11px uppercase set
+     at 1 leaves no gap at all between a cap height and the caps under it,
+     which is what the hero's eyebrow was doing. Six call sites had already
+     patched it locally with leading-relaxed or leading-[1.4]; that is the
+     utility being wrong, not six exceptions. Single-line labels grow their
+     box by 5.5px and move nothing, since they sit in rows that centre
+     them. */
+  line-height: 1.5;
 }
 
 @utility type-mono {
