@@ -26,11 +26,13 @@ import { useReducedMotion } from "@/lib/hooks";
  */
 const WORDS = ["instantly", "securely", "your way"] as const;
 
-/** Per character. The logo's numbers: typing is deliberate, erasing is
- *  quick — the asymmetry of a hand laying letters down and sweeping them
- *  away. */
+/** Per character. Typing keeps the logo's deliberate 92; erasing runs at
+ *  28 — under two frames a letter, so a nine-letter word comes away in a
+ *  quarter of a second and the erase reads as one smooth sweep rather than
+ *  ticks. The asymmetry is the point: a hand lays letters down and brushes
+ *  them away. */
 const TYPE_MS = 92;
-const ERASE_MS = 48;
+const ERASE_MS = 28;
 /** How long a finished word stands — blinking — before it is taken back. */
 const HOLD = 2800;
 /** A beat on the empty line before the next word starts. */

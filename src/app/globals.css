@@ -728,15 +728,14 @@ html[data-cursor="on"] * {
 @utility caret-dot {
   display: inline-block;
   /* Square, not round: the brand's dot is the wordmark's full stop — the
-     lit pixel — and every dot on the site is the same mark at a different
-     size. The size is the round caret's history correcting itself: as a
-     circle, 0.34 was called too small and 0.44 too big, so it sat at 0.38.
-     A square of the same width carries more ink than a circle (a circle
-     fills 78% of its box), so the square at 0.38 read heavier than the
-     round one ever did — 0.34 is the area-equivalent square of the 0.38
-     circle, and lands the weight the 0.38 was chosen for. */
-  width: 0.34em;
-  height: 0.34em;
+     lit pixel. And one ratio everywhere: 0.17em is the proportion the
+     PIXELY. logo keeps, and the caret keeps it too, so the dot ending the
+     headline and the dot ending the name are the same mark at different
+     type sizes rather than two marks. (The round caret's old sizes — 0.34
+     too small, 0.44 too big — were judgements about a circle; they retired
+     with it.) */
+  width: 0.17em;
+  height: 0.17em;
   /* 0.08 sat too close to the last letter — the dot read as part of the
      word rather than as its full stop. */
   margin-left: 0.14em;
