@@ -193,7 +193,8 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .wm-caret {
+  .wm-caret,
+  .caret-dot.at-rest {
     animation: wm-blink 1.1s steps(1) infinite;
   }
 }
@@ -732,7 +733,9 @@ html[data-cursor="on"] * {
      different size. */
   width: 0.38em;
   height: 0.38em;
-  margin-left: 0.08em;
+  /* 0.08 sat too close to the last letter — the dot read as part of the
+     word rather than as its full stop. */
+  margin-left: 0.14em;
   background: currentColor;
   vertical-align: baseline;
 }
