@@ -48,11 +48,26 @@ export default function Manifesto() {
       ref={sectionRef}
       id="manifesto"
       data-theme="ink"
-      /* The copy starts well down the section, so the device has the room to
-         travel, square up and grow before the first line reaches it. At 4rem
-         the copy was landing on it 200px of scroll before it had even parked,
-         which left the animation fighting the text for the same space. */
-      className="relative bg-theme px-6 py-[22vh] text-theme sm:px-10 lg:px-14 lg:pt-[15rem]"
+      /* The headroom belongs to the travelling device: the copy starts well
+         down the section so it has room to travel, square up and grow before
+         the first line reaches it. At 4rem the copy was landing on it 200px
+         of scroll before it had even parked, which left the animation
+         fighting the text for the same space.
+
+         So it is charged to `beside` — the viewports that actually have a
+         travelling device — and not to `lg`, which is width only and was
+         billing an iPad held upright for room nothing was using. Everywhere
+         else the hero's phone dissolves into the seam at the fold and the
+         section can start straight after it: 22vh of top padding was 179px
+         of nothing on a phone and 263 on a tablet, against the 15-16vh the
+         rest of the page keeps.
+
+         Budgeted against what the reader sees, not what the box measures.
+         The hero's seam dissolves the phone over its own last 80px, so that
+         much reads as empty before this section's padding even begins — the
+         join costs the fade plus the padding, and it is the sum that has to
+         look right. ~130px on a phone, ~150 on a tablet. */
+      className="relative bg-theme px-6 pt-[clamp(44px,6vh,76px)] pb-[22vh] text-theme sm:px-10 lg:px-14 beside:pt-[15rem]"
     >
       <h2 className="sr-only">Why Pixely exists</h2>
 
@@ -68,7 +83,7 @@ export default function Manifesto() {
           hardcoded black. Between the device at z-30 and the copy at z-40. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[13rem] z-[35] hidden h-[5.5rem] lg:block"
+        className="pointer-events-none absolute inset-x-0 top-[13rem] z-[35] hidden h-[5.5rem] beside:block"
         style={{
           background:
             "linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--bg) 55%, transparent) 46%, color-mix(in oklab, var(--bg) 88%, transparent) 78%, var(--bg) 100%)",
@@ -76,7 +91,7 @@ export default function Manifesto() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[18.5rem] bottom-0 z-[35] hidden bg-theme lg:block"
+        className="pointer-events-none absolute inset-x-0 top-[18.5rem] bottom-0 z-[35] hidden bg-theme beside:block"
       />
       {/* One centred column rather than a left-aligned block with the right
           half empty. The text stays ranged left inside it: this is a
