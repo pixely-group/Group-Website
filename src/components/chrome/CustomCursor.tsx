@@ -20,7 +20,10 @@ export const CURSOR_DOT_LINK_SCALE = 0.4;
 export const CURSOR_DOT_LINK_PX = CURSOR_DOT_PX * CURSOR_DOT_LINK_SCALE;
 
 /** What the dot grows to over something clickable, and only there. */
-const CURSOR_DOT_CLICKABLE_SCALE = 1.15;
+/** 0.85, down from 1.15: against the 0.4 resting scale, 1.15 nearly
+ *  tripled the dot over a link and it read as a state change rather than a
+ *  response. 0.85 still doubles it — plainly awake, no longer swollen. */
+const CURSOR_DOT_CLICKABLE_SCALE = 0.85;
 
 /**
  * Cursor ink for the chapter beneath it: a dark section takes the light
