@@ -279,12 +279,13 @@
     animation: glyph-flow-back var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
-  /* Wavefronts leaving the origin and going on leaving it. Six a side, a
-     sixth of the cycle apart, so the train is continuous and there is always
-     one setting out as another goes. */
-  [data-nav-panel][data-open] .glyph-ripple {
-    animation: glyph-ripple 4.8s var(--ease-out-expo) infinite;
-    animation-delay: calc(var(--i) * -0.8s);
+  /* One front expanding through a field that stands still, and a second half
+     a cycle behind it so the reach never stops. The field is drawn once in
+     hairline and never animates — twelve arcs all scaling at once was the
+     tangle. */
+  [data-nav-panel][data-open] .glyph-wave {
+    animation: glyph-wave 3.6s var(--ease-out-expo) infinite;
+    animation-delay: calc(var(--i) * -1.8s);
     transform-origin: 0 0;
   }
   /* The record under the seal, and the nodes on the fabric: a slow breath so
@@ -297,13 +298,10 @@
   /* The ellipse is the meridian edge-on and then face-on: scaling it in x is
      the whole illusion of a sphere turning, and it costs one property. */
   [data-nav-panel][data-open] .glyph-turn {
-    animation: glyph-turn 7s linear infinite;
-    /* The axis, which is this element's own origin — not `center`. The
-       meridian lives inside a translate(120 42) group, and `center` resolves
-       to the viewBox's centre expressed in the element's local space, which
-       is that offset counted twice: scaling about it threw the arc out to
-       x=227 at half-turn, right off the sphere. The ripples had it right at
-       0 0 all along. */
+    animation: glyph-turn 7s var(--ease-inout-soft) infinite;
+    /* The ellipse's own centre. The travel is in the keyframes now rather
+       than falling out of how `center` resolves inside a translated group,
+       which is where it used to come from. */
     transform-origin: 0 0;
   }
   /* Up the axis and back down it. A position held, rather than the satellite
@@ -328,16 +326,16 @@
     stroke-dashoffset: 100;
   }
 }
-@keyframes glyph-ripple {
+@keyframes glyph-wave {
   0% {
-    transform: scale(0.18);
+    transform: scale(1);
     opacity: 0;
   }
-  18% {
-    opacity: 0.7;
+  14% {
+    opacity: 0.85;
   }
   100% {
-    transform: scale(1.16);
+    transform: scale(3.4);
     opacity: 0;
   }
 }
@@ -349,22 +347,19 @@
     opacity: 0.6;
   }
 }
-/* A whole turn, not a narrowing and a widening. Scale carries the node on the
-   ellipse's rim, so it crosses right to left, goes through the far side, and
-   returns left to right — which is the only way the direction is legible at
-   all, since a bare ellipse looks identical whichever way it is going.
-   Stepped through cos rather than eased, because easing between two extremes
-   stalls it at the edge-on frame, where there is least to look at. */
+/* Narrowing away to the right and coming back. The translate is what the old
+   transform-origin was producing on its own: at scaleX(0.06) it stood the
+   ellipse at 120 x (1 - 0.06) = 112.8, and that sideways run is the half of
+   it worth keeping. Stated, so it cannot change underneath the drawing the
+   next time a transform-origin is reasoned about. */
 @keyframes glyph-turn {
-  0% { transform: scaleX(1); }
-  12.5% { transform: scaleX(0.707); }
-  25% { transform: scaleX(0.001); }
-  37.5% { transform: scaleX(-0.707); }
-  50% { transform: scaleX(-1); }
-  62.5% { transform: scaleX(-0.707); }
-  75% { transform: scaleX(0.001); }
-  87.5% { transform: scaleX(0.707); }
-  100% { transform: scaleX(1); }
+  0%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+  50% {
+    transform: translateX(112.8px) scaleX(0.06);
+  }
 }
 @keyframes glyph-cross {
   0%, 100% {

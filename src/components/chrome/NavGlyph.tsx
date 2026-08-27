@@ -125,43 +125,49 @@ function ProductGlyph() {
 }
 
 /* — Solutions: first transaction to national scale ————————————————
-   Two origins facing each other, each going on leaving itself, and the
-   square crossing between them.
+   Twelve arcs all scaling at once was a tangle: every one a different
+   radius, every one animating, and no two nesting because the radii were
+   alternating. So the field stands still now and only the front moves.
 
-   The weave is six wavefronts a side rather than four, alternating deep and
-   shallow so they read as a wave train with a shape to it instead of one
-   arc scaled six times. Odd fronts run wider and fainter, even ones tighter
-   and brighter, and the pair of banks meets in the middle where the square
-   is crossing. */
+   Four true semicircles a side, evenly stepped, drawn once in hairline —
+   they nest because they share a centre and a ratio. Over them one accent
+   front expands through the whole field and fades out at the edge, with a
+   second half a cycle behind it so the reach never stops. Two moving parts
+   a side instead of six, and an order to move through. */
 function SolutionsGlyph() {
-  const arc = (sweep: 0 | 1, rx: number) =>
-    `M0 -30 A ${rx} 30 0 0 ${sweep} 0 30`;
-  const fronts = [0, 1, 2, 3, 4, 5];
+  const semi = (r: number, sweep: 0 | 1) => `M0 -${r} A ${r} ${r} 0 0 ${sweep} 0 ${r}`;
   return (
     <Frame>
       {([
-        { x: 26, sweep: 1 as const },
-        { x: 214, sweep: 0 as const },
+        { x: 28, sweep: 1 as const },
+        { x: 212, sweep: 0 as const },
       ]).map((side) => (
         <g key={side.x} transform={`translate(${side.x} 42)`}>
-          {fronts.map((i) => (
+          {[11, 19, 27, 35].map((r, i) => (
+            <path
+              key={r}
+              d={semi(r, side.sweep)}
+              stroke={LINE}
+              strokeWidth="1"
+              opacity={0.3 - i * 0.055}
+            />
+          ))}
+          {[0, 1].map((i) => (
             <path
               key={i}
-              className="glyph-ripple"
-              d={arc(side.sweep, i % 2 ? 20 : 30)}
+              className="glyph-wave"
+              d={semi(11, side.sweep)}
               stroke="var(--accent)"
-              strokeWidth={i % 2 ? 1 : 1.2}
-              opacity={i % 2 ? 0.55 : 1}
+              strokeWidth="1.2"
               style={{ "--i": i } as React.CSSProperties}
             />
           ))}
-          <path d={arc(side.sweep, 30)} stroke={LINE} strokeWidth="1" opacity="0.22" />
-          <line x1="0" y1="-33" x2="0" y2="33" stroke={LINE} strokeWidth="1" opacity="0.34" />
+          <line x1="0" y1="-38" x2="0" y2="38" stroke={LINE} strokeWidth="1" opacity="0.34" />
         </g>
       ))}
-      <line x1="26" y1="42" x2="214" y2="42" stroke={LINE} strokeWidth="1" opacity="0.12" />
+      <line x1="28" y1="42" x2="212" y2="42" stroke={LINE} strokeWidth="1" opacity="0.12" />
       <g className="glyph-cross">
-        <Mark x={26} y={42} />
+        <Mark x={28} y={42} />
       </g>
     </Frame>
   );
@@ -247,15 +253,16 @@ function PlatformGlyph() {
 }
 
 /* — Company: the meridian. A sphere on its axis ——————————————————
-   One meridian, not a whole ellipse. That is the entire difference and it is
-   the reason the turn was invisible before: an ellipse carries both of its
-   arcs, so scaling it to -1 draws exactly the same picture as scaling it to
-   1, and the left half of the journey was already on screen. A single arc
-   has a side. It bulges right, flattens through the axis, bulges left, and
-   comes back — the same gesture on both sides, going round rather than
-   turning back at the middle.
+   The version that was right, restored: the whole ellipse, narrowing away
+   to the right and coming back, with the square running the axis.
 
-   The square still runs the axis. */
+   The sideways travel is the drawing. It used to come out of
+   transform-origin: center resolving to the group's offset counted twice —
+   an accident that happened to look good, and one I removed while calling
+   it a bug. It is written out now, translate and scale together about the
+   ellipse's own centre, so it renders the same and is nobody's accident.
+   The numbers are the ones that accident produced: at its narrowest the
+   ellipse stood at 112.8 with a sixteenth of its width. */
 function CompanyGlyph() {
   return (
     <Frame>
@@ -263,13 +270,7 @@ function CompanyGlyph() {
         <circle r="30" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="-30" y1="0" x2="30" y2="0" stroke={LINE} strokeWidth="1" opacity="0.2" />
-        <path
-          className="glyph-turn"
-          d="M0 -30 A 13 30 0 0 1 0 30"
-          stroke={LINE}
-          strokeWidth="1"
-          opacity="0.42"
-        />
+        <ellipse className="glyph-turn" rx="13" ry="30" stroke={LINE} strokeWidth="1" opacity="0.34" />
         <g className="glyph-bob">
           <Mark x={0} y={0} size={7} />
         </g>
