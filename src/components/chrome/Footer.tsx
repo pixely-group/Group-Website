@@ -4,44 +4,11 @@ import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import WordmarkTrace from "@/components/ui/WordmarkTrace";
+/* The same five columns the navigation opens as sub-menus. Written once, in
+   lib/menu, because two lists that have to agree and are kept apart do not
+   stay in agreement. */
+import { MENU, linkHref } from "@/lib/menu";
 
-/* The Product column carries the six core services the deck documents — the
-   same six Metrics lists — rather than the multi-currency treasury lineup the
-   pre-rebrand site sold. */
-const COLUMNS = [
-  {
-    heading: "Product",
-    href: "#product",
-    links: [
-      "Payments",
-      "eWallets",
-      "Identity",
-      "AI services",
-      "Compliance",
-      "APIs and SDKs",
-    ],
-  },
-  {
-    heading: "Solutions",
-    href: "#solutions",
-    links: ["Startups", "Enterprises", "Platforms", "Financial teams", "Global"],
-  },
-  {
-    heading: "Platform",
-    href: "#network",
-    links: ["Network", "Rails", "Ledger", "API reference", "Status", "Changelog"],
-  },
-  {
-    heading: "Company",
-    href: "#thesis",
-    links: ["About", "Careers", "Press", "Customers", "Contact"],
-  },
-  {
-    heading: "Resources",
-    href: "#security",
-    links: ["Documentation", "Guides", "Security", "Compliance", "Legal"],
-  },
-] as const;
 
 /** Hubs whose local time the footer keeps, west to east. Algiers is the home
  *  node the corridor map is drawn around, so it has to appear in a strip
@@ -139,24 +106,27 @@ export default function Footer() {
           </div>
 
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
-            {COLUMNS.map((column) => (
+            {MENU.map((column) => (
               <div key={column.heading}>
                 <h2 className="type-label mb-5 text-(--faint)">
                   {column.heading}
                 </h2>
                 <ul className="space-y-3">
-                  {column.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href={column.href}
-                        onClick={scrollTo(column.href)}
-                        data-cursor="link"
-                        className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-accent"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
+                  {column.links.map((link) => {
+                    const href = linkHref(column, link);
+                    return (
+                      <li key={link.label}>
+                        <a
+                          href={href}
+                          onClick={scrollTo(href)}
+                          data-cursor="link"
+                          className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-accent"
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}

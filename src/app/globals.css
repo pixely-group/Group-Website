@@ -217,6 +217,65 @@
   animation: none;
 }
 
+/* ————————————————————————————————————————
+   The navigation's sub-menu.
+
+   One panel that travels between the items. Closed, it still holds a
+   position — so opening it from nothing places it silently and only a move
+   between two open items is animated, which is what `data-morph` gates. A
+   panel that slid in from the last item it was under every time would be
+   telling the reader about its own state rather than about the menu.
+
+   The fill is its own token because the bar's glass is picked by class per
+   ground and this has to match it on both without being told which it is on.
+   ———————————————————————————————————————— */
+[data-nav-panel] {
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 -6px;
+  transition:
+    opacity 200ms var(--ease-out-expo),
+    translate 320ms var(--ease-out-expo),
+    visibility 0s linear 200ms;
+}
+[data-nav-panel][data-morph] {
+  transition:
+    opacity 200ms var(--ease-out-expo),
+    translate 320ms var(--ease-out-expo),
+    transform 420ms var(--ease-out-expo),
+    visibility 0s linear 200ms;
+}
+[data-nav-panel][data-open] {
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  transition-delay: 0s;
+}
+
+[data-theme="ink"] {
+  --nav-panel-fill: rgb(10 10 11 / 0.82);
+}
+[data-theme="bone"] {
+  --nav-panel-fill: rgb(236 233 225 / 0.86);
+}
+
+/* The links arrive just behind the panel rather than with it, so the panel
+   reads as a surface that opened and then filled, not as one printed thing
+   fading up. Sixteen milliseconds apart: enough to be a sequence, not enough
+   to be a queue. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-nav-panel][data-open] .nav-panel-item {
+    animation: nav-panel-item 260ms var(--ease-out-expo) backwards;
+    animation-delay: calc(60ms + var(--i) * 16ms);
+  }
+}
+@keyframes nav-panel-item {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
 /* The footer's wordmark writes itself when the reader reaches it, and the dot
    holds the line alone while it waits to start. Same keyframes as the
    navigation's caret, so there is one blink on this site rather than two —

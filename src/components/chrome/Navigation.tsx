@@ -5,6 +5,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
+import { columnFor, linkHref } from "@/lib/menu";
 
 /**
  * Anchors for a single-page site: every entry has to resolve to something on
@@ -15,6 +16,24 @@ import MobileMenu from "@/components/chrome/MobileMenu";
    points at #network, which is the fourth section down, while Services points
    at #solutions, which is the eighth — so reading the bar left to right used
    to walk the page out of sequence. */
+/* The sub-menu.
+
+   One panel that slides between the items rather than five that appear and
+   vanish. The bar already has one dot that walks to the chapter you are in;
+   a second thing that blinked in and out beside it would read as a different
+   system bolted on. One width for all five, so the move is a pure translate
+   and the panel never resizes under the pointer — the columns are five and
+   six short labels, so the widest costs the narrowest nothing.
+
+   Hover has intent: a short wait before opening, so a pointer crossing the
+   bar on its way somewhere else does not drag a panel open behind it, and a
+   longer one before closing, so the diagonal down to the panel is forgiving.
+   Once a panel is open the next item switches to it immediately — the wait
+   is for the first one only, which is the one that might not be meant. */
+const PANEL_W = 280;
+const OPEN_MS = 110;
+const CLOSE_MS = 240;
+
 export const NAV_LINKS = [
   { label: "Platform", href: "#product" },
   { label: "Identity", href: "#network" },
@@ -285,6 +304,21 @@ export default function Navigation() {
     wide.addEventListener("change", shut);
     return () => wide.removeEventListener("change", shut);
   }, [menuOpen, setMenu]);
+  /* The open sub-menu, and where its panel sits. `morph` is the difference
+     between arriving and travelling: opening from nothing places the panel
+     without animating, so it does not fly in from wherever it was left,
+     while moving between items slides it. */
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [panel, setPanel] = useState({ x: 0, morph: false });
+  const openMenuRef = useRef<string | null>(null);
+  const openTimer = useRef(0);
+  const closeTimer = useRef(0);
+  const itemRefs = useRef(new Map<string, HTMLLIElement>());
+  const panelRef = useRef<HTMLDivElement>(null);
+  /* Which device opened it. A touch has no hover, so the first tap has to
+     open the panel instead of following the link. */
+  const lastPointer = useRef("mouse");
+
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const navP = useRef(0);
@@ -577,6 +611,64 @@ export default function Navigation() {
     [lenis],
   );
 
+  const stopMenuTimers = useCallback(() => {
+    window.clearTimeout(openTimer.current);
+    window.clearTimeout(closeTimer.current);
+  }, []);
+
+  const openSub = useCallback(
+    (href: string, now: boolean) => {
+      stopMenuTimers();
+      if (!columnFor(href)) {
+        /* An item with nothing under it still closes whatever was open —
+           moving onto Contact should put the panel away, not leave the last
+           one hanging over a link it has nothing to do with. */
+        openMenuRef.current = null;
+        setOpenMenu(null);
+        return;
+      }
+      const show = () => {
+        const item = itemRefs.current.get(href);
+        const nav = navRef.current;
+        if (item && nav) {
+          const x =
+            item.offsetLeft + item.offsetWidth / 2 - PANEL_W / 2;
+          setPanel({ x, morph: openMenuRef.current !== null });
+        }
+        openMenuRef.current = href;
+        setOpenMenu(href);
+      };
+      if (now || openMenuRef.current !== null) show();
+      else openTimer.current = window.setTimeout(show, OPEN_MS);
+    },
+    [stopMenuTimers],
+  );
+
+  const closeSub = useCallback(
+    (now: boolean) => {
+      stopMenuTimers();
+      const shut = () => {
+        openMenuRef.current = null;
+        setOpenMenu(null);
+      };
+      if (now) shut();
+      else closeTimer.current = window.setTimeout(shut, CLOSE_MS);
+    },
+    [stopMenuTimers],
+  );
+
+  /* Scrolling puts it away. The panel hangs off a bar that is itself
+     condensing as the page moves, and a menu left open through that reads as
+     something that has come loose. */
+  useEffect(() => {
+    if (!openMenu) return;
+    const shut = () => closeSub(true);
+    window.addEventListener("scroll", shut, { passive: true });
+    return () => window.removeEventListener("scroll", shut);
+  }, [openMenu, closeSub]);
+
+  useEffect(() => stopMenuTimers, [stopMenuTimers]);
+
   const scrollTo = (href: string) => (e: React.MouseEvent) => {
     const el = document.querySelector(href);
     // Let the browser handle anything we cannot resolve, rather than
@@ -800,6 +892,24 @@ export default function Navigation() {
               ref={navRef}
               aria-label="Primary"
               className="relative hidden lg:block"
+              /* Both handlers sit here rather than on the list, because the
+                 panel is a child of this element: the pointer moving from an
+                 item down into the panel never leaves the nav, so nothing has
+                 to guess at a safe corridor between the two. */
+              onPointerLeave={() => closeSub(false)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  closeSub(true);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Escape" || !openMenuRef.current) return;
+                const back = itemRefs.current
+                  .get(openMenuRef.current)
+                  ?.querySelector("a");
+                closeSub(true);
+                back?.focus();
+              }}
             >
               {/* The travelling dot: the wordmark's own full stop, off on an
                   errand. It lives INSIDE the nav list on purpose — the
@@ -822,16 +932,66 @@ export default function Navigation() {
               <ul className="flex items-center gap-11">
                 {NAV_LINKS.map((link) => {
                   const active = activeHref === link.href;
+                  const column = columnFor(link.href);
+                  const isOpen = openMenu === link.href;
                   return (
-                    <li key={link.href}>
+                    <li
+                      key={link.href}
+                      ref={(el) => {
+                        if (el) itemRefs.current.set(link.href, el);
+                        else itemRefs.current.delete(link.href);
+                      }}
+                      onPointerEnter={(e) => {
+                        if (e.pointerType === "touch") return;
+                        openSub(link.href, false);
+                      }}
+                    >
                       {/* This transition is for the pointer only; the bar
                           switches it off while it is crossing grounds. */}
                       <a
                         href={link.href}
-                        onClick={scrollTo(link.href)}
+                        id={`nav-item-${link.href.slice(1)}`}
+                        onPointerDown={(e) => {
+                          lastPointer.current = e.pointerType;
+                        }}
+                        onClick={(e) => {
+                          /* No hover on a touch screen, so the first tap has
+                             to be the one that opens the panel. The second
+                             follows the link, which is what a tap on an item
+                             already showing its menu can only mean. */
+                          if (
+                            lastPointer.current === "touch" &&
+                            column &&
+                            !isOpen
+                          ) {
+                            e.preventDefault();
+                            openSub(link.href, true);
+                            return;
+                          }
+                          closeSub(true);
+                          scrollTo(link.href)(e);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key !== "ArrowDown" || !column) return;
+                          /* Down opens it and steps in, which is where a
+                             keyboard expects to go once an item says it has a
+                             menu. Focus alone deliberately does not open it:
+                             tabbing along the bar to reach Login would drag
+                             four panels open on the way, and Escape — which
+                             has to hand focus back to the item it came from —
+                             would be met by the item opening it again. */
+                          e.preventDefault();
+                          openSub(link.href, true);
+                          requestAnimationFrame(() =>
+                            panelRef.current?.querySelector("a")?.focus(),
+                          );
+                        }}
                         data-cursor="link"
                         data-nav-link
                         aria-current={active ? "true" : undefined}
+                        aria-haspopup={column ? "true" : undefined}
+                        aria-expanded={column ? isOpen : undefined}
+                        aria-controls={column ? "nav-submenu" : undefined}
                         className={`type-label relative block py-2 transition-colors duration-300 ease-(--ease-swift) ${
                           active
                             ? "text-accent"
@@ -844,6 +1004,66 @@ export default function Navigation() {
                   );
                 })}
               </ul>
+
+              {/* One panel, moved. The padding is on the outside so the gap
+                  between the bar and the panel is still part of this element
+                  — a pointer crossing it has not left the menu. */}
+              <div
+                ref={panelRef}
+                id="nav-submenu"
+                data-nav-panel
+                data-open={openMenu ? "" : undefined}
+                data-morph={panel.morph ? "" : undefined}
+                aria-labelledby={
+                  openMenu ? `nav-item-${openMenu.slice(1)}` : undefined
+                }
+                aria-hidden={openMenu ? undefined : true}
+                onPointerEnter={stopMenuTimers}
+                className="absolute top-full left-0 pt-4"
+                style={{ width: PANEL_W, transform: `translateX(${panel.x}px)` }}
+              >
+                {(() => {
+                  const column = openMenu ? columnFor(openMenu) : null;
+                  if (!column) return null;
+                  return (
+                    <div
+                      key={column.href}
+                      className="rounded-(--radius-panel) border border-(--line) bg-(--nav-panel-fill) p-5 backdrop-blur-xl"
+                    >
+                      <p className="type-label mb-4 leading-relaxed text-(--faint)">
+                        {column.note}
+                      </p>
+                      <ul className="flex flex-col gap-1">
+                        {column.links.map((link, i) => {
+                          const href = linkHref(column, link);
+                          return (
+                            <li
+                              key={link.label}
+                              className="nav-panel-item"
+                              style={
+                                { "--i": i } as React.CSSProperties
+                              }
+                            >
+                              <a
+                                href={href}
+                                tabIndex={openMenu ? undefined : -1}
+                                onClick={(e) => {
+                                  closeSub(true);
+                                  scrollTo(href)(e);
+                                }}
+                                data-cursor="link"
+                                className="-mx-2 block rounded-(--radius-mock) px-2 py-1.5 text-[0.88rem] text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
+                              >
+                                {link.label}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })()}
+              </div>
             </nav>
 
             <div className="relative flex items-center gap-3">
