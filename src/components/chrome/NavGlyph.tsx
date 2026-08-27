@@ -283,20 +283,21 @@ function PlatformGlyph() {
 }
 
 /* — Company: the meridian. A sphere on its axis ——————————————————
-   The version that was right, restored: the whole ellipse, narrowing away
-   to the right and coming back, with the square running the axis.
+   The whole ellipse, narrowing away to one side and coming back, a beat at
+   the middle, then the same run mirrored — with the square running the axis
+   in step with it.
 
-   The sideways travel is the drawing. It used to come out of
-   transform-origin: center resolving to the group's offset counted twice —
-   an accident that happened to look good, and one I removed while calling
-   it a bug. It is written out now, translate and scale together about the
-   ellipse's own centre, so it renders the same and is nobody's accident.
-   The numbers are the ones that accident produced: at its narrowest the
-   ellipse stood at 112.8 with a sixteenth of its width. */
+   A stop at each end of that run, marked the way the rails mark a junction,
+   so the meridian arrives somewhere rather than simply running out of frame.
+   The reach is one number: the markers are placed from it and the keyframes
+   translate by it, so the ellipse cannot stop short of its own stop or sail
+   past it. */
+const REACH = 112.8;
+
 function CompanyGlyph() {
   return (
     <Frame>
-      <g transform="translate(120 42)">
+      <g transform="translate(120 42)" style={{ "--reach": `${REACH}px` } as React.CSSProperties}>
         <circle r="30" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="-30" y1="0" x2="30" y2="0" stroke={LINE} strokeWidth="1" opacity="0.2" />
@@ -305,6 +306,23 @@ function CompanyGlyph() {
           <Mark x={0} y={0} size={7} />
         </g>
       </g>
+      {/* Drawn after the sphere, so the meridian docks into its stop rather
+          than crossing over it — the hole takes the arriving hairline. */}
+      {[120 - REACH, 120 + REACH].map((x) => (
+        <g key={x}>
+          <rect x={x - 4} y={38} width="8" height="8" fill="var(--bg)" />
+          <rect
+            className="glyph-node"
+            x={x - 3.5}
+            y={38.5}
+            width="7"
+            height="7"
+            stroke={LINE}
+            strokeWidth="1"
+            opacity="0.6"
+          />
+        </g>
+      ))}
     </Frame>
   );
 }

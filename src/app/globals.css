@@ -380,7 +380,9 @@
    The travel is what the old transform-origin was producing on its own: at
    scaleX(0.06) it stood the ellipse at 120 x (1 - 0.06) = 112.8. The left leg
    is that number negated, so the two excursions are the same distance either
-   side of the axis and the drawing is symmetric about it.
+   side of the axis and the drawing is symmetric about it. It comes in as
+   --reach from the drawing, which places its two stops from the same number —
+   the ellipse cannot stop short of one or sail past it.
 
    Each leg keeps the 7s it had, so nothing travels any faster than it did;
    the cycle is longer because there are two of them now, with about nine
@@ -394,14 +396,14 @@
     transform: translateX(0) scaleX(1);
   }
   28% {
-    transform: translateX(112.8px) scaleX(0.06);
+    transform: translateX(var(--reach)) scaleX(0.06);
   }
   50%,
   56% {
     transform: translateX(0) scaleX(1);
   }
   78% {
-    transform: translateX(-112.8px) scaleX(0.06);
+    transform: translateX(calc(var(--reach) * -1)) scaleX(0.06);
   }
   100% {
     transform: translateX(0) scaleX(1);
