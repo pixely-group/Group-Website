@@ -125,22 +125,26 @@ function ProductGlyph() {
 }
 
 /* — Solutions: first transaction to national scale ————————————————
-   Twelve arcs all scaling at once was a tangle: every one a different
-   radius, every one animating, and no two nesting because the radii were
-   alternating. So the field stands still now and only the front moves.
+   Two reaches facing each other and the square crossing between them.
 
-   Four true semicircles a side, evenly stepped, drawn once in hairline —
-   they nest because they share a centre and a ratio. Over them one accent
-   front expands through the whole field and fades out at the edge, with a
-   second half a cycle behind it so the reach never stops. Two moving parts
-   a side instead of six, and an order to move through. */
+   A side answers when the square arrives at it, and waits while the square
+   is away. That is the whole timing: the left fires at the top of the cycle,
+   the right half a cycle later, and each is quiet until the square comes
+   back. Both sides emitting all the time is what made this read as two
+   things happening near each other rather than one thing crossing.
+
+   Two fronts a side, the second a beat-fraction behind the first, so an
+   arrival lands as a burst with some depth to it rather than a single arc. */
+const CROSS = 7.2;
+const ECHO = 0.4;
+
 function SolutionsGlyph() {
   const semi = (r: number, sweep: 0 | 1) => `M0 -${r} A ${r} ${r} 0 0 ${sweep} 0 ${r}`;
   return (
     <Frame>
       {([
-        { x: 28, sweep: 1 as const },
-        { x: 212, sweep: 0 as const },
+        { x: 28, sweep: 1 as const, fires: 0 },
+        { x: 212, sweep: 0 as const, fires: CROSS / 2 },
       ]).map((side) => (
         <g key={side.x} transform={`translate(${side.x} 42)`}>
           {[11, 19, 27, 35].map((r, i) => (
@@ -159,7 +163,13 @@ function SolutionsGlyph() {
               d={semi(11, side.sweep)}
               stroke="var(--accent)"
               strokeWidth="1.2"
-              style={{ "--i": i } as React.CSSProperties}
+              /* Negative, so the cycle is already under way at load and the
+                 front lands on its arrival rather than a cycle later. */
+              style={
+                {
+                  "--delay": `${(side.fires + i * ECHO - CROSS).toFixed(2)}s`,
+                } as React.CSSProperties
+              }
             />
           ))}
           <line x1="0" y1="-38" x2="0" y2="38" stroke={LINE} strokeWidth="1" opacity="0.34" />

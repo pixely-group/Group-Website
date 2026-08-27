@@ -271,8 +271,10 @@
    ———————————————————————————————————————— */
 [data-nav-panel] {
   /* One tempo for the sub-menu drawings, so nothing in them can drift out of
-     phase with anything else. */
+     phase with anything else. The beat is Solutions' front; the turn is
+     Company's whole cycle, and its square is written to the same one. */
   --beat: 3.6s;
+  --turn: 16s;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -285,21 +287,15 @@
     animation: glyph-flow-back var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
-  /* One front expanding through a field that stands still, and a second half
-     a cycle behind it so the reach never stops. The field is drawn once in
-     hairline and never animates — twelve arcs all scaling at once was the
-     tangle.
-
-     The beat. Everything in this drawing is written against it rather than
-     given its own number: the fronts run one beat each, a second front sits
-     half a beat behind, and the square takes exactly two beats to cross and
-     come back. It was 5.4s against 3.6 — three against two, which only comes
-     back into line every 10.8s and is in a different phase on every pass
-     between. Two against one lands the square on an origin exactly as that
-     side lets go of a front, every single time. */
+  /* A side answers when the square arrives at it and waits while the square
+     is away, so the two reaches take turns rather than both running all the
+     time. One cycle is the square's whole round trip — two beats — and the
+     burst occupies only its first third, which is what puts the wait in.
+     The delay per front is worked out where the drawing is, from the side it
+     belongs to and the square's arrival at it. */
   [data-nav-panel][data-open] .glyph-wave {
-    animation: glyph-wave var(--beat) var(--ease-out-expo) infinite;
-    animation-delay: calc(var(--i) * (var(--beat) / -2));
+    animation: glyph-wave calc(var(--beat) * 2) var(--ease-out-expo) infinite;
+    animation-delay: var(--delay, 0s);
     transform-origin: 0 0;
   }
   /* The record under the seal, and the nodes on the fabric: a slow breath so
@@ -312,7 +308,7 @@
   /* The ellipse is the meridian edge-on and then face-on: scaling it in x is
      the whole illusion of a sphere turning, and it costs one property. */
   [data-nav-panel][data-open] .glyph-turn {
-    animation: glyph-turn 16s var(--ease-inout-soft) infinite;
+    animation: glyph-turn var(--turn) var(--ease-inout-soft) infinite;
     /* The ellipse's own centre. The travel is in the keyframes now rather
        than falling out of how `center` resolves inside a translated group,
        which is where it used to come from. */
@@ -320,8 +316,13 @@
   }
   /* Up the axis and back down it. A position held, rather than the satellite
      an orbit was describing. */
+  /* The square keeps the ellipse's time exactly: same duration, same
+     keyframe positions. It is at the top when the ellipse is furthest right,
+     at the foot when it is furthest left, and held at the middle through
+     both of the ellipse's own pauses. 4.6s against 16 was a ratio of about
+     3.5 — the two never met the same way twice. */
   [data-nav-panel][data-open] .glyph-bob {
-    animation: glyph-bob 4.6s var(--ease-inout-soft) infinite;
+    animation: glyph-bob var(--turn) var(--ease-inout-soft) infinite;
   }
   /* The square crossing from one reach to the other, a beat each way.
      Symmetric, so the return is the outward leg run backwards and the loop
@@ -347,9 +348,14 @@
     transform: scale(1);
     opacity: 0;
   }
-  14% {
+  5% {
     opacity: 0.85;
   }
+  36% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+  /* Held out of sight for the rest of the trip, which is the wait. */
   100% {
     transform: scale(3.4);
     opacity: 0;
@@ -409,11 +415,22 @@
   }
 }
 @keyframes glyph-bob {
-  0%, 100% {
+  0%,
+  6% {
+    transform: translateY(0);
+  }
+  28% {
     transform: translateY(-30px);
   }
-  50% {
+  50%,
+  56% {
+    transform: translateY(0);
+  }
+  78% {
     transform: translateY(30px);
+  }
+  100% {
+    transform: translateY(0);
   }
 }
 
