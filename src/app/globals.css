@@ -298,7 +298,7 @@
   /* The ellipse is the meridian edge-on and then face-on: scaling it in x is
      the whole illusion of a sphere turning, and it costs one property. */
   [data-nav-panel][data-open] .glyph-turn {
-    animation: glyph-turn 7s var(--ease-inout-soft) infinite;
+    animation: glyph-turn 16s var(--ease-inout-soft) infinite;
     /* The ellipse's own centre. The travel is in the keyframes now rather
        than falling out of how `center` resolves inside a translated group,
        which is where it used to come from. */
@@ -347,18 +347,37 @@
     opacity: 0.6;
   }
 }
-/* Narrowing away to the right and coming back. The translate is what the old
-   transform-origin was producing on its own: at scaleX(0.06) it stood the
-   ellipse at 120 x (1 - 0.06) = 112.8, and that sideways run is the half of
-   it worth keeping. Stated, so it cannot change underneath the drawing the
-   next time a transform-origin is reasoned about. */
+/* Out to the right and back, a beat at the middle, then the same run
+   mirrored to the left — and round again.
+
+   The travel is what the old transform-origin was producing on its own: at
+   scaleX(0.06) it stood the ellipse at 120 x (1 - 0.06) = 112.8. The left leg
+   is that number negated, so the two excursions are the same distance either
+   side of the axis and the drawing is symmetric about it.
+
+   Each leg keeps the 7s it had, so nothing travels any faster than it did;
+   the cycle is longer because there are two of them now, with about nine
+   tenths of a second held at the middle between. 6% of 16s, which is long
+   enough to read as arriving somewhere rather than as a hitch in the loop.
+   The hold is written as a pair of identical keyframes rather than a pause,
+   so the whole thing stays one seamless cycle. */
 @keyframes glyph-turn {
   0%,
-  100% {
+  6% {
     transform: translateX(0) scaleX(1);
   }
-  50% {
+  28% {
     transform: translateX(112.8px) scaleX(0.06);
+  }
+  50%,
+  56% {
+    transform: translateX(0) scaleX(1);
+  }
+  78% {
+    transform: translateX(-112.8px) scaleX(0.06);
+  }
+  100% {
+    transform: translateX(0) scaleX(1);
   }
 }
 @keyframes glyph-cross {
