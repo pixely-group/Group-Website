@@ -287,6 +287,22 @@
   }
 }
 
+/* Each auth pane on the frame it appears. It is a fresh element per mode —
+   keyed, so React mounts a new one rather than tweening the old — and this
+   settles the extra height in from just below rather than popping it. The
+   panel's top edge is fixed, so the movement reads as the bottom filling. */
+@media (prefers-reduced-motion: no-preference) {
+  .auth-pane {
+    animation: auth-pane 320ms var(--ease-out-expo);
+  }
+}
+@keyframes auth-pane {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
 /* The email verdict. The tick and the cross draw themselves on rather than
    appearing — same gesture, two outcomes — and the mark is keyed on its
    state, so React swaps the element and the draw runs again on every change

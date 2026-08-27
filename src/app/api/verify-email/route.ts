@@ -1,6 +1,7 @@
 import dns from "node:dns/promises";
 
 import { inspect, split, type Check } from "@/lib/email";
+import { probeMailbox } from "@/lib/smtp-probe";
 
 /**
  * The half of verification that needs a network.
@@ -20,6 +21,12 @@ import { inspect, split, type Check } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/* The mailbox probe is off unless the host can actually reach port 25, which
+   almost no cloud host can. Left on in a blocked deployment it would add
+   four seconds of timeout to every check and learn nothing — so it stays a
+   deliberate opt-in, and everything above it is the same with or without. */
+const PROBE = process.env.SMTP_PROBE === "on";
 
 /** MX records outlive a session comfortably. An hour is short enough that a
  *  domain that has just set up mail is not wrong for long. */
@@ -209,6 +216,29 @@ export async function POST(request: Request) {
       message: "That is a throwaway address. Use one you can be reached at.",
       final: true,
     } satisfies Check);
+
+  /* The domain takes mail. Where it is possible, ask the server whether this
+     exact mailbox is there — but only for a plain address (a role inbox is a
+     desk whether or not the probe answers) and only when the flag is on,
+     because a blocked port turns this into four seconds of nothing. */
+  if (PROBE && local.verdict !== "role") {
+    const mailbox = await probeMailbox(address.trim(), domain);
+    if (mailbox === "absent")
+      return Response.json({
+        verdict: "invalid",
+        message: "That mailbox does not exist at this domain.",
+        final: true,
+      } satisfies Check);
+    if (mailbox === "exists")
+      return Response.json({
+        verdict: "ok",
+        message: `${address.trim()} exists and can receive mail.`,
+        final: true,
+      } satisfies Check);
+    /* accepts-all and unknown fall through: the server would take any
+       address or would not say, so the domain-level answer is the honest
+       ceiling and the link is what confirms the rest. */
+  }
 
   /* Carry a role-address finding through rather than overwriting it: the
      domain taking mail does not stop info@ being a desk. */

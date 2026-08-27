@@ -20,11 +20,11 @@ import { inspect, looksFinished, type Check } from "@/lib/email";
  * swap here costs them nothing.
  *
  * Signing in takes no password: an address, and a link lands in the inbox.
- * The two modes therefore differ by more than a field now, which is why the
- * parts that differ share one grid cell — the panel is the height of the
- * taller of them at all times and nothing moves when the pair is switched.
- * A dialog that changes size under the pointer is a dialog that has just
- * moved the button someone was reaching for.
+ * The two modes therefore differ by more than a field, and each is rendered
+ * at its own height rather than padded to a shared one. The panel is pinned
+ * to the top of the viewport, so a taller mode grows downward from a fixed
+ * top edge instead of leaving the shorter one with dead space above the
+ * fold.
  *
  * NOTHING IS SENT. There is no backend to send it to, so the form holds its
  * values in local state, submits to a notice rather than a server, and
@@ -463,7 +463,7 @@ export default function AuthDialog({
       data-theme="ink"
       aria-hidden={!open}
       inert={!open || undefined}
-      className={`fixed inset-0 z-(--z-dialog) flex items-center justify-center px-6 py-10 transition-opacity duration-300 ease-(--ease-out-expo) ${
+      className={`fixed inset-0 z-(--z-dialog) flex items-start justify-center overflow-y-auto px-6 py-[max(2.5rem,10vh)] transition-opacity duration-300 ease-(--ease-out-expo) ${
         open ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
@@ -684,32 +684,15 @@ export default function AuthDialog({
             }
           />
 
-          {/* The two panes share one grid cell, so the form is always as tall
-              as the taller of them and switching moves nothing. Measuring one
-              and pinning a height would drift the moment the copy or the
-              fonts changed; this cannot. */}
-          <div className="grid">
-            <div
-              className={`col-start-1 row-start-1 flex flex-col gap-4 transition-opacity duration-300 ${
-                signingUp ? "pointer-events-none opacity-0" : "opacity-100"
-              }`}
-              inert={signingUp || undefined}
-            >
-              <MagneticButton size="md" className="w-full">
-                Email me a link
-              </MagneticButton>
-              <p className="text-[0.82rem] leading-relaxed text-(--muted)">
-                We&apos;ll send a sign-in link to your registered email
-                address.
-              </p>
-            </div>
-
-            <div
-              className={`col-start-1 row-start-1 flex flex-col gap-4 transition-opacity duration-300 ${
-                signingUp ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-              inert={!signingUp || undefined}
-            >
+          {/* Only the active pane is rendered, so the form is exactly its own
+              height. The panel is anchored at the top of the viewport, so
+              that height resolves downward — the top edge holds and the
+              bottom is where sign-up's extra rows appear. The two are far
+              enough apart now that cross-fading them in place looked like one
+              thing melting into another; a mode is a small step, so it takes
+              a small one. */}
+          {signingUp ? (
+            <div key="up" className="auth-pane flex flex-col gap-4">
               <div>
                 <Field
                   id="auth-password"
@@ -725,7 +708,17 @@ export default function AuthDialog({
                 Create account
               </MagneticButton>
             </div>
-          </div>
+          ) : (
+            <div key="in" className="auth-pane flex flex-col gap-4">
+              <MagneticButton size="md" className="w-full">
+                Email me a link
+              </MagneticButton>
+              <p className="text-[0.82rem] leading-relaxed text-(--muted)">
+                We&apos;ll send a sign-in link to your registered email
+                address.
+              </p>
+            </div>
+          )}
         </form>
 
         {notice && (
@@ -740,16 +733,10 @@ export default function AuthDialog({
         {/* The links lead and the sentence follows — nobody reads the line,
             and anyone who cares is looking for the documents. Sign-up's
             alone: terms are accepted where the account is made, not on every
-            visit back. The foot goes invisible rather than away, because the
-            panel's height is not allowed to change with the tabs — it
-            empties, and inert keeps its links out of the tab order while it
-            is empty. */}
-        <div
-          className={`mt-6 border-t border-(--line) pt-5 transition-opacity duration-300 ${
-            signingUp ? "opacity-100" : "invisible opacity-0"
-          }`}
-          inert={!signingUp || undefined}
-        >
+            visit back. It renders only there now — with the panel free to be
+            its own height, there is no empty space to hold. */}
+        {signingUp && (
+        <div className="mt-6 border-t border-(--line) pt-5">
           <p className="type-label flex flex-wrap items-center gap-x-3 gap-y-2">
             <a
               href="/terms"
@@ -771,6 +758,7 @@ export default function AuthDialog({
             Creating an account accepts both.
           </p>
         </div>
+        )}
 
       </div>
     </div>
