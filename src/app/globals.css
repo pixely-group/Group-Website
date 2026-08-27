@@ -274,11 +274,17 @@
     animation: glyph-flow var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
-  /* Rings leaving the origin and going on leaving it. Four, a quarter of the
-     cycle apart, so one is always setting out as another goes. */
+  /* The same trip the other way, for the rail that runs back. */
+  [data-nav-panel][data-open] .glyph-flow-back {
+    animation: glyph-flow-back var(--dur, 3.4s) linear infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  /* Wavefronts leaving the origin and going on leaving it. Six a side, a
+     sixth of the cycle apart, so the train is continuous and there is always
+     one setting out as another goes. */
   [data-nav-panel][data-open] .glyph-ripple {
-    animation: glyph-ripple 4.4s var(--ease-out-expo) infinite;
-    animation-delay: calc(var(--i) * -1.1s);
+    animation: glyph-ripple 4.8s var(--ease-out-expo) infinite;
+    animation-delay: calc(var(--i) * -0.8s);
     transform-origin: 0 0;
   }
   /* The record under the seal, and the nodes on the fabric: a slow breath so
@@ -292,7 +298,13 @@
      the whole illusion of a sphere turning, and it costs one property. */
   [data-nav-panel][data-open] .glyph-turn {
     animation: glyph-turn 7s linear infinite;
-    transform-origin: center;
+    /* The axis, which is this element's own origin — not `center`. The
+       meridian lives inside a translate(120 42) group, and `center` resolves
+       to the viewBox's centre expressed in the element's local space, which
+       is that offset counted twice: scaling about it threw the arc out to
+       x=227 at half-turn, right off the sphere. The ripples had it right at
+       0 0 all along. */
+    transform-origin: 0 0;
   }
   /* Up the axis and back down it. A position held, rather than the satellite
      an orbit was describing. */
@@ -309,6 +321,11 @@
 @keyframes glyph-flow {
   to {
     stroke-dashoffset: -100;
+  }
+}
+@keyframes glyph-flow-back {
+  to {
+    stroke-dashoffset: 100;
   }
 }
 @keyframes glyph-ripple {
@@ -354,7 +371,7 @@
     transform: translateX(0);
   }
   50% {
-    transform: translateX(180px);
+    transform: translateX(188px);
   }
 }
 @keyframes glyph-bob {

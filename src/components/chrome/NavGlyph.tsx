@@ -125,108 +125,137 @@ function ProductGlyph() {
 }
 
 /* — Solutions: first transaction to national scale ————————————————
-   Two origins now, facing each other, each going on leaving itself — and
-   the square crossing between them, which is the reach the column is about
-   rather than one point broadcasting at nothing. */
+   Two origins facing each other, each going on leaving itself, and the
+   square crossing between them.
+
+   The weave is six wavefronts a side rather than four, alternating deep and
+   shallow so they read as a wave train with a shape to it instead of one
+   arc scaled six times. Odd fronts run wider and fainter, even ones tighter
+   and brighter, and the pair of banks meets in the middle where the square
+   is crossing. */
 function SolutionsGlyph() {
-  const arc = (sweep: 0 | 1) => `M0 -28 A 28 28 0 0 ${sweep} 0 28`;
+  const arc = (sweep: 0 | 1, rx: number) =>
+    `M0 -30 A ${rx} 30 0 0 ${sweep} 0 30`;
+  const fronts = [0, 1, 2, 3, 4, 5];
   return (
     <Frame>
       {([
-        { x: 30, sweep: 1 as const },
-        { x: 210, sweep: 0 as const },
+        { x: 26, sweep: 1 as const },
+        { x: 214, sweep: 0 as const },
       ]).map((side) => (
         <g key={side.x} transform={`translate(${side.x} 42)`}>
-          {[0, 1, 2, 3].map((i) => (
+          {fronts.map((i) => (
             <path
               key={i}
               className="glyph-ripple"
-              d={arc(side.sweep)}
+              d={arc(side.sweep, i % 2 ? 20 : 30)}
               stroke="var(--accent)"
-              strokeWidth="1"
+              strokeWidth={i % 2 ? 1 : 1.2}
+              opacity={i % 2 ? 0.55 : 1}
               style={{ "--i": i } as React.CSSProperties}
             />
           ))}
-          <path d={arc(side.sweep)} stroke={LINE} strokeWidth="1" opacity="0.2" />
-          <line x1="0" y1="-32" x2="0" y2="32" stroke={LINE} strokeWidth="1" opacity="0.3" />
+          <path d={arc(side.sweep, 30)} stroke={LINE} strokeWidth="1" opacity="0.22" />
+          <line x1="0" y1="-33" x2="0" y2="33" stroke={LINE} strokeWidth="1" opacity="0.34" />
         </g>
       ))}
-      <line x1="30" y1="42" x2="210" y2="42" stroke={LINE} strokeWidth="1" opacity="0.14" />
+      <line x1="26" y1="42" x2="214" y2="42" stroke={LINE} strokeWidth="1" opacity="0.12" />
       <g className="glyph-cross">
-        <Mark x={30} y={42} />
+        <Mark x={26} y={42} />
       </g>
     </Frame>
   );
 }
 
-/* — Platform: what the network is, seen from above ————————————————
-   Replaced outright: rails said the same thing as Product's routes, in the
-   same direction, and two drawings that rhyme are one drawing used twice.
-
-   This is the shape underneath instead — a ring of nodes attesting to a
-   centre, each edge carrying its confirmation inwards. It moves toward a
-   point rather than across the frame, which is the one direction none of
-   the others use. */
+/* — Platform: the rails underneath ————————————————————————————————
+   The rails again, with more on them. Three roads at their own speeds and
+   the ties between; the outer two run one way and the middle runs back, so
+   the drawing has traffic rather than a current. Junctions where a rail is
+   worth marking, and a switch curving between the top two — the one place
+   something can change lines, which is what a junction is for. */
 function PlatformGlyph() {
-  const cx = 120;
-  const cy = 42;
-  const ring = [0, 60, 120, 180, 240, 300].map((deg) => {
-    const rad = (deg * Math.PI) / 180;
-    return {
-      deg,
-      x: +(cx + 76 * Math.cos(rad)).toFixed(1),
-      y: +(cy + 30 * Math.sin(rad)).toFixed(1),
-    };
-  });
+  const rails = [
+    { y: 20, dur: 3.2, delay: 0, back: false },
+    { y: 42, dur: 2.4, delay: 0.7, back: true },
+    { y: 64, dur: 3.8, delay: 1.3, back: false },
+  ];
+  const switchPath = "M96 20 C 116 20 116 42 136 42";
   return (
     <Frame>
-      <ellipse cx={cx} cy={cy} rx="76" ry="30" stroke={LINE} strokeWidth="1" opacity="0.16" />
-      {ring.map((node, i) => {
-        const edge = `M${node.x} ${node.y} L${cx} ${cy}`;
-        return (
-          <g key={node.deg}>
-            <path d={edge} stroke={LINE} strokeWidth="1" opacity="0.24" />
-            <path
-              className="glyph-flow"
-              d={edge}
-              pathLength={100}
-              strokeDasharray="26 74"
-              stroke="var(--accent)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              style={
-                {
-                  "--delay": `${i * 0.42}s`,
-                  "--dur": "3s",
-                } as React.CSSProperties
-              }
-            />
-            <rect
-              className="glyph-node"
-              x={node.x - 2.5}
-              y={node.y - 2.5}
-              width="5"
-              height="5"
-              fill={LINE}
-              opacity="0.5"
-              style={{ "--i": i } as React.CSSProperties}
-            />
-          </g>
-        );
-      })}
-      {/* The thing being attested to, and a hole for it to sit in. */}
-      <rect x={cx - 7} y={cy - 7} width="14" height="14" fill="var(--bg)" />
-      <Mark x={cx} y={cy} size={8} />
+      {Array.from({ length: 15 }, (_, i) => 16 + i * 15.1).map((x) => (
+        <line key={x} x1={x} y1="20" x2={x} y2="64" stroke={LINE} strokeWidth="1" opacity="0.08" />
+      ))}
+
+      {rails.map((rail) => (
+        <g key={rail.y}>
+          <line x1="14" y1={rail.y} x2="226" y2={rail.y} stroke={LINE} strokeWidth="1" opacity="0.34" />
+          <path
+            className={rail.back ? "glyph-flow-back" : "glyph-flow"}
+            d={`M14 ${rail.y} L226 ${rail.y}`}
+            pathLength={100}
+            strokeDasharray="12 88"
+            stroke="var(--accent)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            style={
+              { "--delay": `${rail.delay}s`, "--dur": `${rail.dur}s` } as React.CSSProperties
+            }
+          />
+        </g>
+      ))}
+
+      {/* The switch: the one place a line can change lines. */}
+      <path d={switchPath} stroke={LINE} strokeWidth="1" opacity="0.3" />
+      <path
+        className="glyph-flow"
+        d={switchPath}
+        pathLength={100}
+        strokeDasharray="30 70"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        style={{ "--delay": "1.9s", "--dur": "4.2s" } as React.CSSProperties}
+      />
+
+      {/* Junctions, on the rails rather than beside them. */}
+      {[
+        [60, 20],
+        [96, 20],
+        [136, 42],
+        [180, 64],
+      ].map(([x, y], i) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x - 4} y={y - 4} width="8" height="8" fill="var(--bg)" />
+          <rect
+            className="glyph-node"
+            x={x - 3.5}
+            y={y - 3.5}
+            width="7"
+            height="7"
+            stroke={LINE}
+            strokeWidth="1"
+            opacity="0.6"
+            style={{ "--i": i } as React.CSSProperties}
+          />
+        </g>
+      ))}
+
+      <Mark x={14} y={42} size={6} />
+      <Mark x={226} y={42} size={6} />
     </Frame>
   );
 }
 
 /* — Company: the meridian. A sphere on its axis ——————————————————
-   The ellipse alone cannot say which way it is turning: narrowing and
-   widening are the same picture in both directions. So a node rides its
-   rim, carried by the same scale — it crosses right to left, keeps going
-   through the far side, and comes back left to right. One turn, both ways
-   across the face, and the square still runs the axis. */
+   One meridian, not a whole ellipse. That is the entire difference and it is
+   the reason the turn was invisible before: an ellipse carries both of its
+   arcs, so scaling it to -1 draws exactly the same picture as scaling it to
+   1, and the left half of the journey was already on screen. A single arc
+   has a side. It bulges right, flattens through the axis, bulges left, and
+   comes back — the same gesture on both sides, going round rather than
+   turning back at the middle.
+
+   The square still runs the axis. */
 function CompanyGlyph() {
   return (
     <Frame>
@@ -234,10 +263,13 @@ function CompanyGlyph() {
         <circle r="30" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="-30" y1="0" x2="30" y2="0" stroke={LINE} strokeWidth="1" opacity="0.2" />
-        <g className="glyph-turn">
-          <ellipse rx="13" ry="30" stroke={LINE} strokeWidth="1" opacity="0.34" />
-          <rect x={10.5} y={-2.5} width="5" height="5" fill={LINE} opacity="0.7" />
-        </g>
+        <path
+          className="glyph-turn"
+          d="M0 -30 A 13 30 0 0 1 0 30"
+          stroke={LINE}
+          strokeWidth="1"
+          opacity="0.42"
+        />
         <g className="glyph-bob">
           <Mark x={0} y={0} size={7} />
         </g>
