@@ -35,13 +35,23 @@ const FORGIVE = 4;
 /** Alpha above which a pixel counts as ink. Low, because the glyph edges are
  *  anti-aliased and the edge should feel live rather than walled. */
 const INK = 40;
-/** How long the dot holds the line alone before the letters arrive. A blink
- *  is 1.1s, so this is a little over one full cycle — long enough to read as
- *  a cursor waiting rather than as a stutter before the word. */
-const HOLD_MS = 1300;
-/** Per letter. Slower than the navigation's 92, because these are six
- *  glyphs the width of the page rather than six at 17px. */
-const WRITE_MS = 110;
+/* The wordmark's arrival, in four movements. The dot begins where it belongs
+   — the full stop at the end of the name — goes to fetch the word, and
+   writes it back to itself. Slow on purpose: this is the last thing on the
+   page and it has the room to be watched. */
+/** Blinking at home, on the right, before it sets off. A blink cycle is
+ *  1.1s, so this is one and a half of them. */
+const HOLD_MS = 1600;
+/** The journey out to the head of the line. */
+const TRAVEL_MS = 900;
+/** Waiting at the head, blinking again, before the first letter. */
+const SETTLE_MS = 700;
+/** Per letter. Slower than the navigation's 92, because these are six glyphs
+ *  the width of the page rather than six at 17px — and because the point is
+ *  to watch the word being made, not to get it on screen. */
+const WRITE_MS = 190;
+/** The caret's own hop between letters. Short enough to still be a jump. */
+const HOP_MS = 120;
 
 export default function WordmarkTrace({
   text,
@@ -56,8 +66,11 @@ export default function WordmarkTrace({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fine = useFinePointer();
-  /* The footer wordmark writes itself when the reader reaches it: the dot
-     alone first, blinking, then the letters after it, left to right.
+  /* The footer wordmark writes itself when the reader reaches it, in four
+     movements: the dot blinking at home on the right, where the name's full
+     stop lives; the journey out to the head of the line; a wait there, now
+     reading as a cursor rather than a full stop; and the word written back
+     to itself, left to right, arriving home on the last letter.
 
      The letters are hidden with visibility, not display, so they keep their
      boxes — and the dot is walked along the line with a transform instead of
@@ -79,45 +92,66 @@ export default function WordmarkTrace({
     letters.forEach((el) => {
       el.style.visibility = "hidden";
     });
+    /* It starts at home, on the right, because that is where this square
+       lives — it is the name's full stop before it is ever a caret. */
     dot.classList.add("is-blinking");
 
     const timers: number[] = [];
 
     /** Where the dot sits once k letters have been written, as a shift from
-     *  its home at the end of the word. Measured at the moment writing
-     *  starts, so the fit has long since settled. */
-    const shiftFor = (k: number, margin: number, home: number) =>
+     *  its home at the end of the word. Measured when the journey starts, so
+     *  the fit has long since settled. */
+    const stops = (margin: number, home: number) => (k: number) =>
       (k === 0
         ? letters[0].getBoundingClientRect().left - margin
         : letters[k - 1].getBoundingClientRect().right) - home;
 
-    const write = () => {
+    /* Movement two: it leaves home and travels the length of the word to the
+       head of the line. Not blinking on the way — a caret in transit is
+       going somewhere, and a blink would read as it stalling. */
+    const setOff = () => {
       const margin = parseFloat(getComputedStyle(dot).marginLeft) || 0;
       const home = letters[letters.length - 1].getBoundingClientRect().right;
+      const shiftFor = stops(margin, home);
 
-      /* Placed before the first letter appears, so the caret is already
-         waiting at the start of the line rather than jumping there. */
-      dot.style.transform = `translateX(${shiftFor(0, margin, home)}px)`;
-      /* A caret does not glide, but at this size an instant jump of a
-         hundred-odd pixels reads as a flicker. Short enough to still be a
-         jump. */
-      dot.style.transition = "transform 70ms var(--ease-swift)";
-      /* Stills as soon as it starts writing, the way the navigation's caret
-         does — a cursor blinks while it waits, not while it types. */
       dot.classList.remove("is-blinking");
+      dot.style.transition = `transform ${TRAVEL_MS}ms var(--ease-out-expo)`;
+      dot.style.transform = `translateX(${shiftFor(0)}px)`;
+
+      timers.push(
+        window.setTimeout(() => {
+          /* Movement three: arrived, and blinking again — now it is a cursor
+             waiting to type rather than a full stop. */
+          dot.classList.add("is-blinking");
+          timers.push(window.setTimeout(() => write(shiftFor), SETTLE_MS));
+        }, TRAVEL_MS),
+      );
+    };
+
+    /* Movement four: it writes the word back to itself, left to right, and
+       arrives home as the last letter lands. */
+    const write = (shiftFor: (k: number) => number) => {
+      dot.classList.remove("is-blinking");
+      dot.style.transition = `transform ${HOP_MS}ms var(--ease-swift)`;
 
       letters.forEach((el, i) => {
         timers.push(
           window.setTimeout(
             () => {
               el.style.visibility = "";
-              dot.style.transform = `translateX(${shiftFor(i + 1, margin, home)}px)`;
-              if (i === letters.length - 1) {
-                /* Home. Cleared rather than set to zero, so nothing of this
-                   is left on the element for the trace to inherit. */
-                dot.style.transform = "";
-                dot.style.transition = "";
+              if (i < letters.length - 1) {
+                dot.style.transform = `translateX(${shiftFor(i + 1)}px)`;
+                return;
               }
+              /* Home. Cleared rather than set to zero — the last stop is
+                 home, so it travels the final hop either way, and nothing of
+                 this is left on the element for the trace to inherit. */
+              dot.style.transform = "";
+              timers.push(
+                window.setTimeout(() => {
+                  dot.style.transition = "";
+                }, HOP_MS + 40),
+              );
             },
             (i + 1) * WRITE_MS,
           ),
@@ -131,7 +165,7 @@ export default function WordmarkTrace({
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
-        timers.push(window.setTimeout(write, HOLD_MS));
+        timers.push(window.setTimeout(setOff, HOLD_MS));
       },
       { threshold: 0.4 },
     );
