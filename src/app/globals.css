@@ -217,6 +217,17 @@
   animation: none;
 }
 
+/* The footer's wordmark writes itself when the reader reaches it, and the dot
+   holds the line alone while it waits to start. Same keyframes as the
+   navigation's caret, so there is one blink on this site rather than two —
+   and it stills the moment the letters begin arriving, because a cursor
+   blinks while it waits, not while it types. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-trace-dot].is-blinking {
+    animation: wm-blink 1.1s steps(1) infinite;
+  }
+}
+
 /* The wordmark's own dot is the travelling marker's home. While the marker
    is away at a menu item the home stays empty — opacity, not display, so it
    keeps reserving its place in the word for the return. Scoped to the nav

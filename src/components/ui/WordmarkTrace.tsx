@@ -35,6 +35,13 @@ const FORGIVE = 4;
 /** Alpha above which a pixel counts as ink. Low, because the glyph edges are
  *  anti-aliased and the edge should feel live rather than walled. */
 const INK = 40;
+/** How long the dot holds the line alone before the letters arrive. A blink
+ *  is 1.1s, so this is a little over one full cycle — long enough to read as
+ *  a cursor waiting rather than as a stutter before the word. */
+const HOLD_MS = 1300;
+/** Per letter. Slower than the navigation's 92, because these are six
+ *  glyphs the width of the page rather than six at 17px. */
+const WRITE_MS = 110;
 
 export default function WordmarkTrace({
   text,
@@ -49,6 +56,98 @@ export default function WordmarkTrace({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fine = useFinePointer();
+  /* The footer wordmark writes itself when the reader reaches it: the dot
+     alone first, blinking, then the letters after it, left to right.
+
+     The letters are hidden with visibility, not display, so they keep their
+     boxes — and the dot is walked along the line with a transform instead of
+     being carried there by the layout. Removing them from flow was the
+     obvious way to make the dot travel and it was wrong twice over: FitText
+     re-fits on document.fonts.ready, which lands after this effect, so it
+     measured a line holding nothing but the dot and scaled the font until
+     that filled the page — a 675px full stop on a 3097px line. Keeping the
+     boxes means every re-fit, and the trace canvas under it, still measure
+     the whole word. */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const letters = [...host.querySelectorAll<HTMLElement>("[data-wm-letter]")];
+    const dot = host.querySelector<HTMLElement>("[data-trace-dot]");
+    if (!letters.length || !dot) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    letters.forEach((el) => {
+      el.style.visibility = "hidden";
+    });
+    dot.classList.add("is-blinking");
+
+    const timers: number[] = [];
+
+    /** Where the dot sits once k letters have been written, as a shift from
+     *  its home at the end of the word. Measured at the moment writing
+     *  starts, so the fit has long since settled. */
+    const shiftFor = (k: number, margin: number, home: number) =>
+      (k === 0
+        ? letters[0].getBoundingClientRect().left - margin
+        : letters[k - 1].getBoundingClientRect().right) - home;
+
+    const write = () => {
+      const margin = parseFloat(getComputedStyle(dot).marginLeft) || 0;
+      const home = letters[letters.length - 1].getBoundingClientRect().right;
+
+      /* Placed before the first letter appears, so the caret is already
+         waiting at the start of the line rather than jumping there. */
+      dot.style.transform = `translateX(${shiftFor(0, margin, home)}px)`;
+      /* A caret does not glide, but at this size an instant jump of a
+         hundred-odd pixels reads as a flicker. Short enough to still be a
+         jump. */
+      dot.style.transition = "transform 70ms var(--ease-swift)";
+      /* Stills as soon as it starts writing, the way the navigation's caret
+         does — a cursor blinks while it waits, not while it types. */
+      dot.classList.remove("is-blinking");
+
+      letters.forEach((el, i) => {
+        timers.push(
+          window.setTimeout(
+            () => {
+              el.style.visibility = "";
+              dot.style.transform = `translateX(${shiftFor(i + 1, margin, home)}px)`;
+              if (i === letters.length - 1) {
+                /* Home. Cleared rather than set to zero, so nothing of this
+                   is left on the element for the trace to inherit. */
+                dot.style.transform = "";
+                dot.style.transition = "";
+              }
+            },
+            (i + 1) * WRITE_MS,
+          ),
+        );
+      });
+    };
+
+    /* Once. The word writing itself every time the reader passes the foot of
+       the page would be a tic rather than an arrival. */
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        timers.push(window.setTimeout(write, HOLD_MS));
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(host);
+
+    return () => {
+      io.disconnect();
+      timers.forEach(clearTimeout);
+      letters.forEach((el) => {
+        el.style.visibility = "";
+      });
+      dot.classList.remove("is-blinking");
+      dot.style.transform = "";
+      dot.style.transition = "";
+    };
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -262,6 +361,7 @@ export default function WordmarkTrace({
           dot ? (
             <span
               aria-hidden
+              data-trace-dot
               className="inline-block bg-accent"
               style={{ width: "0.17em", height: "0.17em", marginLeft: "0.07em" }}
             />
