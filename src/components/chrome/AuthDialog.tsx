@@ -198,6 +198,41 @@ function Strength({ value }: { value: string }) {
   );
 }
 
+/** A legal document, linked from inside the form it governs. It opens in a
+ *  new tab on purpose: the reader is mid-sign-up with a half-typed form, and
+ *  a same-tab navigation throws that away to show them boilerplate. The
+ *  arrow says so before they click. */
+function DocLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      data-cursor="link"
+      className="inline-flex items-baseline gap-[0.35em] text-(--muted) underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-accent"
+    >
+      {children}
+      <svg
+        width="7"
+        height="7"
+        viewBox="0 0 8 8"
+        fill="none"
+        aria-hidden
+        className="shrink-0"
+      >
+        <path
+          d="M1.5 6.5 6.5 1.5M2.5 1.5h4v4"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
 function Provider({
   label,
   onPress,
@@ -794,34 +829,19 @@ export default function AuthDialog({
           </p>
         )}
 
-        {/* The links lead and the sentence follows — nobody reads the line,
-            and anyone who cares is looking for the documents. Sign-up's
-            alone: terms are accepted where the account is made, not on every
-            visit back. It renders only there now — with the panel free to be
-            its own height, there is no empty space to hold. */}
+        {/* One sentence, not a link row over an orphaned clause — the last
+            pass split "what you accept" from "that you accept it", and the
+            two read as furniture. The documents are unmistakably links now:
+            underlined, arrowed, a step brighter than the sentence — and they
+            open in a new tab, because leaving a modal with a half-typed form
+            to read boilerplate is how the form dies. Sign-up's alone: terms
+            are accepted where the account is made. */}
         {signingUp && (
-        <div className="mt-6 border-t border-(--line) pt-5">
-          <p className="type-label flex flex-wrap items-center gap-x-3 gap-y-2">
-            <a
-              href="/terms"
-              data-cursor="link"
-              className="text-(--muted) transition-colors duration-200 hover:text-accent"
-            >
-              Terms of service
-            </a>
-            <span aria-hidden className="size-[3px] bg-(--faint)" />
-            <a
-              href="/privacy"
-              data-cursor="link"
-              className="text-(--muted) transition-colors duration-200 hover:text-accent"
-            >
-              Privacy notice
-            </a>
+          <p className="type-label mt-6 border-t border-(--line) pt-5 leading-relaxed text-(--faint)">
+            Creating an account means accepting the{" "}
+            <DocLink href="/terms">terms</DocLink> and the{" "}
+            <DocLink href="/privacy">privacy notice</DocLink>.
           </p>
-          <p className="mt-2 text-[0.78rem] leading-relaxed text-(--faint)">
-            Creating an account accepts both.
-          </p>
-        </div>
         )}
 
       </div>
