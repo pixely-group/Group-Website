@@ -31,15 +31,39 @@ const DNS_TIMEOUT_MS = 1500;
  *  Oldest out first, which for this access pattern is close enough to LRU. */
 const CACHE_MAX = 5000;
 
-type Domain = { mail: boolean; at: number };
+/* The mail hosts throwaway providers actually run. A provider spins up new
+   domains far faster than any list is maintained — but they all point at the
+   same handful of exchanges, and that is the part that does not change. So
+   the domain list catches the known ones and this catches the rest, which is
+   the only way to be strict about it without pretending a list is complete.
+
+   Matched on the exchange's own domain, so a subdomain of one of these is
+   caught too. */
+const DISPOSABLE_MX = [
+  "mailinator.com", "guerrillamail.com", "yopmail.com", "trashmail.com",
+  "mailnesia.com", "temp-mail.org", "dropmail.me", "10minutemail.com",
+  "mail.tm", "maildrop.cc", "mailsac.com", "moakt.com", "sharklasers.com",
+  "spamgourmet.com", "throwawaymail.com", "inboxkitten.com", "duck.com",
+];
+
+function disposableExchange(hosts: string[]): boolean {
+  return hosts.some((raw) => {
+    const host = raw.replace(/\.$/, "").toLowerCase();
+    return DISPOSABLE_MX.some(
+      (bad) => host === bad || host.endsWith(`.${bad}`),
+    );
+  });
+}
+
+type Domain = { mail: boolean; disposable: boolean; at: number };
 const domains = new Map<string, Domain>();
 
-function remember(domain: string, mail: boolean) {
+function remember(domain: string, mail: boolean, disposable: boolean) {
   if (domains.size >= CACHE_MAX) {
     const oldest = domains.keys().next().value;
     if (oldest) domains.delete(oldest);
   }
-  domains.set(domain, { mail, at: Date.now() });
+  domains.set(domain, { mail, disposable, at: Date.now() });
 }
 
 async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
@@ -56,8 +80,10 @@ async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
   }
 }
 
+type Answer = { mail: boolean; disposable: boolean };
+
 /**
- * Does this domain accept mail at all?
+ * Does this domain accept mail, and is it somebody's throwaway?
  *
  * MX first. Falling back to A/AAAA is not a nicety — RFC 5321 says a domain
  * with an address record and no MX takes mail at that host, and small
@@ -65,21 +91,27 @@ async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
  * would reject them, and rejecting a real customer is a far worse failure
  * here than admitting a dead one.
  */
-async function acceptsMail(domain: string): Promise<boolean | null> {
+async function lookUp(domain: string): Promise<Answer | null> {
   const hit = domains.get(domain);
-  if (hit && Date.now() - hit.at < TTL_MS) return hit.mail;
+  if (hit && Date.now() - hit.at < TTL_MS)
+    return { mail: hit.mail, disposable: hit.disposable };
 
   const mx = await withTimeout(
     dns.resolveMx(domain).catch(() => [] as { exchange: string }[]),
     DNS_TIMEOUT_MS,
   );
   if (mx === null) return null; // timed out — say so rather than guess
+
   /* A single "." exchange is a domain declaring it takes no mail at all,
      which is a real answer and a negative one. */
   const usable = mx.filter((r) => r.exchange && r.exchange !== ".");
   if (usable.length) {
-    remember(domain, true);
-    return true;
+    const answer = {
+      mail: true,
+      disposable: disposableExchange(usable.map((r) => r.exchange)),
+    };
+    remember(domain, answer.mail, answer.disposable);
+    return answer;
   }
 
   const a = await withTimeout(
@@ -87,9 +119,9 @@ async function acceptsMail(domain: string): Promise<boolean | null> {
     DNS_TIMEOUT_MS,
   );
   if (a === null) return null;
-  const mail = Array.isArray(a) && a.length > 0;
-  remember(domain, mail);
-  return mail;
+  const answer = { mail: Array.isArray(a) && a.length > 0, disposable: false };
+  remember(domain, answer.mail, answer.disposable);
+  return answer;
 }
 
 export async function POST(request: Request) {
@@ -113,19 +145,28 @@ export async function POST(request: Request) {
   if (!parts) return Response.json(local);
   const domain = parts.domain.toLowerCase();
 
-  const mail = await acceptsMail(domain);
+  const found = await lookUp(domain);
 
-  if (mail === null)
+  if (found === null)
     return Response.json({
       verdict: "unknown",
       message: "Could not reach the domain just now. You can carry on.",
       final: false,
     } satisfies Check);
 
-  if (!mail)
+  if (!found.mail)
     return Response.json({
       verdict: "invalid",
       message: `${domain} does not accept mail.`,
+      final: true,
+    } satisfies Check);
+
+  /* Caught by the company it keeps rather than by name — this is the half of
+     throwaway detection a list cannot do. */
+  if (found.disposable)
+    return Response.json({
+      verdict: "disposable",
+      message: "That is a throwaway address. Use one you can be reached at.",
       final: true,
     } satisfies Check);
 

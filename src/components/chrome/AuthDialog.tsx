@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
-import { inspect, type Check } from "@/lib/email";
+import { inspect, looksFinished, type Check } from "@/lib/email";
 
 /**
  * Sign in and create an account, in one dialog.
@@ -120,51 +120,63 @@ function Verdict({ state }: { state: "checking" | "good" | "bad" }) {
   );
 }
 
-/* Shown while a password is being made, never as a wall of red after the
-   fact. Each one ticks as it is satisfied, so the field is a thing being
-   completed rather than a thing being failed. */
+/* A password being built, not a form being failed.
+
+   Three boxes waiting to be ticked is a list of everything you have not done
+   yet, presented all at once, and it is the same list on every site anyone
+   has ever signed up to. This says one thing at a time — the next thing —
+   and the bar underneath keeps the score. A fourth segment past the
+   requirement, unnamed, because length is worth more than any rule and
+   there should be somewhere further to go than "acceptable". */
 const RULES = [
-  { id: "len", label: "8 characters or more", met: (v: string) => v.length >= 8 },
-  { id: "num", label: "A number", met: (v: string) => /\d/.test(v) },
-  { id: "cap", label: "A capital", met: (v: string) => /[A-Z]/.test(v) },
+  {
+    id: "len",
+    met: (v: string) => v.length >= 8,
+    next: (v: string) =>
+      `${8 - v.length} more character${8 - v.length === 1 ? "" : "s"}`,
+  },
+  { id: "num", met: (v: string) => /\d/.test(v), next: () => "a number" },
+  { id: "cap", met: (v: string) => /[A-Z]/.test(v), next: () => "a capital" },
+  /* No `next`: nothing asks for this, it is just further. */
+  { id: "long", met: (v: string) => v.length >= 12, next: null },
 ];
 
-function Rules({ value }: { value: string }) {
+function Strength({ value }: { value: string }) {
+  const met = RULES.map((rule) => rule.met(value));
+  const enough = met[0] && met[1] && met[2];
+  const wanting = RULES.find((rule, i) => !met[i] && rule.next);
+
+  const label = !value
+    ? "Make it hard to guess."
+    : wanting
+      ? `Needs ${wanting.next!(value)}.`
+      : met[3]
+        ? "Strong."
+        : "Good. Longer is stronger.";
+
   return (
-    <ul className="mt-3 flex flex-col gap-2">
-      {RULES.map((rule, i) => {
-        const met = rule.met(value);
-        return (
-          <li
+    <div className="mt-3">
+      <div className="flex gap-1.5" aria-hidden>
+        {RULES.map((rule, i) => (
+          <span
             key={rule.id}
-            className="flex items-center gap-2.5 text-[0.8rem] transition-colors duration-300"
-            style={{ color: met ? "var(--color-positive)" : "var(--faint)" }}
-          >
-            <span
-              className="rule-box relative grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors duration-300"
-              data-met={met || undefined}
-              style={{
-                borderColor: met ? "var(--color-positive)" : "var(--line-strong)",
-                transitionDelay: `${i * 40}ms`,
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path
-                  className="rule-tick"
-                  d="M3 8.4 6.4 11.8 13 5.2"
-                  pathLength={100}
-                  stroke="var(--color-positive)"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            {rule.label}
-          </li>
-        );
-      })}
-    </ul>
+            className="strength-seg h-[3px] flex-1 rounded-full"
+            data-on={met[i] || undefined}
+            data-good={enough || undefined}
+            style={{ animationDelay: `${i * 30}ms` }}
+          />
+        ))}
+      </div>
+      <p
+        /* The bar is decoration; this is the signal, and it speaks when the
+           typing settles rather than on every keystroke. */
+        aria-live="polite"
+        className="mt-2 text-[0.8rem] leading-relaxed transition-colors duration-300"
+        style={{ color: enough ? "var(--color-positive)" : "var(--faint)" }}
+      >
+        {label}
+      </p>
+    </div>
   );
 }
 
@@ -351,14 +363,16 @@ export default function AuthDialog({
       return;
     }
 
-    /* Nothing on screen while the address is still being typed. The syntax
-       check is instant and would happily put a red cross beside "amine@gmail"
-       on the way to "amine@gmail.com" — a verdict on a half-typed address is
-       a verdict on something nobody has finished saying. It waits for the
-       typing to stop, and blur asks immediately. */
+    /* Real time means answering when there is something to answer, not on a
+       fixed wait. An address that has been finished — a name, an @, a domain
+       with a dot and a real ending — gets checked almost at once, so the tick
+       lands as the last character does. One that has not is left alone: the
+       syntax check is instant and would put a red cross beside "amine@gmail"
+       on the way to "amine@gmail.com", which is a verdict on something nobody
+       has finished saying. That one waits, and blur asks immediately. */
     setCheck(null);
     setChecking(false);
-    job.current.timer = window.setTimeout(run, 520);
+    job.current.timer = window.setTimeout(run, looksFinished(address) ? 150 : 900);
   };
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -683,7 +697,7 @@ export default function AuthDialog({
                   value={password}
                   onChange={setPassword}
                 />
-                <Rules value={password} />
+                <Strength value={password} />
               </div>
               <MagneticButton size="md" className="w-full">
                 Create account

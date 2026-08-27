@@ -50,15 +50,29 @@ export type Check = {
 const LOCAL = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
 const LABEL = /^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
 
-/* Seed list. Short on purpose — a long list here would read as coverage it
-   does not have. Production wants a maintained feed; this catches the ones
-   people actually reach for. */
+/* Throwaway providers, by domain. A list is the fast half of catching these
+   and the weak half — a provider adds domains faster than any list is
+   updated, and several run hundreds. The other half is on the server, which
+   recognises the handful of mail hosts these domains all point at, and so
+   catches the ones nobody has written down yet. */
 const DISPOSABLE = new Set([
-  "10minutemail.com", "guerrillamail.com", "mailinator.com", "yopmail.com",
-  "tempmail.com", "temp-mail.org", "throwawaymail.com", "getnada.com",
-  "trashmail.com", "sharklasers.com", "dispostable.com", "fakeinbox.com",
-  "maildrop.cc", "mintemail.com", "mohmal.com", "spamgourmet.com",
-  "emailondeck.com", "moakt.com", "tempr.email", "burnermail.io",
+  "0-mail.com", "10minutemail.com", "10minutemail.net", "20minutemail.com",
+  "33mail.com", "anonbox.net", "burnermail.io", "byom.de",
+  "dispostable.com", "dropmail.me", "e4ward.com", "emailondeck.com",
+  "emailtemporanea.net", "fakeinbox.com", "fakemailgenerator.com",
+  "getairmail.com", "getnada.com", "grr.la", "guerrillamail.biz",
+  "guerrillamail.com", "guerrillamail.de", "guerrillamail.net",
+  "guerrillamail.org", "guerrillamailblock.com", "harakirimail.com",
+  "inboxbear.com", "inboxkitten.com", "jetable.org", "mailcatch.com",
+  "maildrop.cc", "mailduck.io", "mailinator.com", "mailinator.net",
+  "mailnesia.com", "mailsac.com", "mailtemp.info", "mintemail.com",
+  "moakt.com", "mohmal.com", "mytemp.email", "nowmymail.com",
+  "pokemail.net", "sharklasers.com", "spam4.me", "spambog.com",
+  "spamgourmet.com", "sute.jp", "temp-mail.io", "temp-mail.org",
+  "tempail.com", "tempinbox.com", "tempmail.com", "tempmail.dev",
+  "tempmail.plus", "tempmailo.com", "tempr.email", "throwawaymail.com",
+  "trashmail.com", "trashmail.de", "trbvm.com", "wegwerfmail.de",
+  "yopmail.com", "yopmail.fr", "yopmail.net", "zetmail.com",
 ]);
 
 /* Mail to a desk rather than a person. Not invalid, and for some products
@@ -147,6 +161,27 @@ export function nearestDomain(domain: string): string | undefined {
     }
   }
   return bestAt <= 2 ? best : undefined;
+}
+
+/**
+ * Has this been finished, or is it still being typed?
+ *
+ * Not the same question as "is it valid". It asks whether the thing on
+ * screen has the shape of a whole address — a local part, an @, a domain
+ * with a dot and a plausible ending — so the verifier can answer the moment
+ * someone stops rather than after a fixed wait. "amine@gmail" is not
+ * finished; "amine@gmail.com" is, and deserves an answer immediately.
+ */
+export function looksFinished(raw: string): boolean {
+  const address = raw.trim();
+  const parts = split(address);
+  if (!parts) return false;
+  const labels = parts.domain.split(".");
+  return (
+    labels.length >= 2 &&
+    labels.every((l) => l.length > 0) &&
+    /^[A-Za-z]{2,}$/.test(labels[labels.length - 1])
+  );
 }
 
 /**

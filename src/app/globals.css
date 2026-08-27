@@ -303,20 +303,47 @@
     transform-origin: 8px 8px;
     animation: verdict-spin 700ms linear infinite;
   }
-  /* The rule's tick, drawn the same way at the smaller size. */
-  .rule-box[data-met] .rule-tick {
-    stroke-dasharray: 100;
-    animation: verdict-draw 300ms var(--ease-out-expo) backwards;
+}
+
+/* The password's score. Each segment fills from its left as it is earned and
+   snaps taller on the way — the whole point is that finishing a password
+   should feel like getting somewhere, which a row of ticked boxes never
+   does. Colour carries the last of it: signal while it is being built,
+   positive once the requirement is met. */
+.strength-seg {
+  background: var(--line-strong);
+  transform-origin: left center;
+  transition:
+    background-color 320ms var(--ease-out-expo),
+    opacity 320ms var(--ease-out-expo);
+  opacity: 0.5;
+}
+.strength-seg[data-on] {
+  background: var(--color-signal);
+  opacity: 1;
+}
+.strength-seg[data-on][data-good] {
+  background: var(--color-positive);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .strength-seg[data-on] {
+    animation: strength-earn 420ms var(--ease-out-expo) backwards;
   }
 }
-.verdict-draw,
-.rule-tick {
+@keyframes strength-earn {
+  0% {
+    transform: scaleX(0) scaleY(1);
+  }
+  55% {
+    transform: scaleX(1) scaleY(2.6);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+  }
+}
+.verdict-draw {
   stroke-dasharray: 100;
   stroke-dashoffset: 0;
-}
-/* Nothing in the box until the rule is met — the tick is the whole signal. */
-.rule-box:not([data-met]) .rule-tick {
-  opacity: 0;
 }
 @keyframes verdict-in {
   from {
