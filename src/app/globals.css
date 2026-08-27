@@ -308,8 +308,9 @@
 /* The password's score. Each segment fills from its left as it is earned and
    snaps taller on the way — the whole point is that finishing a password
    should feel like getting somewhere, which a row of ticked boxes never
-   does. Colour carries the last of it: signal while it is being built,
-   positive once the requirement is met. */
+   does. The row wears the verdict — red while little is met, amber partway,
+   green once the requirement is — and the tier lives on the row, so every
+   lit segment agrees. */
 .strength-seg {
   background: var(--line-strong);
   transform-origin: left center;
@@ -318,12 +319,21 @@
     opacity 320ms var(--ease-out-expo);
   opacity: 0.5;
 }
-.strength-seg[data-on] {
-  background: var(--color-signal);
-  opacity: 1;
+.strength-row[data-tier="weak"] {
+  --strength-tier: var(--color-negative);
 }
-.strength-seg[data-on][data-good] {
-  background: var(--color-positive);
+/* A caution tier the palette does not carry. Local until something else
+   needs it — one call site is not a token. */
+.strength-row[data-tier="mid"] {
+  --strength-tier: #d29a3d;
+}
+.strength-row[data-tier="good"],
+.strength-row[data-tier="strong"] {
+  --strength-tier: var(--color-positive);
+}
+.strength-seg[data-on] {
+  background: var(--strength-tier, var(--color-signal));
+  opacity: 1;
 }
 @media (prefers-reduced-motion: no-preference) {
   .strength-seg[data-on] {

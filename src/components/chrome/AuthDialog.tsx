@@ -143,7 +143,24 @@ const RULES = [
 
 function Strength({ value }: { value: string }) {
   const met = RULES.map((rule) => rule.met(value));
-  const enough = met[0] && met[1] && met[2];
+  const core = met.slice(0, 3).filter(Boolean).length;
+  const enough = core === 3;
+  /* One segment lights the moment anything is typed — a meter that stays
+     dark through the first seven characters looks broken, and "very weak"
+     is an honest score for them. */
+  const lit = value ? Math.max(met.filter(Boolean).length, 1) : 0;
+  /* The traffic light: red while one requirement or none is met, amber at
+     two, green at all three — and the fourth segment is extra credit for
+     length, past which there is nothing left to ask. */
+  const tier = !value
+    ? undefined
+    : enough
+      ? met[3]
+        ? "strong"
+        : "good"
+      : core >= 2
+        ? "mid"
+        : "weak";
   const wanting = RULES.find((rule, i) => !met[i] && rule.next);
 
   const label = !value
@@ -156,20 +173,21 @@ function Strength({ value }: { value: string }) {
 
   return (
     <div className="mt-3">
-      <div className="flex gap-1.5" aria-hidden>
+      <div className="strength-row flex gap-1.5" aria-hidden data-tier={tier}>
         {RULES.map((rule, i) => (
           <span
             key={rule.id}
             className="strength-seg h-[3px] flex-1 rounded-full"
-            data-on={met[i] || undefined}
-            data-good={enough || undefined}
+            data-on={i < lit || undefined}
             style={{ animationDelay: `${i * 30}ms` }}
           />
         ))}
       </div>
       <p
-        /* The bar is decoration; this is the signal, and it speaks when the
-           typing settles rather than on every keystroke. */
+        /* The bar is the judge; this stays the helper, naming the next step
+           in neutral until there is something to celebrate. Red guidance
+           under a field reads as an error, and an unfinished password is
+           not one yet. */
         aria-live="polite"
         className="mt-2 text-[0.8rem] leading-relaxed transition-colors duration-300"
         style={{ color: enough ? "var(--color-positive)" : "var(--faint)" }}
@@ -410,12 +428,16 @@ export default function AuthDialog({
       /* Everything focusable is inside the panel here, so the ring can be
          queried rather than assembled the way the compact menu has to. */
       /* Anything deliberately out of the tab order stays out of the ring —
-         the unselected tab and the scrim both carry tabindex -1, and a ring
-         that counted them would wrap to a control the browser skips. */
-      const ring = panelRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]):not([tabindex="-1"]), input:not([disabled])',
-      );
-      if (!ring?.length) return;
+         the unselected tab and the scrim carry tabindex -1, and everything
+         inside an inert region (the resting pane, the emptied legal foot) is
+         unfocusable however focusable it looks to a query. Wrapping onto a
+         control the browser skips would drop the trap on the floor. */
+      const ring = [
+        ...(panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]):not([tabindex="-1"]), input:not([disabled])',
+        ) ?? []),
+      ].filter((el) => !el.closest("[inert]"));
+      if (!ring.length) return;
       const first = ring[0];
       const last = ring[ring.length - 1];
       if (e.shiftKey && document.activeElement === first) {
@@ -677,8 +699,8 @@ export default function AuthDialog({
                 Email me a link
               </MagneticButton>
               <p className="text-[0.82rem] leading-relaxed text-(--muted)">
-                No password. We send a link that signs you in, and it works
-                once.
+                We&apos;ll send a sign-in link to your registered email
+                address.
               </p>
             </div>
 
@@ -715,12 +737,19 @@ export default function AuthDialog({
           </p>
         )}
 
-        {/* The links lead and the sentence follows, which is the way round
-            people use this: nobody reads the line, and the ones who care are
-            looking for the documents. Buried mid-sentence they were the
-            least reachable thing in the panel. Kept for both modes, so the
-            foot is not another thing that changes height. */}
-        <div className="mt-6 border-t border-(--line) pt-5">
+        {/* The links lead and the sentence follows — nobody reads the line,
+            and anyone who cares is looking for the documents. Sign-up's
+            alone: terms are accepted where the account is made, not on every
+            visit back. The foot goes invisible rather than away, because the
+            panel's height is not allowed to change with the tabs — it
+            empties, and inert keeps its links out of the tab order while it
+            is empty. */}
+        <div
+          className={`mt-6 border-t border-(--line) pt-5 transition-opacity duration-300 ${
+            signingUp ? "opacity-100" : "invisible opacity-0"
+          }`}
+          inert={!signingUp || undefined}
+        >
           <p className="type-label flex flex-wrap items-center gap-x-3 gap-y-2">
             <a
               href="/terms"
@@ -739,9 +768,7 @@ export default function AuthDialog({
             </a>
           </p>
           <p className="mt-2 text-[0.78rem] leading-relaxed text-(--faint)">
-            {signingUp
-              ? "Creating an account accepts both."
-              : "Signing in accepts both."}
+            Creating an account accepts both.
           </p>
         </div>
 

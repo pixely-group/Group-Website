@@ -55,15 +55,16 @@ function disposableExchange(hosts: string[]): boolean {
   });
 }
 
-type Domain = { mail: boolean; disposable: boolean; at: number };
+type Answer = { registered: boolean; mail: boolean; disposable: boolean };
+type Domain = Answer & { at: number };
 const domains = new Map<string, Domain>();
 
-function remember(domain: string, mail: boolean, disposable: boolean) {
+function remember(domain: string, answer: Answer) {
   if (domains.size >= CACHE_MAX) {
     const oldest = domains.keys().next().value;
     if (oldest) domains.delete(oldest);
   }
-  domains.set(domain, { mail, disposable, at: Date.now() });
+  domains.set(domain, { ...answer, at: Date.now() });
 }
 
 async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
@@ -80,47 +81,79 @@ async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
   }
 }
 
-type Answer = { mail: boolean; disposable: boolean };
-
 /**
- * Does this domain accept mail, and is it somebody's throwaway?
+ * Is this domain registered, does it accept mail, and is it a throwaway?
  *
  * MX first. Falling back to A/AAAA is not a nicety — RFC 5321 says a domain
  * with an address record and no MX takes mail at that host, and small
  * self-hosted domains still rely on it. Treating "no MX" as undeliverable
  * would reject them, and rejecting a real customer is a far worse failure
  * here than admitting a dead one.
+ *
+ * Registration is read from the failure mode rather than looked up
+ * separately: NXDOMAIN — Node's ENOTFOUND — means the name does not exist at
+ * all, where ENODATA means it exists and simply has no records of that kind.
+ * An address at an unregistered domain cannot exist, and "not registered" is
+ * a more useful answer than "does not accept mail".
  */
 async function lookUp(domain: string): Promise<Answer | null> {
   const hit = domains.get(domain);
   if (hit && Date.now() - hit.at < TTL_MS)
-    return { mail: hit.mail, disposable: hit.disposable };
+    return {
+      registered: hit.registered,
+      mail: hit.mail,
+      disposable: hit.disposable,
+    };
 
   const mx = await withTimeout(
-    dns.resolveMx(domain).catch(() => [] as { exchange: string }[]),
+    dns.resolveMx(domain).then(
+      (records) => ({ records, missing: false }),
+      (e: NodeJS.ErrnoException) => ({
+        records: [] as { exchange: string }[],
+        missing: e?.code === "ENOTFOUND",
+      }),
+    ),
     DNS_TIMEOUT_MS,
   );
   if (mx === null) return null; // timed out — say so rather than guess
 
   /* A single "." exchange is a domain declaring it takes no mail at all,
      which is a real answer and a negative one. */
-  const usable = mx.filter((r) => r.exchange && r.exchange !== ".");
+  const usable = mx.records.filter((r) => r.exchange && r.exchange !== ".");
   if (usable.length) {
     const answer = {
+      registered: true,
       mail: true,
       disposable: disposableExchange(usable.map((r) => r.exchange)),
     };
-    remember(domain, answer.mail, answer.disposable);
+    remember(domain, answer);
     return answer;
   }
 
   const a = await withTimeout(
-    Promise.any([dns.resolve4(domain), dns.resolve6(domain)]).catch(() => []),
+    Promise.any([dns.resolve4(domain), dns.resolve6(domain)]).then(
+      (records) => ({ records, missing: false }),
+      (err: AggregateError) => ({
+        records: [] as string[],
+        missing:
+          err?.errors?.every(
+            (e) => (e as NodeJS.ErrnoException)?.code === "ENOTFOUND",
+          ) ?? false,
+      }),
+    ),
     DNS_TIMEOUT_MS,
   );
   if (a === null) return null;
-  const answer = { mail: Array.isArray(a) && a.length > 0, disposable: false };
-  remember(domain, answer.mail, answer.disposable);
+
+  const answer = {
+    /* Unregistered only when every query said the name itself does not
+       exist — a lookup that failed any other way is a domain with problems,
+       not a domain that is not there. */
+    registered: !(mx.missing && a.missing),
+    mail: a.records.length > 0,
+    disposable: false,
+  };
+  remember(domain, answer);
   return answer;
 }
 
@@ -154,10 +187,17 @@ export async function POST(request: Request) {
       final: false,
     } satisfies Check);
 
+  if (!found.registered)
+    return Response.json({
+      verdict: "invalid",
+      message: `${domain} is not a registered domain.`,
+      final: true,
+    } satisfies Check);
+
   if (!found.mail)
     return Response.json({
       verdict: "invalid",
-      message: `${domain} does not accept mail.`,
+      message: `${domain} is registered but does not accept mail.`,
       final: true,
     } satisfies Check);
 
@@ -176,9 +216,11 @@ export async function POST(request: Request) {
 
   return Response.json({
     verdict: "ok",
-    /* Deliberately not "deliverable". The domain takes mail; whether this
-       mailbox exists is the one thing nothing here can see. */
-    message: `${domain} accepts mail.`,
+    /* Deliberately not "verified". The domain takes mail; whether this
+       exact mailbox exists is the one thing no lookup can see, and the link
+       we send is what settles it — an address that cannot receive the link
+       never becomes an account. */
+    message: `${domain} accepts mail. The link we send confirms the inbox.`,
     final: false,
   } satisfies Check);
 }
