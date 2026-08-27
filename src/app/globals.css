@@ -287,14 +287,18 @@
     animation: glyph-flow-back var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
-  /* A side answers when the square arrives at it and waits while the square
-     is away, so the two reaches take turns rather than both running all the
-     time. One cycle is the square's whole round trip — two beats — and the
-     burst occupies only its first third, which is what puts the wait in.
-     The delay per front is worked out where the drawing is, from the side it
-     belongs to and the square's arrival at it. */
+  /* A side pulls for exactly as long as the square takes to leave it, on the
+     square's own easing. The pull opens at an arrival and closes at the far
+     arrival, where the other side takes over — so one side or the other is
+     always pulling and the handover happens on the landing.
+
+     It used to run 36% of the cycle against a crossing of 50%: the pull was
+     spent a whole second before the square touched down, and that second was
+     the part with nothing moving in it. It also eased out while the square
+     eased in and out, so even where they overlapped they were pulling away
+     at different rates. Same length now, same curve. */
   [data-nav-panel][data-open] .glyph-wave {
-    animation: glyph-wave calc(var(--beat) * 2) var(--ease-out-expo) infinite;
+    animation: glyph-wave calc(var(--beat) * 2) var(--ease-inout-soft) infinite;
     animation-delay: var(--delay, 0s);
     transform-origin: 0 0;
   }
@@ -348,14 +352,15 @@
     transform: scale(1);
     opacity: 0;
   }
-  5% {
-    opacity: 0.85;
+  6% {
+    opacity: 0.9;
   }
-  36% {
+  /* Half the cycle: the crossing exactly. */
+  50% {
     transform: scale(3.4);
     opacity: 0;
   }
-  /* Held out of sight for the rest of the trip, which is the wait. */
+  /* Away while the far side has it. */
   100% {
     transform: scale(3.4);
     opacity: 0;
