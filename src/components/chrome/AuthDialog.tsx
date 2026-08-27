@@ -15,16 +15,22 @@ import { inspect, type Check } from "@/lib/email";
  * backend this can be backed by /login without being redesigned: the panel
  * is the presentation, and the URL is a separate decision.
  *
- * One panel with two modes rather than two dialogs. Signing in and signing
- * up differ by a single field and the wording on one button — presenting
- * them as separate destinations makes a reader who guessed wrong start over,
- * and the swap here costs them nothing.
+ * One panel with two modes rather than two dialogs. Presenting them as
+ * separate destinations makes a reader who guessed wrong start over, and the
+ * swap here costs them nothing.
+ *
+ * Signing in takes no password: an address, and a link lands in the inbox.
+ * The two modes therefore differ by more than a field now, which is why the
+ * parts that differ share one grid cell — the panel is the height of the
+ * taller of them at all times and nothing moves when the pair is switched.
+ * A dialog that changes size under the pointer is a dialog that has just
+ * moved the button someone was reaching for.
  *
  * NOTHING IS SENT. There is no backend to send it to, so the form holds its
  * values in local state, submits to a notice rather than a server, and
  * stores nothing anywhere. That notice is deliberate and it is the honest
- * state of this: a password field that quietly accepts a real password and
- * does nothing with it is worse than one that says so.
+ * state of this: a field that quietly accepts a real password and does
+ * nothing with it is worse than one that says so.
  */
 
 type Mode = "in" | "up";
@@ -64,6 +70,104 @@ function AppleMark() {
   );
 }
 
+/** The verdict, drawn. A tick that draws itself on and a cross that draws
+ *  itself in are the same gesture at two outcomes — and the stroke is dashed
+ *  to its own length, so each one arrives rather than appearing. */
+function Verdict({ state }: { state: "checking" | "good" | "bad" }) {
+  return (
+    <span
+      key={state}
+      aria-hidden
+      className="verdict pointer-events-none absolute top-1/2 right-4 -translate-y-1/2"
+      data-state={state}
+    >
+      {state === "checking" ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
+          <path
+            className="verdict-spin"
+            d="M8 2a6 6 0 0 1 6 6"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : state === "good" ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path
+            className="verdict-draw"
+            d="M3 8.4 6.4 11.8 13 5.2"
+            pathLength={100}
+            stroke="var(--color-positive)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path
+            className="verdict-draw"
+            d="M4 4l8 8M12 4l-8 8"
+            pathLength={100}
+            stroke="var(--color-negative)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+/* Shown while a password is being made, never as a wall of red after the
+   fact. Each one ticks as it is satisfied, so the field is a thing being
+   completed rather than a thing being failed. */
+const RULES = [
+  { id: "len", label: "8 characters or more", met: (v: string) => v.length >= 8 },
+  { id: "num", label: "A number", met: (v: string) => /\d/.test(v) },
+  { id: "cap", label: "A capital", met: (v: string) => /[A-Z]/.test(v) },
+];
+
+function Rules({ value }: { value: string }) {
+  return (
+    <ul className="mt-3 flex flex-col gap-2">
+      {RULES.map((rule, i) => {
+        const met = rule.met(value);
+        return (
+          <li
+            key={rule.id}
+            className="flex items-center gap-2.5 text-[0.8rem] transition-colors duration-300"
+            style={{ color: met ? "var(--color-positive)" : "var(--faint)" }}
+          >
+            <span
+              className="rule-box relative grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors duration-300"
+              data-met={met || undefined}
+              style={{
+                borderColor: met ? "var(--color-positive)" : "var(--line-strong)",
+                transitionDelay: `${i * 40}ms`,
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <path
+                  className="rule-tick"
+                  d="M3 8.4 6.4 11.8 13 5.2"
+                  pathLength={100}
+                  stroke="var(--color-positive)"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            {rule.label}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function Provider({
   label,
   onPress,
@@ -96,6 +200,7 @@ function Field({
   onBlur,
   tone,
   note,
+  mark,
 }: {
   id: string;
   label: string;
@@ -108,6 +213,9 @@ function Field({
    *  which is not the same as nothing being wrong. */
   tone?: "good" | "warn" | "bad";
   note?: React.ReactNode;
+  /** Drawn inside the field's right edge, where the answer belongs — beside
+   *  what was typed rather than underneath it. */
+  mark?: React.ReactNode;
 }) {
   const edge =
     tone === "bad"
@@ -121,6 +229,7 @@ function Field({
     <div>
       <label htmlFor={id} className="block">
         <span className="type-label block text-(--faint)">{label}</span>
+        <span className="relative mt-2 block">
         <input
           id={id}
           type={type}
@@ -130,8 +239,10 @@ function Field({
           onBlur={onBlur}
           aria-describedby={note ? `${id}-note` : undefined}
           aria-invalid={tone === "bad" || undefined}
-          className={`mt-2 block w-full rounded-(--radius-control) border bg-(--surface) px-4 py-3 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:bg-transparent ${edge}`}
+          className={`block w-full rounded-(--radius-control) border bg-(--surface) py-3 pr-11 pl-4 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:bg-transparent ${edge}`}
         />
+        {mark}
+        </span>
       </label>
       {note && (
         <p
@@ -194,7 +305,7 @@ export default function AuthDialog({
      event handler, never from an effect's dependency list, so memoising it
      buys nothing — and writing the debounce ref from inside a memoised
      callback is what the compiler objects to. */
-  const verify = (value: string) => {
+  const verify = (value: string, now = false) => {
     window.clearTimeout(job.current.timer);
     const address = value.trim();
     job.current.address = address;
@@ -205,34 +316,49 @@ export default function AuthDialog({
       return;
     }
 
-    /* Everything decidable here is decided here, immediately — a malformed
-       address should not cost a round trip, and a typo should be caught
-       while the finger is still on the key. */
-    const local = inspect(address);
-    setCheck(local.verdict === "ok" ? null : local);
-    if (local.final) {
-      setChecking(false);
+    const run = () => {
+      /* Everything decidable here is decided here — a malformed address
+         should never cost a round trip. */
+      const local = inspect(address);
+      setCheck(local.verdict === "ok" ? null : local);
+      if (local.final) {
+        setChecking(false);
+        return;
+      }
+
+      setChecking(true);
+      window.setTimeout(async () => {
+        try {
+          const res = await fetch("/api/verify-email", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email: address }),
+          });
+          const result = (await res.json()) as Check;
+          if (job.current.address !== address) return;
+          setCheck(result);
+        } catch {
+          if (job.current.address !== address) return;
+          setCheck(null);
+        } finally {
+          if (job.current.address === address) setChecking(false);
+        }
+      }, 0);
+    };
+
+    if (now) {
+      run();
       return;
     }
 
-    setChecking(true);
-    job.current.timer = window.setTimeout(async () => {
-      try {
-        const res = await fetch("/api/verify-email", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email: address }),
-        });
-        const result = (await res.json()) as Check;
-        if (job.current.address !== address) return;
-        setCheck(result);
-      } catch {
-        if (job.current.address !== address) return;
-        setCheck(null);
-      } finally {
-        if (job.current.address === address) setChecking(false);
-      }
-    }, 420);
+    /* Nothing on screen while the address is still being typed. The syntax
+       check is instant and would happily put a red cross beside "amine@gmail"
+       on the way to "amine@gmail.com" — a verdict on a half-typed address is
+       a verdict on something nobody has finished saying. It waits for the
+       typing to stop, and blur asks immediately. */
+    setCheck(null);
+    setChecking(false);
+    job.current.timer = window.setTimeout(run, 520);
   };
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -350,6 +476,18 @@ export default function AuthDialog({
           />
         </span>
 
+        {/* The tabs say which way in; the heading says where you have
+            arrived. They are not the same job — the pair is a control, and
+            this is the top of the thing it controls. */}
+        <h2 id={titleId} className="type-headline mt-6 text-[1.7rem]">
+          {signingUp ? "Create account" : "Sign in"}
+        </h2>
+        <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted)">
+          {signingUp
+            ? "Payments, identity and AI on one platform."
+            : "Welcome back."}
+        </p>
+
         {/* Both ways in, side by side and both legible from the first frame.
             A link at the foot saying "New to Pixely?" asks the reader to
             finish reading the wrong form before it tells them there is
@@ -369,7 +507,7 @@ export default function AuthDialog({
                 ?.focus(),
             );
           }}
-          className="relative mt-6 grid grid-cols-2 rounded-(--radius-control) border border-(--line) bg-(--surface) p-1"
+          className="relative mt-7 grid grid-cols-2 rounded-(--radius-control) border border-(--line) bg-(--surface) p-1"
         >
           {/* Inset by the track's own padding, so its corner is the track's
               less that padding — the same 4px relationship the panel and its
@@ -407,18 +545,6 @@ export default function AuthDialog({
             );
           })}
         </div>
-
-        {/* The tabs say which way in; the heading says where you have
-            arrived. They are not the same job — the pair is a control, and
-            this is the top of the thing it controls. */}
-        <h2 id={titleId} className="type-headline mt-6 text-[1.7rem]">
-          {signingUp ? "Create account" : "Sign in"}
-        </h2>
-        <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted)">
-          {signingUp
-            ? "Payments, identity and AI on one platform."
-            : "Welcome back."}
-        </p>
 
         <div className="mt-7 flex flex-col gap-3">
           <Provider label="Continue with Google" onPress={pending}>
@@ -459,6 +585,10 @@ export default function AuthDialog({
           }}
           className="flex flex-col gap-4"
         >
+          {/* One field for both ways in. It is the whole of signing in and
+              the start of signing up, so duplicating it per pane would mean
+              two inputs wearing one id and two verifiers racing each other
+              over the same address. */}
           <Field
             id="auth-email"
             label="Work email"
@@ -467,14 +597,21 @@ export default function AuthDialog({
             value={email}
             onChange={(v) => {
               setEmail(v);
-              /* Only while creating an account. Signing in does not care
-                 whether the domain takes mail — the password decides it,
-                 and checking would leak which addresses are registered. */
-              if (signingUp) verify(v);
+              verify(v);
             }}
-            onBlur={signingUp ? () => verify(email) : undefined}
+            onBlur={() => verify(email, true)}
+            mark={
+              checking ? (
+                <Verdict state="checking" />
+              ) : check?.verdict === "invalid" ||
+                check?.verdict === "disposable" ? (
+                <Verdict state="bad" />
+              ) : check?.verdict === "ok" && email.trim() ? (
+                <Verdict state="good" />
+              ) : undefined
+            }
             tone={
-              !signingUp || !check
+              !check
                 ? undefined
                 : check.verdict === "invalid" || check.verdict === "disposable"
                   ? "bad"
@@ -485,7 +622,7 @@ export default function AuthDialog({
                       : undefined
             }
             note={
-              !signingUp ? undefined : checking ? (
+              checking ? (
                 <span className="text-(--faint)">Checking the domain…</span>
               ) : check?.message ? (
                 <>
@@ -497,7 +634,7 @@ export default function AuthDialog({
                         type="button"
                         onClick={() => {
                           setEmail(check.suggestion!);
-                          verify(check.suggestion!);
+                          verify(check.suggestion!, true);
                         }}
                         data-cursor="link"
                         className="text-accent underline-offset-4 hover:underline"
@@ -510,30 +647,48 @@ export default function AuthDialog({
               ) : undefined
             }
           />
-          <Field
-            id="auth-password"
-            label="Password"
-            type="password"
-            autoComplete={signingUp ? "new-password" : "current-password"}
-            value={password}
-            onChange={setPassword}
-          />
 
-          {!signingUp && (
-            <button
-              type="button"
-              onClick={pending}
-              data-cursor="link"
-              className="type-label self-start text-(--muted) transition-colors duration-200 hover:text-accent"
+          {/* The two panes share one grid cell, so the form is always as tall
+              as the taller of them and switching moves nothing. Measuring one
+              and pinning a height would drift the moment the copy or the
+              fonts changed; this cannot. */}
+          <div className="grid">
+            <div
+              className={`col-start-1 row-start-1 flex flex-col gap-4 transition-opacity duration-300 ${
+                signingUp ? "pointer-events-none opacity-0" : "opacity-100"
+              }`}
+              inert={signingUp || undefined}
             >
-              Forgot password
-            </button>
-          )}
+              <MagneticButton size="md" className="w-full">
+                Email me a link
+              </MagneticButton>
+              <p className="text-[0.82rem] leading-relaxed text-(--muted)">
+                No password. We send a link that signs you in, and it works
+                once.
+              </p>
+            </div>
 
-          <div className="mt-2">
-            <MagneticButton size="md" className="w-full">
-              {signingUp ? "Create account" : "Sign in"}
-            </MagneticButton>
+            <div
+              className={`col-start-1 row-start-1 flex flex-col gap-4 transition-opacity duration-300 ${
+                signingUp ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+              inert={!signingUp || undefined}
+            >
+              <div>
+                <Field
+                  id="auth-password"
+                  label="Password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={setPassword}
+                />
+                <Rules value={password} />
+              </div>
+              <MagneticButton size="md" className="w-full">
+                Create account
+              </MagneticButton>
+            </div>
           </div>
         </form>
 
@@ -546,19 +701,36 @@ export default function AuthDialog({
           </p>
         )}
 
-        {signingUp && (
-          <p className="mt-6 border-t border-(--line) pt-5 text-[0.78rem] leading-relaxed text-(--faint)">
-            Creating an account means agreeing to the{" "}
-            <a href="/terms" className="text-(--muted) underline underline-offset-4 hover:text-accent" data-cursor="link">
-              terms
-            </a>{" "}
-            and the{" "}
-            <a href="/privacy" className="text-(--muted) underline underline-offset-4 hover:text-accent" data-cursor="link">
-              privacy notice
+        {/* The links lead and the sentence follows, which is the way round
+            people use this: nobody reads the line, and the ones who care are
+            looking for the documents. Buried mid-sentence they were the
+            least reachable thing in the panel. Kept for both modes, so the
+            foot is not another thing that changes height. */}
+        <div className="mt-6 border-t border-(--line) pt-5">
+          <p className="type-label flex flex-wrap items-center gap-x-3 gap-y-2">
+            <a
+              href="/terms"
+              data-cursor="link"
+              className="text-(--muted) transition-colors duration-200 hover:text-accent"
+            >
+              Terms of service
             </a>
-            .
+            <span aria-hidden className="size-[3px] bg-(--faint)" />
+            <a
+              href="/privacy"
+              data-cursor="link"
+              className="text-(--muted) transition-colors duration-200 hover:text-accent"
+            >
+              Privacy notice
+            </a>
           </p>
-        )}
+          <p className="mt-2 text-[0.78rem] leading-relaxed text-(--faint)">
+            {signingUp
+              ? "Creating an account accepts both."
+              : "Signing in accepts both."}
+          </p>
+        </div>
+
       </div>
     </div>
   );

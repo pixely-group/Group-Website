@@ -287,6 +287,54 @@
   }
 }
 
+/* The email verdict. The tick and the cross draw themselves on rather than
+   appearing — same gesture, two outcomes — and the mark is keyed on its
+   state, so React swaps the element and the draw runs again on every change
+   instead of only the first. */
+@media (prefers-reduced-motion: no-preference) {
+  .verdict {
+    animation: verdict-in 260ms var(--ease-out-expo) backwards;
+  }
+  .verdict-draw {
+    stroke-dasharray: 100;
+    animation: verdict-draw 320ms var(--ease-out-expo) 60ms backwards;
+  }
+  .verdict-spin {
+    transform-origin: 8px 8px;
+    animation: verdict-spin 700ms linear infinite;
+  }
+  /* The rule's tick, drawn the same way at the smaller size. */
+  .rule-box[data-met] .rule-tick {
+    stroke-dasharray: 100;
+    animation: verdict-draw 300ms var(--ease-out-expo) backwards;
+  }
+}
+.verdict-draw,
+.rule-tick {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+}
+/* Nothing in the box until the rule is met — the tick is the whole signal. */
+.rule-box:not([data-met]) .rule-tick {
+  opacity: 0;
+}
+@keyframes verdict-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+@keyframes verdict-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+@keyframes verdict-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
 /* The sub-menu drawings. All of it is scoped to an open panel: only one glyph
    is ever mounted, and it should not be running before it is looked at.
 
