@@ -5,6 +5,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
+import AuthDialog from "@/components/chrome/AuthDialog";
 import { columnFor, linkHref } from "@/lib/menu";
 import NavGlyph from "@/components/chrome/NavGlyph";
 
@@ -58,14 +59,6 @@ const CONDENSE_OVER = 200;
  * inset, is what governs from 1024 up: max() takes the inset only on screens
  * too narrow for the measure to fit.
  */
-/**
- * Where signing in goes. Every other link on this site is an anchor into the
- * page, because the site is the page — there is no app to hand off to yet.
- * Until there is, this lands on the same section the button does; give it the
- * real URL here and the anchor scrolling turns itself off.
- */
-export const LOGIN_HREF = "#start";
-
 export const NAV_INSETS =
   "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:52rem] " +
   "[--nav-row-right:20px] " +
@@ -239,6 +232,9 @@ export default function Navigation() {
   const [crossing, setCrossing] = useState(false);
   const schemeRef = useRef<"ink" | "bone">("ink");
   const [menuOpen, setMenuOpen] = useState(false);
+  /* Held here rather than in either trigger: the bar and the compact menu
+     both open the same panel, and it has to outlive the menu closing. */
+  const [authOpen, setAuthOpen] = useState(false);
   /* Whether the bar is standing on the menu rather than on the page.
      Not the same as menuOpen at the closing end: the panel collapses to a
      lip the height of this bar and only disappears when that is done, so
@@ -1091,13 +1087,10 @@ export default function Navigation() {
                 inert={gathered}
                 className="nav-aside hidden sm:block"
               >
+                {/* No href: it opens the sign-in panel rather than going
+                    anywhere on the page, so it is a button. */}
                 <MagneticButton
-                  href={LOGIN_HREF}
-                  onClick={
-                    LOGIN_HREF.startsWith("#")
-                      ? scrollTo(LOGIN_HREF)
-                      : undefined
-                  }
+                  onClick={() => setAuthOpen(true)}
                   variant="outline"
                   size="sm"
                 >
@@ -1148,7 +1141,9 @@ export default function Navigation() {
         scheme={menuScheme}
         activeHref={activeHref}
         onBarGround={setBarGround}
+        onLogin={() => setAuthOpen(true)}
       />
+      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }

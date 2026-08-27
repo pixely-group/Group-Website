@@ -5,7 +5,6 @@ import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import {
-  LOGIN_HREF,
   NAV_GEOMETRY,
   NAV_INSETS,
   NAV_LINKS,
@@ -30,6 +29,9 @@ type Props = {
    *  timer cannot do this: the wipe is eased, so that frame is not a fixed
    *  number of milliseconds from the click. */
   onBarGround: (overMenu: boolean) => void;
+  /** Opens the sign-in panel. The menu closes itself first — the two are both
+   *  dialogs, and stacking them would trap focus in the wrong one. */
+  onLogin: () => void;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
@@ -41,6 +43,7 @@ export default function MobileMenu({
   scheme,
   activeHref,
   onBarGround,
+  onLogin,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
@@ -337,9 +340,14 @@ export default function MobileMenu({
               Get started
             </MagneticButton>
           </span>
+          {/* No href: it opens the sign-in panel rather than going anywhere,
+              so it is a button and announces itself as one. The menu shuts
+              first — two layers of dialog over each other is one too many. */}
           <MagneticButton
-            href={LOGIN_HREF}
-            onClick={LOGIN_HREF.startsWith("#") ? onNavigate(LOGIN_HREF) : undefined}
+            onClick={() => {
+              onClose();
+              onLogin();
+            }}
             variant="outline"
             className="w-full justify-center"
           >

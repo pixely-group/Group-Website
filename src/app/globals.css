@@ -77,6 +77,9 @@
   /* The bar rides over the open menu rather than being covered and redrawn
      by it — there is only ever one bar, and its own button shuts the menu. */
   --z-nav-over-menu: 120;
+  /* Above the bar and the compact menu, below the cursor — the cursor has to
+     stay legible over whatever is in front of the page. */
+  --z-dialog: 125;
   --z-cursor: 130;
 }
 
@@ -257,6 +260,31 @@
 }
 [data-theme="bone"] {
   --nav-panel-fill: rgb(236 233 225 / 0.86);
+}
+
+/* The sign-in panel. The scrim fades on its own; the panel comes up with it
+   and settles, so the two read as one thing arriving rather than a box
+   appearing on a wash. Reduced motion keeps the fade and drops the travel —
+   a panel that is there or not there, with nothing crossing the screen. */
+.auth-panel {
+  opacity: 0;
+  translate: 0 10px;
+  scale: 0.985;
+  transition:
+    opacity 260ms var(--ease-out-expo),
+    translate 380ms var(--ease-out-expo),
+    scale 380ms var(--ease-out-expo);
+}
+.auth-panel.is-open {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-panel {
+    translate: 0 0;
+    scale: 1;
+  }
 }
 
 /* The sub-menu drawings. All of it is scoped to an open panel: only one glyph
