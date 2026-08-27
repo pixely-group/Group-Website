@@ -32,6 +32,8 @@ type Props = {
   /** Opens the sign-in panel. The menu closes itself first — the two are both
    *  dialogs, and stacking them would trap focus in the wrong one. */
   onLogin: () => void;
+  /** The same panel opened on Create account, for the Get started button. */
+  onSignup: () => void;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
@@ -44,6 +46,7 @@ export default function MobileMenu({
   activeHref,
   onBarGround,
   onLogin,
+  onSignup,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
@@ -332,9 +335,13 @@ export default function MobileMenu({
           {/* Wrapped rather than given `sm:hidden` directly: the button's own
               inline-flex is the same specificity and wins by CSS order. */}
           <span className="block w-full sm:hidden">
+            {/* Create account, matching the bar's own pair — not a scroll to
+                #start, which stays the in-page CTAs' destination. */}
             <MagneticButton
-              href="#start"
-              onClick={onNavigate("#start")}
+              onClick={() => {
+                onClose();
+                onSignup();
+              }}
               className="w-full justify-center"
             >
               Get started

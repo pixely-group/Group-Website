@@ -235,6 +235,25 @@ export default function Navigation() {
   /* Held here rather than in either trigger: the bar and the compact menu
      both open the same panel, and it has to outlive the menu closing. */
   const [authOpen, setAuthOpen] = useState(false);
+  /* Which pane the trigger promised: Login opens Sign in, Get started opens
+     Create account. */
+  const [authMode, setAuthMode] = useState<"in" | "up">("in");
+  /* Who is signed in, if anyone — asked once on load. The Login button wears
+     the name once a connector has done its work, which is the only visible
+     proof the sign-in went anywhere. */
+  const [account, setAccount] = useState<{ name?: string; email?: string } | null>(null);
+  useEffect(() => {
+    let gone = false;
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((d) => {
+        if (!gone && d.user) setAccount(d.user);
+      })
+      .catch(() => {});
+    return () => {
+      gone = true;
+    };
+  }, []);
   /* Whether the bar is standing on the menu rather than on the page.
      Not the same as menuOpen at the closing end: the panel collapses to a
      lip the height of this bar and only disappears when that is done, so
@@ -1088,19 +1107,42 @@ export default function Navigation() {
                 className="nav-aside hidden sm:block"
               >
                 {/* No href: it opens the sign-in panel rather than going
-                    anywhere on the page, so it is a button. */}
+                    anywhere on the page, so it is a button. Signed in, it
+                    wears the name instead and a press signs out — the
+                    smallest possible account surface, and the proof a
+                    connector actually connected. */}
                 <MagneticButton
-                  onClick={() => setAuthOpen(true)}
+                  onClick={
+                    account
+                      ? async () => {
+                          await fetch("/api/auth/signout", { method: "POST" });
+                          window.location.reload();
+                        }
+                      : () => {
+                          setAuthMode("in");
+                          setAuthOpen(true);
+                        }
+                  }
                   variant="outline"
                   size="sm"
                 >
-                  Login
+                  {account?.name?.split(" ")[0] ?? account?.email?.split("@")[0] ?? "Login"}
                 </MagneticButton>
               </span>
               {/* Wrapped rather than given `hidden` directly: the button's own
                   `inline-flex` is the same specificity and wins by CSS order. */}
               <span className="hidden sm:block">
-                <MagneticButton href="#start" onClick={scrollTo("#start")} size="sm">
+                {/* Opens the panel on Create account — the pair beside it:
+                    one way in for people with accounts, one for people
+                    without. The in-page CTAs still scroll to #start, which
+                    is the talk-to-an-engineer chapter. */}
+                <MagneticButton
+                  onClick={() => {
+                    setAuthMode("up");
+                    setAuthOpen(true);
+                  }}
+                  size="sm"
+                >
                   Get started
                 </MagneticButton>
               </span>
@@ -1141,9 +1183,20 @@ export default function Navigation() {
         scheme={menuScheme}
         activeHref={activeHref}
         onBarGround={setBarGround}
-        onLogin={() => setAuthOpen(true)}
+        onLogin={() => {
+          setAuthMode("in");
+          setAuthOpen(true);
+        }}
+        onSignup={() => {
+          setAuthMode("up");
+          setAuthOpen(true);
+        }}
       />
-      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthDialog
+        open={authOpen}
+        initialMode={authMode}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 }

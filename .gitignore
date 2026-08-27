@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# committed on purpose — it documents the variables and holds no secrets
+!.env.example

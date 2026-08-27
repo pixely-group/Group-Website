@@ -292,16 +292,34 @@ function Field({
 export default function AuthDialog({
   open,
   onClose,
+  initialMode = "in",
 }: {
   open: boolean;
   onClose: () => void;
+  /** Which pane the trigger promised. Login opens Sign in; Get started opens
+   *  Create account — a panel that disagrees with its button has lost. */
+  initialMode?: Mode;
 }) {
-  const [mode, setMode] = useState<Mode>("in");
+  const [mode, setMode] = useState<Mode>(initialMode);
+  /* Adjusted during render, React's own pattern for a changed prop: when a
+     different trigger opens the panel, its promise wins over whatever the
+     pair was left on. */
+  const [prevInitial, setPrevInitial] = useState(initialMode);
+  if (initialMode !== prevInitial) {
+    setPrevInitial(initialMode);
+    setMode(initialMode);
+  }
   const [email, setEmail] = useState("");
   const [check, setCheck] = useState<Check | null>(null);
   const [checking, setChecking] = useState(false);
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  /* Which connectors are live, asked once per open. The buttons check before
+     they navigate, so an unactivated one says so instead of bouncing off a
+     503 into nothing. */
+  const [live, setLive] = useState<{ google: boolean; apple: boolean } | null>(
+    null,
+  );
 
   /* Closing clears what was typed. Done here rather than from an effect
      watching `open`, because it is a consequence of the close itself — there
@@ -318,12 +336,12 @@ export default function AuthDialog({
        nothing to gain: the email stays in the field across a close, so a
        reply landing a moment later is about the address still sitting there
        rather than a stale one. */
-    /* Back to signing in. The control that opens this says Login, and it
-       reopening on Create account because that is where someone left it last
-       is the panel arguing with the button that summoned it. */
-    setMode("in");
+    /* Back to whatever the trigger promised. Reopening on the pane someone
+       wandered to last is the panel arguing with the button that summoned
+       it. */
+    setMode(initialMode);
     onClose();
-  }, [onClose]);
+  }, [onClose, initialMode]);
 
   /* The check in flight: which address it is about, and the timer waiting to
      send it. One object rather than two refs — a reply that arrives after
@@ -397,6 +415,22 @@ export default function AuthDialog({
   const returnTo = useRef<HTMLElement | null>(null);
   const lenis = useLenis();
   const titleId = useId();
+
+  useEffect(() => {
+    if (!open || live) return;
+    let gone = false;
+    fetch("/api/auth/providers")
+      .then((res) => res.json())
+      .then((d) => {
+        if (!gone) setLive({ google: !!d.google, apple: !!d.apple });
+      })
+      .catch(() => {
+        if (!gone) setLive({ google: false, apple: false });
+      });
+    return () => {
+      gone = true;
+    };
+  }, [open, live]);
 
   /* The page underneath holds still, and the element that opened this gets
      the focus back when it closes — otherwise a keyboard lands at the top of
@@ -583,10 +617,40 @@ export default function AuthDialog({
         </div>
 
         <div className="mt-7 flex flex-col gap-3">
-          <Provider label="Continue with Google" onPress={pending}>
+          {/* A configured connector is a real navigation — the whole page
+              goes to the provider and comes back signed in. An unconfigured
+              one explains itself in the panel's own voice. */}
+          <Provider
+            label="Continue with Google"
+            onPress={() =>
+              live?.google
+                ? /* A document navigation on purpose — this is a route
+                     handler that hands the whole page to Google's consent
+                     screen, not a Next page router.push could reach. The URL
+                     is made absolute, which is what the lint rule is
+                     actually guarding. */
+                  window.location.assign(
+                    new URL("/api/auth/google/start", window.location.origin),
+                  )
+                : setNotice(
+                    "Google sign-in isn't activated yet — it goes live the moment the Google keys are set. Nothing was sent.",
+                  )
+            }
+          >
             <GoogleMark />
           </Provider>
-          <Provider label="Continue with Apple" onPress={pending}>
+          <Provider
+            label="Continue with Apple"
+            onPress={() =>
+              live?.apple
+                ? window.location.assign(
+                    new URL("/api/auth/apple/start", window.location.origin),
+                  )
+                : setNotice(
+                    "Apple sign-in isn't activated yet — it goes live the moment the Apple keys are set. Nothing was sent.",
+                  )
+            }
+          >
             <AppleMark />
           </Provider>
         </div>
