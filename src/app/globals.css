@@ -193,18 +193,25 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .wm-caret,
+  /* The rotating word's caret idles the way a caret does — it is mid-cycle
+     between typing and erasing, and a still one there reads as stalled. */
   .caret-dot.at-rest {
     animation: wm-blink 1.1s steps(1) infinite;
   }
+  /* The logo's does the opposite: it answers the hand rather than idling.
+     At rest the dot is the wordmark's full stop and holds still, which is
+     what a full stop does; under the pointer it becomes a cursor. A mark
+     that blinks at nobody is a mark that never settles. */
+  .wordmark:hover .wm-caret {
+    animation: wm-blink 1.1s steps(1) infinite;
+  }
 }
-/* The caret blinks only when the full name is on show and untouched.
-   Everything else stills it: a hand on the logo, letters still being
-   typed, the gathered bar where the word has closed to P., and the
-   compact menu holding at P. — a lone P with a flashing dot reads as a
-   fault, not a caret. */
-.wordmark:hover .wm-caret,
-.wm-caret.wm-typing,
+/* Two states outrank the hover. Letters still being typed, and the gathered
+   bar or compact menu where the word has closed to P. — a lone P with a
+   flashing dot beside it reads as a fault, not a caret. Both are written to
+   match the hover rule's specificity and placed after it, so a hand on the
+   logo cannot bring the blink back in either. */
+.wordmark .wm-caret.wm-typing,
 .nav-ground[data-wm-compact] .wm-caret,
 .nav-ground[data-wm-short] .wm-caret {
   animation: none;

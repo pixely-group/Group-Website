@@ -470,9 +470,14 @@ export default function BrandLab() {
               The square leaves the logo and does the same job everywhere else
               at the same 0.17em ratio: it walks the navigation to mark the
               chapter you are in, it becomes the caret that types and erases
-              the rotating word, and it ends the headline. It blinks only when
-              the full name is shown and untouched — a lone P with a flashing
-              dot reads as a fault, not a caret.
+              the rotating word, and it ends the headline. In the logo it holds
+              still until the pointer is on the wordmark, and blinks only under
+              it — at rest the dot is a full stop, and a full stop does not
+              flash. It stays still even under the pointer once the word has
+              closed to a lone P, where a flashing dot reads as a fault rather
+              than a caret. The rotating word&apos;s caret keeps its own idle blink,
+              because there it is genuinely mid-cycle between typing and
+              erasing.
             </p>
             <p className="mt-4 leading-relaxed text-(--muted)">
               One consequence: nothing else on the surface is a small blue
