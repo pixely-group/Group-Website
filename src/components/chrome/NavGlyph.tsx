@@ -86,7 +86,12 @@ function Route({
    Everything enters at one door and leaves by another; between them the
    fabric fans out and closes again. Three routes so the middle one can be
    the straight-through case and the outer two the ones that touch a
-   service on the way. */
+   service on the way.
+
+   Two nodes, one on each outer route, sitting at the middle of its flat
+   run — where the pulse is travelling straight and the node reads as a
+   stop on the line rather than a speck beside it. They are drawn last, so
+   the pulse passes behind them. */
 function ProductGlyph() {
   const top = "M20 42 C 62 42 62 14 104 14 L 136 14 C 178 14 178 42 220 42";
   const mid = "M20 42 L 220 42";
@@ -96,25 +101,23 @@ function ProductGlyph() {
       <Route d={top} delay={0} />
       <Route d={mid} delay={1.15} />
       <Route d={low} delay={2.3} />
-      {[
-        [104, 14],
-        [136, 14],
-        [104, 70],
-        [136, 70],
-      ].map(([x, y], i) => (
-        <rect
-          key={`${x}-${y}`}
-          className="glyph-node"
-          x={x - 2.5}
-          y={y - 2.5}
-          width="5"
-          height="5"
-          fill={LINE}
-          opacity="0.45"
-          style={{ "--i": i } as React.CSSProperties}
-        />
-      ))}
       <line x1="120" y1="34" x2="120" y2="50" stroke={LINE} strokeWidth="1" opacity="0.18" />
+      {[14, 70].map((y) => (
+        <g key={y}>
+          {/* A hole in the route, so the line stops at the node instead of
+              running under it and out the far side. */}
+          <rect x={116} y={y - 4} width="8" height="8" fill="var(--bg)" />
+          <rect
+            x={116.5}
+            y={y - 3.5}
+            width="7"
+            height="7"
+            stroke={LINE}
+            strokeWidth="1"
+            opacity="0.75"
+          />
+        </g>
+      ))}
       <Mark x={20} y={42} />
       <Mark x={220} y={42} />
     </Frame>
@@ -122,94 +125,119 @@ function ProductGlyph() {
 }
 
 /* — Solutions: first transaction to national scale ————————————————
-   Rings leaving one point and going on leaving it. The reach is the
-   subject, so the rings are the whole drawing and the origin is a single
-   square. */
+   Two origins now, facing each other, each going on leaving itself — and
+   the square crossing between them, which is the reach the column is about
+   rather than one point broadcasting at nothing. */
 function SolutionsGlyph() {
+  const arc = (sweep: 0 | 1) => `M0 -28 A 28 28 0 0 ${sweep} 0 28`;
   return (
     <Frame>
-      <g transform="translate(34 42)">
-        {[0, 1, 2, 3].map((i) => (
-          <path
-            key={i}
-            className="glyph-ripple"
-            d="M0 -30 A 30 30 0 0 1 0 30"
-            stroke="var(--accent)"
-            strokeWidth="1"
-            style={{ "--i": i } as React.CSSProperties}
-          />
-        ))}
-        <path d="M0 -30 A 30 30 0 0 1 0 30" stroke={LINE} strokeWidth="1" opacity="0.2" />
-        <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.3" />
-        <Mark x={0} y={0} />
-      </g>
-      {/* The far edge it is reaching for. */}
-      <line
-        x1="222"
-        y1="12"
-        x2="222"
-        y2="72"
-        stroke={LINE}
-        strokeWidth="1"
-        opacity="0.28"
-        strokeDasharray="3 5"
-      />
-    </Frame>
-  );
-}
-
-/* — Platform: the rails underneath ————————————————————————————————
-   Three of them, carrying at their own speeds, with the ties between. The
-   traffic is dashes flowing rather than a single object crossing, because a
-   rail is a thing that is continuously busy. */
-function PlatformGlyph() {
-  const rails = [
-    { y: 22, dur: 2.6, delay: 0 },
-    { y: 42, dur: 3.6, delay: 0.5 },
-    { y: 62, dur: 3.1, delay: 1.1 },
-  ];
-  return (
-    <Frame>
-      {Array.from({ length: 13 }, (_, i) => 16 + i * 17.4).map((x) => (
-        <line key={x} x1={x} y1="22" x2={x} y2="62" stroke={LINE} strokeWidth="1" opacity="0.1" />
-      ))}
-      {rails.map((rail) => (
-        <g key={rail.y}>
-          <line x1="14" y1={rail.y} x2="226" y2={rail.y} stroke={LINE} strokeWidth="1" opacity="0.34" />
-          <path
-            className="glyph-flow"
-            d={`M14 ${rail.y} L226 ${rail.y}`}
-            pathLength={100}
-            strokeDasharray="10 90"
-            stroke="var(--accent)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            style={
-              {
-                "--delay": `${rail.delay}s`,
-                "--dur": `${rail.dur}s`,
-              } as React.CSSProperties
-            }
-          />
+      {([
+        { x: 30, sweep: 1 as const },
+        { x: 210, sweep: 0 as const },
+      ]).map((side) => (
+        <g key={side.x} transform={`translate(${side.x} 42)`}>
+          {[0, 1, 2, 3].map((i) => (
+            <path
+              key={i}
+              className="glyph-ripple"
+              d={arc(side.sweep)}
+              stroke="var(--accent)"
+              strokeWidth="1"
+              style={{ "--i": i } as React.CSSProperties}
+            />
+          ))}
+          <path d={arc(side.sweep)} stroke={LINE} strokeWidth="1" opacity="0.2" />
+          <line x1="0" y1="-32" x2="0" y2="32" stroke={LINE} strokeWidth="1" opacity="0.3" />
         </g>
       ))}
-      <Mark x={14} y={42} size={6} />
-      <Mark x={226} y={42} size={6} />
+      <line x1="30" y1="42" x2="210" y2="42" stroke={LINE} strokeWidth="1" opacity="0.14" />
+      <g className="glyph-cross">
+        <Mark x={30} y={42} />
+      </g>
     </Frame>
   );
 }
 
-/* — Company: the meridian. A sphere on its axis, and the square running the
-   axis rather than orbiting it — asked for, and better: the orbit read as a
-   satellite, which is a different idea from a position held. */
+/* — Platform: what the network is, seen from above ————————————————
+   Replaced outright: rails said the same thing as Product's routes, in the
+   same direction, and two drawings that rhyme are one drawing used twice.
+
+   This is the shape underneath instead — a ring of nodes attesting to a
+   centre, each edge carrying its confirmation inwards. It moves toward a
+   point rather than across the frame, which is the one direction none of
+   the others use. */
+function PlatformGlyph() {
+  const cx = 120;
+  const cy = 42;
+  const ring = [0, 60, 120, 180, 240, 300].map((deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return {
+      deg,
+      x: +(cx + 76 * Math.cos(rad)).toFixed(1),
+      y: +(cy + 30 * Math.sin(rad)).toFixed(1),
+    };
+  });
+  return (
+    <Frame>
+      <ellipse cx={cx} cy={cy} rx="76" ry="30" stroke={LINE} strokeWidth="1" opacity="0.16" />
+      {ring.map((node, i) => {
+        const edge = `M${node.x} ${node.y} L${cx} ${cy}`;
+        return (
+          <g key={node.deg}>
+            <path d={edge} stroke={LINE} strokeWidth="1" opacity="0.24" />
+            <path
+              className="glyph-flow"
+              d={edge}
+              pathLength={100}
+              strokeDasharray="26 74"
+              stroke="var(--accent)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              style={
+                {
+                  "--delay": `${i * 0.42}s`,
+                  "--dur": "3s",
+                } as React.CSSProperties
+              }
+            />
+            <rect
+              className="glyph-node"
+              x={node.x - 2.5}
+              y={node.y - 2.5}
+              width="5"
+              height="5"
+              fill={LINE}
+              opacity="0.5"
+              style={{ "--i": i } as React.CSSProperties}
+            />
+          </g>
+        );
+      })}
+      {/* The thing being attested to, and a hole for it to sit in. */}
+      <rect x={cx - 7} y={cy - 7} width="14" height="14" fill="var(--bg)" />
+      <Mark x={cx} y={cy} size={8} />
+    </Frame>
+  );
+}
+
+/* — Company: the meridian. A sphere on its axis ——————————————————
+   The ellipse alone cannot say which way it is turning: narrowing and
+   widening are the same picture in both directions. So a node rides its
+   rim, carried by the same scale — it crosses right to left, keeps going
+   through the far side, and comes back left to right. One turn, both ways
+   across the face, and the square still runs the axis. */
 function CompanyGlyph() {
   return (
     <Frame>
       <g transform="translate(120 42)">
         <circle r="30" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.5" />
-        <ellipse className="glyph-turn" rx="13" ry="30" stroke={LINE} strokeWidth="1" opacity="0.34" />
         <line x1="-30" y1="0" x2="30" y2="0" stroke={LINE} strokeWidth="1" opacity="0.2" />
+        <g className="glyph-turn">
+          <ellipse rx="13" ry="30" stroke={LINE} strokeWidth="1" opacity="0.34" />
+          <rect x={10.5} y={-2.5} width="5" height="5" fill={LINE} opacity="0.7" />
+        </g>
         <g className="glyph-bob">
           <Mark x={0} y={0} size={7} />
         </g>

@@ -291,13 +291,18 @@
   /* The ellipse is the meridian edge-on and then face-on: scaling it in x is
      the whole illusion of a sphere turning, and it costs one property. */
   [data-nav-panel][data-open] .glyph-turn {
-    animation: glyph-turn 7s var(--ease-inout-soft) infinite;
+    animation: glyph-turn 7s linear infinite;
     transform-origin: center;
   }
   /* Up the axis and back down it. A position held, rather than the satellite
      an orbit was describing. */
   [data-nav-panel][data-open] .glyph-bob {
     animation: glyph-bob 4.6s var(--ease-inout-soft) infinite;
+  }
+  /* The square crossing from one reach to the other. Symmetric, so the return
+     is the outward leg run backwards and the loop closes on itself. */
+  [data-nav-panel][data-open] .glyph-cross {
+    animation: glyph-cross 5.4s var(--ease-inout-soft) infinite;
   }
 }
 
@@ -327,12 +332,29 @@
     opacity: 0.6;
   }
 }
+/* A whole turn, not a narrowing and a widening. Scale carries the node on the
+   ellipse's rim, so it crosses right to left, goes through the far side, and
+   returns left to right — which is the only way the direction is legible at
+   all, since a bare ellipse looks identical whichever way it is going.
+   Stepped through cos rather than eased, because easing between two extremes
+   stalls it at the edge-on frame, where there is least to look at. */
 @keyframes glyph-turn {
+  0% { transform: scaleX(1); }
+  12.5% { transform: scaleX(0.707); }
+  25% { transform: scaleX(0.001); }
+  37.5% { transform: scaleX(-0.707); }
+  50% { transform: scaleX(-1); }
+  62.5% { transform: scaleX(-0.707); }
+  75% { transform: scaleX(0.001); }
+  87.5% { transform: scaleX(0.707); }
+  100% { transform: scaleX(1); }
+}
+@keyframes glyph-cross {
   0%, 100% {
-    transform: scaleX(1);
+    transform: translateX(0);
   }
   50% {
-    transform: scaleX(0.06);
+    transform: translateX(180px);
   }
 }
 @keyframes glyph-bob {
