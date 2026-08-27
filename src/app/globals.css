@@ -269,6 +269,12 @@
    travelling fast enough to hide one. The first version held at the far end
    and jumped back to the start, which is a reset with a rest in it.
    ———————————————————————————————————————— */
+[data-nav-panel] {
+  /* One tempo for the sub-menu drawings, so nothing in them can drift out of
+     phase with anything else. */
+  --beat: 3.6s;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   [data-nav-panel][data-open] .glyph-flow {
     animation: glyph-flow var(--dur, 3.4s) linear infinite;
@@ -282,10 +288,18 @@
   /* One front expanding through a field that stands still, and a second half
      a cycle behind it so the reach never stops. The field is drawn once in
      hairline and never animates — twelve arcs all scaling at once was the
-     tangle. */
+     tangle.
+
+     The beat. Everything in this drawing is written against it rather than
+     given its own number: the fronts run one beat each, a second front sits
+     half a beat behind, and the square takes exactly two beats to cross and
+     come back. It was 5.4s against 3.6 — three against two, which only comes
+     back into line every 10.8s and is in a different phase on every pass
+     between. Two against one lands the square on an origin exactly as that
+     side lets go of a front, every single time. */
   [data-nav-panel][data-open] .glyph-wave {
-    animation: glyph-wave 3.6s var(--ease-out-expo) infinite;
-    animation-delay: calc(var(--i) * -1.8s);
+    animation: glyph-wave var(--beat) var(--ease-out-expo) infinite;
+    animation-delay: calc(var(--i) * (var(--beat) / -2));
     transform-origin: 0 0;
   }
   /* The record under the seal, and the nodes on the fabric: a slow breath so
@@ -309,10 +323,12 @@
   [data-nav-panel][data-open] .glyph-bob {
     animation: glyph-bob 4.6s var(--ease-inout-soft) infinite;
   }
-  /* The square crossing from one reach to the other. Symmetric, so the return
-     is the outward leg run backwards and the loop closes on itself. */
+  /* The square crossing from one reach to the other, a beat each way.
+     Symmetric, so the return is the outward leg run backwards and the loop
+     closes on itself — and it eases at each end, so it is slowest exactly
+     where it arrives, which is where the front it lands on is launching. */
   [data-nav-panel][data-open] .glyph-cross {
-    animation: glyph-cross 5.4s var(--ease-inout-soft) infinite;
+    animation: glyph-cross calc(var(--beat) * 2) var(--ease-inout-soft) infinite;
   }
 }
 
@@ -385,7 +401,11 @@
     transform: translateX(0);
   }
   50% {
-    transform: translateX(188px);
+    /* 212 - 28. The origins moved to 28 and 212 when the field was rebuilt
+       and this kept the old distance, so the square was overshooting the far
+       origin by four and landing beside the thing it is supposed to arrive
+       at. */
+    transform: translateX(184px);
   }
 }
 @keyframes glyph-bob {
