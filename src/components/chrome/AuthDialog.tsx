@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
+import { inspect, type Check } from "@/lib/email";
 
 /**
  * Sign in and create an account, in one dialog.
@@ -92,6 +93,9 @@ function Field({
   autoComplete,
   value,
   onChange,
+  onBlur,
+  tone,
+  note,
 }: {
   id: string;
   label: string;
@@ -99,19 +103,48 @@ function Field({
   autoComplete: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
+  /** Colours the rule under the field. Absent means nothing is known yet,
+   *  which is not the same as nothing being wrong. */
+  tone?: "good" | "warn" | "bad";
+  note?: React.ReactNode;
 }) {
+  const edge =
+    tone === "bad"
+      ? "border-(--color-negative)"
+      : tone === "warn"
+        ? "border-(--color-signal-lift)"
+        : tone === "good"
+          ? "border-(--color-positive)"
+          : "border-(--line)";
   return (
-    <label htmlFor={id} className="block">
-      <span className="type-label block text-(--faint)">{label}</span>
-      <input
-        id={id}
-        type={type}
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 block w-full rounded-(--radius-control) border border-(--line) bg-(--surface) px-4 py-3 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:border-(--line-strong) focus:bg-transparent"
-      />
-    </label>
+    <div>
+      <label htmlFor={id} className="block">
+        <span className="type-label block text-(--faint)">{label}</span>
+        <input
+          id={id}
+          type={type}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-describedby={note ? `${id}-note` : undefined}
+          aria-invalid={tone === "bad" || undefined}
+          className={`mt-2 block w-full rounded-(--radius-control) border bg-(--surface) px-4 py-3 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:bg-transparent ${edge}`}
+        />
+      </label>
+      {note && (
+        <p
+          id={`${id}-note`}
+          /* Polite: it speaks when the typing stops, rather than interrupting
+             every keystroke with a half-finished address. */
+          aria-live="polite"
+          className="mt-2 text-[0.8rem] leading-relaxed text-(--muted)"
+        >
+          {note}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -123,8 +156,9 @@ export default function AuthDialog({
   onClose: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("in");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [check, setCheck] = useState<Check | null>(null);
+  const [checking, setChecking] = useState(false);
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -135,12 +169,71 @@ export default function AuthDialog({
   const close = useCallback(() => {
     setNotice(null);
     setPassword("");
+    setCheck(null);
+    setChecking(false);
+    /* The pending check is deliberately left alone. Touching it from here
+       would put `job` inside a memoised callback, and the compiler will not
+       let a ref be captured by a hook and written outside one — and there is
+       nothing to gain: the email stays in the field across a close, so a
+       reply landing a moment later is about the address still sitting there
+       rather than a stale one. */
     /* Back to signing in. The control that opens this says Login, and it
        reopening on Create account because that is where someone left it last
        is the panel arguing with the button that summoned it. */
     setMode("in");
     onClose();
   }, [onClose]);
+
+  /* The check in flight: which address it is about, and the timer waiting to
+     send it. One object rather than two refs — a reply that arrives after
+     the field has moved on is dropped by comparing against `address`, and
+     holding the pair together says they belong to the same question. */
+  const job = useRef({ address: "", timer: 0 });
+
+  /* A plain function, not a useCallback: it is only ever called from an
+     event handler, never from an effect's dependency list, so memoising it
+     buys nothing — and writing the debounce ref from inside a memoised
+     callback is what the compiler objects to. */
+  const verify = (value: string) => {
+    window.clearTimeout(job.current.timer);
+    const address = value.trim();
+    job.current.address = address;
+
+    if (!address) {
+      setCheck(null);
+      setChecking(false);
+      return;
+    }
+
+    /* Everything decidable here is decided here, immediately — a malformed
+       address should not cost a round trip, and a typo should be caught
+       while the finger is still on the key. */
+    const local = inspect(address);
+    setCheck(local.verdict === "ok" ? null : local);
+    if (local.final) {
+      setChecking(false);
+      return;
+    }
+
+    setChecking(true);
+    job.current.timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/verify-email", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: address }),
+        });
+        const result = (await res.json()) as Check;
+        if (job.current.address !== address) return;
+        setCheck(result);
+      } catch {
+        if (job.current.address !== address) return;
+        setCheck(null);
+      } finally {
+        if (job.current.address === address) setChecking(false);
+      }
+    }, 420);
+  };
 
   const panelRef = useRef<HTMLDivElement>(null);
   const returnTo = useRef<HTMLElement | null>(null);
@@ -257,13 +350,6 @@ export default function AuthDialog({
           />
         </span>
 
-        {/* The dialog's name for a screen reader. The tabs carry the visible
-            hierarchy, so a heading repeating whichever one is selected would
-            be saying it twice. */}
-        <h2 id={titleId} className="sr-only">
-          Sign in or create an account
-        </h2>
-
         {/* Both ways in, side by side and both legible from the first frame.
             A link at the foot saying "New to Pixely?" asks the reader to
             finish reading the wrong form before it tells them there is
@@ -322,7 +408,13 @@ export default function AuthDialog({
           })}
         </div>
 
-        <p className="mt-5 text-[0.9rem] leading-relaxed text-(--muted)">
+        {/* The tabs say which way in; the heading says where you have
+            arrived. They are not the same job — the pair is a control, and
+            this is the top of the thing it controls. */}
+        <h2 id={titleId} className="type-headline mt-6 text-[1.7rem]">
+          {signingUp ? "Create account" : "Sign in"}
+        </h2>
+        <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted)">
           {signingUp
             ? "Payments, identity and AI on one platform."
             : "Welcome back."}
@@ -351,37 +443,72 @@ export default function AuthDialog({
           aria-labelledby={`auth-tab-${mode}`}
           onSubmit={(e) => {
             e.preventDefault();
+            /* A known-bad address does not get as far as the notice — there
+               is no point telling someone accounts are not connected when
+               the thing they typed could not receive one either way. */
+            if (
+              signingUp &&
+              (check?.verdict === "invalid" ||
+                check?.verdict === "disposable" ||
+                check?.verdict === "typo")
+            ) {
+              document.getElementById("auth-email")?.focus();
+              return;
+            }
             pending();
           }}
           className="flex flex-col gap-4"
         >
-          {/* Collapsed rather than removed, so the panel grows into the extra
-              field instead of jumping a row taller. inert while it is shut,
-              or Tab walks into a field nobody can see. */}
-          <div
-            className={`grid transition-[grid-template-rows] duration-500 ease-(--ease-out-expo) motion-reduce:transition-none ${
-              signingUp ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
-            inert={!signingUp || undefined}
-          >
-            <div className="overflow-hidden">
-              <Field
-                id="auth-name"
-                label="Full name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={setName}
-              />
-            </div>
-          </div>
           <Field
             id="auth-email"
             label="Work email"
             type="email"
             autoComplete="email"
             value={email}
-            onChange={setEmail}
+            onChange={(v) => {
+              setEmail(v);
+              /* Only while creating an account. Signing in does not care
+                 whether the domain takes mail — the password decides it,
+                 and checking would leak which addresses are registered. */
+              if (signingUp) verify(v);
+            }}
+            onBlur={signingUp ? () => verify(email) : undefined}
+            tone={
+              !signingUp || !check
+                ? undefined
+                : check.verdict === "invalid" || check.verdict === "disposable"
+                  ? "bad"
+                  : check.verdict === "typo" || check.verdict === "role"
+                    ? "warn"
+                    : check.verdict === "ok"
+                      ? "good"
+                      : undefined
+            }
+            note={
+              !signingUp ? undefined : checking ? (
+                <span className="text-(--faint)">Checking the domain…</span>
+              ) : check?.message ? (
+                <>
+                  {check.message}
+                  {check.suggestion && (
+                    <>
+                      {" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail(check.suggestion!);
+                          verify(check.suggestion!);
+                        }}
+                        data-cursor="link"
+                        className="text-accent underline-offset-4 hover:underline"
+                      >
+                        Use it
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : undefined
+            }
           />
           <Field
             id="auth-password"
@@ -421,8 +548,15 @@ export default function AuthDialog({
 
         {signingUp && (
           <p className="mt-6 border-t border-(--line) pt-5 text-[0.78rem] leading-relaxed text-(--faint)">
-            Creating an account means agreeing to the terms and the privacy
-            notice.
+            Creating an account means agreeing to the{" "}
+            <a href="/terms" className="text-(--muted) underline underline-offset-4 hover:text-accent" data-cursor="link">
+              terms
+            </a>{" "}
+            and the{" "}
+            <a href="/privacy" className="text-(--muted) underline underline-offset-4 hover:text-accent" data-cursor="link">
+              privacy notice
+            </a>
+            .
           </p>
         )}
       </div>
