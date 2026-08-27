@@ -147,13 +147,17 @@ function SolutionsGlyph() {
         { x: 212, sweep: 0 as const, fires: CROSS / 2 },
       ]).map((side) => (
         <g key={side.x} transform={`translate(${side.x} 42)`}>
-          {[11, 19, 27, 35].map((r, i) => (
+          {/* Three, not four. The span is the same — 11 out to 35, which is
+              where the front fades — so the field still ends where the pull
+              does; the step just widens from 8 to 12 and the reach has room
+              to be read through. */}
+          {[11, 23, 35].map((r, i) => (
             <path
               key={r}
               d={semi(r, side.sweep)}
               stroke={LINE}
               strokeWidth="1"
-              opacity={0.3 - i * 0.055}
+              opacity={0.3 - i * 0.065}
             />
           ))}
           <path
