@@ -259,6 +259,79 @@
   --nav-panel-fill: rgb(236 233 225 / 0.86);
 }
 
+/* The sub-menu drawings. All of it is scoped to an open panel: only one glyph
+   is ever mounted, and it should not be running before it is looked at.
+
+   Transforms on SVG children, in user units — the viewBox is 240 x 84 and
+   these numbers are in that space, not in pixels of the rendered box, which
+   is what lets the drawings scale with the panel and keep their timing. */
+@media (prefers-reduced-motion: no-preference) {
+  /* A signal running the length of a rail, pausing at the far end before it
+     comes round again — a loop that never rests reads as a progress bar. */
+  [data-nav-panel][data-open] .glyph-run {
+    animation: glyph-run 4.6s var(--ease-inout-soft) infinite;
+  }
+  [data-nav-panel][data-open] .glyph-run-back {
+    animation: glyph-run-back 4.6s var(--ease-inout-soft) infinite;
+    animation-delay: 0.9s;
+  }
+  /* The scale draws itself, shortest first. */
+  [data-nav-panel][data-open] .glyph-rise {
+    animation: glyph-rise 3.8s var(--ease-out-expo) infinite;
+    animation-delay: calc(var(--i) * 130ms);
+    transform-origin: center bottom;
+  }
+  [data-nav-panel][data-open] .glyph-climb {
+    animation: glyph-climb 3.8s var(--ease-out-expo) infinite;
+  }
+  /* The ellipse is the meridian seen edge-on and then face-on: scaling it in
+     x is the whole illusion of a sphere turning, and it costs one property. */
+  [data-nav-panel][data-open] .glyph-turn {
+    animation: glyph-turn 7s var(--ease-inout-soft) infinite;
+    transform-origin: center;
+  }
+  [data-nav-panel][data-open] .glyph-orbit {
+    animation: glyph-orbit 7s linear infinite;
+    transform-origin: 0 42px;
+  }
+  [data-nav-panel][data-open] .glyph-sweep {
+    animation: glyph-sweep 4.4s var(--ease-inout-soft) infinite;
+  }
+}
+
+@keyframes glyph-run {
+  0% { transform: translateX(12px); }
+  55%, 100% { transform: translateX(228px); }
+}
+@keyframes glyph-run-back {
+  0% { transform: translateX(228px); }
+  55%, 100% { transform: translateX(12px); }
+}
+@keyframes glyph-rise {
+  0%, 8% { transform: scaleY(0); opacity: 0; }
+  30%, 78% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+@keyframes glyph-climb {
+  0%, 8% { transform: translate(-160px, 62px); }
+  46%, 78% { transform: translate(0, 0); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes glyph-turn {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.06); }
+}
+@keyframes glyph-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes glyph-sweep {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  70% { transform: translateX(136px); opacity: 1; }
+  86%, 100% { transform: translateX(136px); opacity: 0; }
+}
+
 /* The links arrive just behind the panel rather than with it, so the panel
    reads as a surface that opened and then filled, not as one printed thing
    fading up. Sixteen milliseconds apart: enough to be a sequence, not enough

@@ -6,6 +6,7 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
 import { columnFor, linkHref } from "@/lib/menu";
+import NavGlyph from "@/components/chrome/NavGlyph";
 
 /**
  * Anchors for a single-page site: every entry has to resolve to something on
@@ -1030,10 +1031,22 @@ export default function Navigation() {
                       key={column.href}
                       className="rounded-(--radius-panel) border border-(--line) bg-(--nav-panel-fill) p-5 backdrop-blur-xl"
                     >
-                      <p className="type-label mb-4 leading-relaxed text-(--faint)">
+                      {/* The drawing runs only while the panel is open, and
+                          only one is ever mounted — the panel renders the
+                          open column alone. */}
+                      <div className="mb-4 opacity-90">
+                        <NavGlyph heading={column.heading} />
+                      </div>
+                      <p className="type-label leading-relaxed text-(--faint)">
                         {column.note}
                       </p>
-                      <ul className="flex flex-col gap-1">
+                      {/* The items are the bar's own type, so the menu reads
+                          as the navigation continuing rather than as a
+                          different kind of list hanging off it. The note
+                          above is the same face a step back in weight of
+                          colour, which is what keeps two runs of mono caps
+                          from reading as one block. */}
+                      <ul className="mt-4 flex flex-col gap-0.5 border-t border-(--line) pt-4">
                         {column.links.map((link, i) => {
                           const href = linkHref(column, link);
                           return (
@@ -1052,7 +1065,7 @@ export default function Navigation() {
                                   scrollTo(href)(e);
                                 }}
                                 data-cursor="link"
-                                className="-mx-2 block rounded-(--radius-mock) px-2 py-1.5 text-[0.88rem] text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
+                                className="type-label -mx-2 block rounded-(--radius-mock) px-2 py-2 text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
                               >
                                 {link.label}
                               </a>
