@@ -297,10 +297,23 @@ const REACH = 112.8;
 function CompanyGlyph() {
   return (
     <Frame>
+      {/* The sphere's own equator, run out to the stops at either end: the
+          same line at the same weight, just long enough to be the road the
+          meridian travels rather than a mark inside the circle. Drawn first,
+          so the sphere sits on it and each stop's hole takes it — the line
+          arrives at a stop and ends there instead of passing through. */}
+      <line
+        x1={120 - REACH}
+        y1="42"
+        x2={120 + REACH}
+        y2="42"
+        stroke={LINE}
+        strokeWidth="1"
+        opacity="0.2"
+      />
       <g transform="translate(120 42)" style={{ "--reach": `${REACH}px` } as React.CSSProperties}>
         <circle r="30" stroke={LINE} strokeWidth="1" opacity="0.5" />
         <line x1="0" y1="-34" x2="0" y2="34" stroke={LINE} strokeWidth="1" opacity="0.5" />
-        <line x1="-30" y1="0" x2="30" y2="0" stroke={LINE} strokeWidth="1" opacity="0.2" />
         <ellipse className="glyph-turn" rx="13" ry="30" stroke={LINE} strokeWidth="1" opacity="0.34" />
         <g className="glyph-bob">
           <Mark x={0} y={0} size={7} />
