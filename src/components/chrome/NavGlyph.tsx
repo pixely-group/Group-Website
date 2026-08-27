@@ -102,19 +102,24 @@ function ProductGlyph() {
       <Route d={mid} delay={1.15} />
       <Route d={low} delay={2.3} />
       <line x1="120" y1="34" x2="120" y2="50" stroke={LINE} strokeWidth="1" opacity="0.18" />
-      {[14, 70].map((y) => (
+      {[14, 70].map((y, i) => (
         <g key={y}>
           {/* A hole in the route, so the line stops at the node instead of
-              running under it and out the far side. */}
+              running under it and out the far side. The hole does not
+              breathe — only the outline does, the way the rails' junctions
+              do. Put the class on the group and the hole fades with it and
+              the route shows straight through the node. */}
           <rect x={116} y={y - 4} width="8" height="8" fill="var(--bg)" />
           <rect
+            className="glyph-node"
             x={116.5}
             y={y - 3.5}
             width="7"
             height="7"
             stroke={LINE}
             strokeWidth="1"
-            opacity="0.75"
+            opacity="0.6"
+            style={{ "--i": i } as React.CSSProperties}
           />
         </g>
       ))}
@@ -175,6 +180,22 @@ function SolutionsGlyph() {
         </g>
       ))}
       <line x1="28" y1="42" x2="212" y2="42" stroke={LINE} strokeWidth="1" opacity="0.12" />
+      {/* The midpoint between the two reaches, marked the way the rails mark
+          a junction. Drawn before the square so the square crosses over it
+          rather than being outlined by it on the way past. */}
+      <g>
+        <rect x={116} y={38} width="8" height="8" fill="var(--bg)" />
+        <rect
+          className="glyph-node"
+          x={116.5}
+          y={38.5}
+          width="7"
+          height="7"
+          stroke={LINE}
+          strokeWidth="1"
+          opacity="0.6"
+        />
+      </g>
       <g className="glyph-cross">
         <Mark x={28} y={42} />
       </g>
