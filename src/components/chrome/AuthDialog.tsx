@@ -176,8 +176,11 @@ export default function AuthDialog({
       if (e.key !== "Tab") return;
       /* Everything focusable is inside the panel here, so the ring can be
          queried rather than assembled the way the compact menu has to. */
+      /* Anything deliberately out of the tab order stays out of the ring —
+         the unselected tab and the scrim both carry tabindex -1, and a ring
+         that counted them would wrap to a control the browser skips. */
       const ring = panelRef.current?.querySelectorAll<HTMLElement>(
-        "a[href], button:not([disabled]), input:not([disabled])",
+        'a[href], button:not([disabled]):not([tabindex="-1"]), input:not([disabled])',
       );
       if (!ring?.length) return;
       const first = ring[0];
@@ -241,17 +244,85 @@ export default function AuthDialog({
           </svg>
         </button>
 
-        <p className="type-label text-(--faint)">
+        {/* The wordmark at the size the rest of the site sets it: the
+            headline face, tracked 0.06em, with the full stop at 0.17em and
+            0.12 after the word. It was type-label with a 0.5em dot — three
+            times the brand's ratio, on the wrong face. */}
+        <span className="type-headline inline-flex items-baseline text-[1.05rem] tracking-[0.06em] text-(--fg)">
           Pixely
           <span
             aria-hidden
-            className="ml-[0.5em] inline-block size-[0.5em] bg-accent align-baseline"
+            className="inline-block bg-accent"
+            style={{ width: "0.17em", height: "0.17em", marginLeft: "0.12em" }}
           />
-        </p>
-        <h2 id={titleId} className="type-headline mt-3 text-[1.7rem]">
-          {signingUp ? "Create account" : "Sign in"}
+        </span>
+
+        {/* The dialog's name for a screen reader. The tabs carry the visible
+            hierarchy, so a heading repeating whichever one is selected would
+            be saying it twice. */}
+        <h2 id={titleId} className="sr-only">
+          Sign in or create an account
         </h2>
-        <p className="mt-2 text-[0.9rem] leading-relaxed text-(--muted)">
+
+        {/* Both ways in, side by side and both legible from the first frame.
+            A link at the foot saying "New to Pixely?" asks the reader to
+            finish reading the wrong form before it tells them there is
+            another one. */}
+        <div
+          role="tablist"
+          aria-label="Sign in or create an account"
+          onKeyDown={(e) => {
+            if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+            e.preventDefault();
+            const next: Mode = signingUp ? "in" : "up";
+            setMode(next);
+            setNotice(null);
+            requestAnimationFrame(() =>
+              panelRef.current
+                ?.querySelector<HTMLElement>(`#auth-tab-${next}`)
+                ?.focus(),
+            );
+          }}
+          className="relative mt-6 grid grid-cols-2 rounded-(--radius-control) border border-(--line) bg-(--surface) p-1"
+        >
+          {/* Inset by the track's own padding, so its corner is the track's
+              less that padding — the same 4px relationship the panel and its
+              controls keep everywhere else. */}
+          <span
+            aria-hidden
+            className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-[calc(var(--radius-control)-4px)] bg-accent transition-transform duration-500 ease-(--ease-out-expo) motion-reduce:transition-none"
+            style={{ transform: signingUp ? "translateX(100%)" : undefined }}
+          />
+          {([
+            { id: "in", label: "Sign in" },
+            { id: "up", label: "Create account" },
+          ] as const).map((tab) => {
+            const on = mode === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`auth-tab-${tab.id}`}
+                role="tab"
+                type="button"
+                aria-selected={on}
+                aria-controls="auth-panel-form"
+                tabIndex={on ? 0 : -1}
+                onClick={() => {
+                  setMode(tab.id);
+                  setNotice(null);
+                }}
+                data-cursor="link"
+                className={`type-label relative z-10 rounded-[calc(var(--radius-control)-4px)] py-2.5 transition-colors duration-300 ${
+                  on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mt-5 text-[0.9rem] leading-relaxed text-(--muted)">
           {signingUp
             ? "Payments, identity and AI on one platform."
             : "Welcome back."}
@@ -275,22 +346,35 @@ export default function AuthDialog({
         </div>
 
         <form
+          id="auth-panel-form"
+          role="tabpanel"
+          aria-labelledby={`auth-tab-${mode}`}
           onSubmit={(e) => {
             e.preventDefault();
             pending();
           }}
           className="flex flex-col gap-4"
         >
-          {signingUp && (
-            <Field
-              id="auth-name"
-              label="Full name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={setName}
-            />
-          )}
+          {/* Collapsed rather than removed, so the panel grows into the extra
+              field instead of jumping a row taller. inert while it is shut,
+              or Tab walks into a field nobody can see. */}
+          <div
+            className={`grid transition-[grid-template-rows] duration-500 ease-(--ease-out-expo) motion-reduce:transition-none ${
+              signingUp ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+            inert={!signingUp || undefined}
+          >
+            <div className="overflow-hidden">
+              <Field
+                id="auth-name"
+                label="Full name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={setName}
+              />
+            </div>
+          </div>
           <Field
             id="auth-email"
             label="Work email"
@@ -335,20 +419,12 @@ export default function AuthDialog({
           </p>
         )}
 
-        <p className="mt-6 border-t border-(--line) pt-5 text-[0.85rem] text-(--muted)">
-          {signingUp ? "Already have an account?" : "New to Pixely?"}{" "}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(signingUp ? "in" : "up");
-              setNotice(null);
-            }}
-            data-cursor="link"
-            className="text-accent underline-offset-4 hover:underline"
-          >
-            {signingUp ? "Sign in" : "Create account"}
-          </button>
-        </p>
+        {signingUp && (
+          <p className="mt-6 border-t border-(--line) pt-5 text-[0.78rem] leading-relaxed text-(--faint)">
+            Creating an account means agreeing to the terms and the privacy
+            notice.
+          </p>
+        )}
       </div>
     </div>
   );
