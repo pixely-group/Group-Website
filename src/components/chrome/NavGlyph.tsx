@@ -133,10 +133,10 @@ function ProductGlyph() {
    back. Both sides emitting all the time is what made this read as two
    things happening near each other rather than one thing crossing.
 
-   Two fronts a side, the second a beat-fraction behind the first, so an
-   arrival lands as a burst with some depth to it rather than a single arc. */
+   One front a side, once per arrival. A second front trailing the first read
+   as the side pulling twice for one landing, which is a beat the square
+   never played. */
 const CROSS = 7.2;
-const ECHO = 0.4;
 
 function SolutionsGlyph() {
   const semi = (r: number, sweep: 0 | 1) => `M0 -${r} A ${r} ${r} 0 0 ${sweep} 0 ${r}`;
@@ -156,22 +156,17 @@ function SolutionsGlyph() {
               opacity={0.3 - i * 0.055}
             />
           ))}
-          {[0, 1].map((i) => (
-            <path
-              key={i}
-              className="glyph-wave"
-              d={semi(11, side.sweep)}
-              stroke="var(--accent)"
-              strokeWidth="1.2"
-              /* Negative, so the cycle is already under way at load and the
-                 front lands on its arrival rather than a cycle later. */
-              style={
-                {
-                  "--delay": `${(side.fires + i * ECHO - CROSS).toFixed(2)}s`,
-                } as React.CSSProperties
-              }
-            />
-          ))}
+          <path
+            className="glyph-wave"
+            d={semi(11, side.sweep)}
+            stroke="var(--accent)"
+            strokeWidth="1.2"
+            /* Negative, so the cycle is already under way at load and the
+               front lands on its arrival rather than a cycle later. */
+            style={
+              { "--delay": `${(side.fires - CROSS).toFixed(2)}s` } as React.CSSProperties
+            }
+          />
           <line x1="0" y1="-38" x2="0" y2="38" stroke={LINE} strokeWidth="1" opacity="0.34" />
         </g>
       ))}
