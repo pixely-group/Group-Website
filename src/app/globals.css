@@ -906,6 +906,14 @@ body {
   border-radius: var(--radius-control);
 }
 
+/* The dialog's fields carry their own 1px edge that already answers focus —
+   line to line-strong, or the verdict's colour — so the global ring made two
+   borders where one is the design. The edge is the focus indicator here;
+   the ring stays for everything that has no edge of its own. */
+.auth-panel input:focus-visible {
+  outline: none;
+}
+
 /* Lenis recommended styles */
 html.lenis,
 html.lenis body {

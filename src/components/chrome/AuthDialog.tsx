@@ -919,15 +919,13 @@ export default function AuthDialog({
           )}
         </form>
 
-        {/* One sentence, not a link row over an orphaned clause — the last
-            pass split "what you accept" from "that you accept it", and the
-            two read as furniture. The documents are unmistakably links now:
-            underlined, arrowed, a step brighter than the sentence — and they
-            open in a new tab, because leaving a modal with a half-typed form
-            to read boilerplate is how the form dies. Sign-up's alone: terms
-            are accepted where the account is made. */}
+        {/* One sentence, its documents unmistakably links: underlined,
+            arrowed, a step brighter than the words around them, opening in a
+            new tab because leaving a modal with a half-typed form to read
+            boilerplate is how the form dies. Sign-up's alone, and no rule
+            over it — the sentence follows the button directly. */}
         {signingUp && (
-          <p className="type-label mt-6 border-t border-(--line) pt-5 leading-relaxed text-(--faint)">
+          <p className="type-label mt-5 leading-relaxed text-(--faint)">
             Creating an account means accepting the{" "}
             <DocLink href="/terms">terms</DocLink> and the{" "}
             <DocLink href="/privacy">privacy notice</DocLink>.
