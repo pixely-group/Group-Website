@@ -26,11 +26,11 @@ import { inspect, looksFinished, type Check } from "@/lib/email";
  * top edge instead of leaving the shorter one with dead space above the
  * fold.
  *
- * NOTHING IS SENT. There is no backend to send it to, so the form holds its
- * values in local state, submits to a notice rather than a server, and
- * stores nothing anywhere. That notice is deliberate and it is the honest
- * state of this: a field that quietly accepts a real password and does
- * nothing with it is worse than one that says so.
+ * NOTHING IS SENT. There is no backend for the email flows yet, so the
+ * form holds its values in local state and a fully valid submit ends
+ * quietly — the gates answer for anything wrong, and sending the actual
+ * link is the next build. The social buttons are live: they hand the page
+ * to the provider and come back signed in.
  */
 
 type Mode = "in" | "up";
@@ -243,6 +243,41 @@ function Strength({
   );
 }
 
+/** A legal document, linked from inside the form it governs. It opens in a
+ *  new tab on purpose: the reader is mid-sign-up with a half-typed form, and
+ *  a same-tab navigation throws that away to show them boilerplate. The
+ *  arrow says so before they click. */
+function DocLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      data-cursor="link"
+      className="inline-flex items-baseline gap-[0.35em] text-(--muted) underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-accent"
+    >
+      {children}
+      <svg
+        width="7"
+        height="7"
+        viewBox="0 0 8 8"
+        fill="none"
+        aria-hidden
+        className="shrink-0"
+      >
+        <path
+          d="M1.5 6.5 6.5 1.5M2.5 1.5h4v4"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
 function Provider({
   label,
   onPress,
@@ -362,7 +397,6 @@ export default function AuthDialog({
   const [check, setCheck] = useState<Check | null>(null);
   const [checking, setChecking] = useState(false);
   const [password, setPassword] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
   /* Which connectors are live, asked once per open. The buttons check before
      they navigate, so an unactivated one says so instead of bouncing off a
      503 into nothing. */
@@ -403,7 +437,6 @@ export default function AuthDialog({
      is no external state to synchronise with, and a password should not sit
      in memory behind a dismissed panel. */
   const close = useCallback(() => {
-    setNotice(null);
     setPassword("");
     setPwDemand(false);
     setCheck(null);
@@ -565,10 +598,6 @@ export default function AuthDialog({
   }, [open, close]);
 
   const signingUp = mode === "up";
-  const pending = () =>
-    setNotice(
-      "Accounts are not connected yet — this is the interface, and nothing has been sent.",
-    );
 
   return (
     <div
@@ -648,7 +677,6 @@ export default function AuthDialog({
             e.preventDefault();
             const next: Mode = signingUp ? "in" : "up";
             setMode(next);
-            setNotice(null);
             requestAnimationFrame(() =>
               panelRef.current
                 ?.querySelector<HTMLElement>(`#auth-tab-${next}`)
@@ -679,10 +707,7 @@ export default function AuthDialog({
                 aria-selected={on}
                 aria-controls="auth-panel-form"
                 tabIndex={on ? 0 : -1}
-                onClick={() => {
-                  setMode(tab.id);
-                  setNotice(null);
-                }}
+                onClick={() => setMode(tab.id)}
                 data-cursor="link"
                 className={`type-label relative z-10 rounded-[calc(var(--radius-control)-4px)] py-2.5 transition-colors duration-300 ${
                   on ? "text-bone" : "text-(--muted) hover:text-(--fg)"
@@ -698,21 +723,21 @@ export default function AuthDialog({
           {/* A configured connector is a real navigation — the whole page
               goes to the provider and comes back signed in. An unconfigured
               one explains itself in the panel's own voice. */}
+          {/* A document navigation on purpose — these are route handlers
+              that hand the whole page to the provider's consent screen, not
+              Next pages router.push could reach. The URLs are absolute,
+              which is what the lint rule is actually guarding. Unconfigured
+              (a fresh checkout without keys) the press does nothing: the
+              notice that used to explain sat in the div that was asked off
+              the panel, and both connectors are configured everywhere this
+              runs. */}
           <Provider
             label="Continue with Google"
             onPress={() =>
-              live?.google
-                ? /* A document navigation on purpose — this is a route
-                     handler that hands the whole page to Google's consent
-                     screen, not a Next page router.push could reach. The URL
-                     is made absolute, which is what the lint rule is
-                     actually guarding. */
-                  window.location.assign(
-                    new URL("/api/auth/google/start", window.location.origin),
-                  )
-                : setNotice(
-                    "Google sign-in isn't activated yet — it goes live the moment the Google keys are set. Nothing was sent.",
-                  )
+              live?.google &&
+              window.location.assign(
+                new URL("/api/auth/google/start", window.location.origin),
+              )
             }
           >
             <GoogleMark />
@@ -720,13 +745,10 @@ export default function AuthDialog({
           <Provider
             label="Continue with Apple"
             onPress={() =>
-              live?.apple
-                ? window.location.assign(
-                    new URL("/api/auth/apple/start", window.location.origin),
-                  )
-                : setNotice(
-                    "Apple sign-in isn't activated yet — it goes live the moment the Apple keys are set. Nothing was sent.",
-                  )
+              live?.apple &&
+              window.location.assign(
+                new URL("/api/auth/apple/start", window.location.origin),
+              )
             }
           >
             <AppleMark />
@@ -784,7 +806,10 @@ export default function AuthDialog({
               pokePassword();
               return;
             }
-            pending();
+            /* Everything passed. There is no backend to hand this to yet, so
+               a valid submit ends here, quietly — the notice that used to
+               say so sat between the button and the legal line and was asked
+               off the panel. Sending the actual link is the next build. */
           }}
           className="flex flex-col gap-4"
         >
@@ -894,12 +919,18 @@ export default function AuthDialog({
           )}
         </form>
 
-        {notice && (
-          <p
-            role="status"
-            className="mt-5 rounded-(--radius-control) border border-(--line) bg-(--surface) px-4 py-3 text-[0.82rem] leading-relaxed text-(--muted)"
-          >
-            {notice}
+        {/* One sentence, not a link row over an orphaned clause — the last
+            pass split "what you accept" from "that you accept it", and the
+            two read as furniture. The documents are unmistakably links now:
+            underlined, arrowed, a step brighter than the sentence — and they
+            open in a new tab, because leaving a modal with a half-typed form
+            to read boilerplate is how the form dies. Sign-up's alone: terms
+            are accepted where the account is made. */}
+        {signingUp && (
+          <p className="type-label mt-6 border-t border-(--line) pt-5 leading-relaxed text-(--faint)">
+            Creating an account means accepting the{" "}
+            <DocLink href="/terms">terms</DocLink> and the{" "}
+            <DocLink href="/privacy">privacy notice</DocLink>.
           </p>
         )}
 
