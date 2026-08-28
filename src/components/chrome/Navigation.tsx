@@ -239,16 +239,7 @@ export default function Navigation() {
   /* Which pane the trigger promised: Login opens Sign in, Get started opens
      Create account. */
   const [authMode, setAuthMode] = useState<"in" | "up">("in");
-  /* Any Get started button anywhere on the page opens the panel here — the
-     hero's, the closing chapter's — on the pane it promises. */
-  useEffect(
-    () =>
-      onOpenAuth((mode) => {
-        setAuthMode(mode);
-        setAuthOpen(true);
-      }),
-    [],
-  );
+
   /* Who is signed in, if anyone — asked once on load. The Login button wears
      the name once a connector has done its work, which is the only visible
      proof the sign-in went anywhere. */
@@ -696,16 +687,48 @@ export default function Navigation() {
 
   useEffect(() => stopMenuTimers, [stopMenuTimers]);
 
+  /* The scroll itself, callable without a click — the auth trigger routes
+     signed-in Get started presses here, and it has no event to prevent. */
+  const goTo = useCallback(
+    (href: string) => {
+      const el = document.querySelector(href);
+      if (!el) return false;
+      setMenu(false);
+      setActiveHref(href);
+      glide(href, el);
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   const scrollTo = (href: string) => (e: React.MouseEvent) => {
-    const el = document.querySelector(href);
     // Let the browser handle anything we cannot resolve, rather than
     // swallowing the click and going nowhere.
-    if (!el) return;
+    if (!goTo(href)) return;
     e.preventDefault();
-    setMenu(false);
-    setActiveHref(href);
-    glide(href, el);
   };
+
+  /* Any Get started button anywhere on the page arrives here — the hero's,
+     the closing chapter's — and this is the one place that knows who is
+     signed in, so the routing decision lives here and nowhere else. Signed
+     out, the panel opens on the promised pane. Signed in, an account form
+     would be nonsense — the press goes to the getting-started chapter
+     instead, which is what "get started" means once you are in.
+     Resubscribed when the session changes, or the listener would keep
+     answering for whoever was signed in when it mounted. */
+  useEffect(
+    () =>
+      onOpenAuth((mode) => {
+        if (account) {
+          goTo("#start");
+          return;
+        }
+        setAuthMode(mode);
+        setAuthOpen(true);
+      }),
+    [account, goTo],
+  );
 
   /* One dot with two states: at rest it IS the wordmark's full stop, and
      when a section is active it leaves the logo and stands beside that menu
