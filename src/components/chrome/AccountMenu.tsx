@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import Link from "next/link";
+
 import MagneticButton from "@/components/ui/MagneticButton";
 
 /**
@@ -14,10 +16,11 @@ import MagneticButton from "@/components/ui/MagneticButton";
  * doing the same work. One system, whether the panel under the bar holds a
  * chapter or a person.
  *
- * The items are a list, and the list is short because the product is: only
- * destinations that exist are in it. Dashboard, profile and settings each
- * take one row here on the day they are real — a menu of dead links dressed
- * as a product is worse than a short menu telling the truth.
+ * Every row clears one bar: it goes somewhere real. Dashboard, Profile and
+ * Settings are the account area's pages — honest scaffolds that read the
+ * session server-side and refuse to invent what does not exist yet — and
+ * Support is a place on the front page. The list grows by that rule and no
+ * other.
  *
  * This also retires a hazard: the name used to sign out on click, with
  * nothing between an idle press and a dropped session. Sign out is now a
@@ -34,8 +37,14 @@ export type Account = {
   email?: string;
 };
 
-const ITEMS: { label: string; act: "goto" | "signout"; href?: string }[] = [
-  /* Dashboard / Profile / Settings slot in above when they exist. */
+/* Three kinds of row: a page of the account area, a place on the front
+   page, and the one action. The pages exist — each is an honest scaffold
+   that reads the session server-side — which is the bar a row has to clear
+   to be listed. */
+const ITEMS: { label: string; act: "page" | "goto" | "signout"; href?: string }[] = [
+  { label: "Dashboard", act: "page", href: "/dashboard" },
+  { label: "Profile", act: "page", href: "/profile" },
+  { label: "Settings", act: "page", href: "/settings" },
   { label: "Support", act: "goto", href: "#resources" },
   { label: "Sign out", act: "signout" },
 ];
@@ -160,19 +169,31 @@ export default function AccountMenu({
                 className="nav-panel-item"
                 style={{ "--i": i } as React.CSSProperties}
               >
-                <button
-                  type="button"
-                  tabIndex={open ? undefined : -1}
-                  onClick={() => {
-                    setOpen(false);
-                    if (item.act === "goto") goTo(item.href!);
-                    else onSignOut();
-                  }}
-                  data-cursor="link"
-                  className="type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
-                >
-                  {item.label}
-                </button>
+                {item.act === "page" ? (
+                  <Link
+                    href={item.href!}
+                    tabIndex={open ? undefined : -1}
+                    onClick={() => setOpen(false)}
+                    data-cursor="link"
+                    className="type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    tabIndex={open ? undefined : -1}
+                    onClick={() => {
+                      setOpen(false);
+                      if (item.act === "goto") goTo(item.href!);
+                      else onSignOut();
+                    }}
+                    data-cursor="link"
+                    className="type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
+                  >
+                    {item.label}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

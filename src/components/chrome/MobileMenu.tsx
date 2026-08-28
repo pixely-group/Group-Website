@@ -356,6 +356,25 @@ export default function MobileMenu({
                   </p>
                 )}
               </div>
+              {/* The account pages, plainly — the bar's panel has hover and
+                  stagger; a full-screen menu just needs the doors. */}
+              <ul className="flex flex-col gap-1 border-t border-(--line) pt-4">
+                {[
+                  { href: "/dashboard", label: "Dashboard" },
+                  { href: "/profile", label: "Profile" },
+                  { href: "/settings", label: "Settings" },
+                ].map((page) => (
+                  <li key={page.href}>
+                    <a
+                      href={page.href}
+                      data-cursor="link"
+                      className="type-label block py-2 text-(--muted) transition-colors duration-200 hover:text-accent"
+                    >
+                      {page.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
               <MagneticButton
                 onClick={onSignOut}
                 variant="outline"
