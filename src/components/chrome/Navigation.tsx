@@ -343,6 +343,15 @@ export default function Navigation() {
   const closeTimer = useRef(0);
   const itemRefs = useRef(new Map<string, HTMLLIElement>());
   const panelRef = useRef<HTMLDivElement>(null);
+  /* Whether the pointer is on the nav — an item or the panel under it. The
+     scroll-shut consults it, for the same reason the account menu's does:
+     Lenis keeps emitting scroll events while its easing settles, so a wheel
+     tick with the pointer parked on an item closed the panel in the same
+     beat hover opened it — and with the pointer already inside, no new
+     pointerenter could ever reopen it. The panel rides the list it is
+     anchored to while the bar gathers, so closing under a hovering pointer
+     defended no geometry. */
+  const subHovering = useRef(false);
   /* Which device opened it. A touch has no hover, so the first tap has to
      open the panel instead of following the link. */
   const lastPointer = useRef("mouse");
@@ -685,12 +694,16 @@ export default function Navigation() {
     [stopMenuTimers],
   );
 
-  /* Scrolling puts it away. The panel hangs off a bar that is itself
-     condensing as the page moves, and a menu left open through that reads as
-     something that has come loose. */
+  /* Scrolling puts it away — unless the pointer is still on the menu. The
+     panel rides the condensing bar attached to its item, so geometry never
+     breaks mid-scroll; the close is for a menu left open behind a reader
+     who has moved on, not one being aimed at. */
   useEffect(() => {
     if (!openMenu) return;
-    const shut = () => closeSub(true);
+    const shut = () => {
+      if (subHovering.current) return;
+      closeSub(true);
+    };
     window.addEventListener("scroll", shut, { passive: true });
     return () => window.removeEventListener("scroll", shut);
   }, [openMenu, closeSub]);
@@ -956,7 +969,13 @@ export default function Navigation() {
                  panel is a child of this element: the pointer moving from an
                  item down into the panel never leaves the nav, so nothing has
                  to guess at a safe corridor between the two. */
-              onPointerLeave={() => closeSub(false)}
+              onPointerEnter={(e) => {
+                subHovering.current = e.pointerType !== "touch";
+              }}
+              onPointerLeave={() => {
+                subHovering.current = false;
+                closeSub(false);
+              }}
               onBlur={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                   closeSub(true);
