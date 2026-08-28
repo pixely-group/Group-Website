@@ -43,7 +43,9 @@ export type Account = {
    to be listed. */
 const ITEMS: { label: string; act: "page" | "goto" | "signout"; href?: string }[] = [
   { label: "Dashboard", act: "page", href: "/dashboard" },
-  { label: "Profile", act: "page", href: "/profile" },
+  /* No Profile row: the panel's own header IS the profile — name, address,
+     provider — so the row was a door to the room you were standing in. The
+     page keeps its tab inside the account area. */
   { label: "Settings", act: "page", href: "/settings" },
   { label: "Support", act: "goto", href: "#resources" },
   { label: "Sign out", act: "signout" },

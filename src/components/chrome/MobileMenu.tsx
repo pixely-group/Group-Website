@@ -359,9 +359,10 @@ export default function MobileMenu({
               {/* The account pages, plainly — the bar's panel has hover and
                   stagger; a full-screen menu just needs the doors. */}
               <ul className="flex flex-col gap-1 border-t border-(--line) pt-4">
+                {/* Mirrors the bar's panel: no Profile row, because the
+                    identity above is the profile. */}
                 {[
                   { href: "/dashboard", label: "Dashboard" },
-                  { href: "/profile", label: "Profile" },
                   { href: "/settings", label: "Settings" },
                 ].map((page) => (
                   <li key={page.href}>
