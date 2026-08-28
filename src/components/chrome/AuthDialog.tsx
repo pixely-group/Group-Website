@@ -295,6 +295,7 @@ function Field({
   tone,
   note,
   mark,
+  shaking,
 }: {
   id: string;
   label: string;
@@ -310,6 +311,9 @@ function Field({
   /** Drawn inside the field's right edge, where the answer belongs — beside
    *  what was typed rather than underneath it. */
   mark?: React.ReactNode;
+  /** One beat of sideways shake — the field saying "here" when a submit
+   *  arrives with nothing in it. */
+  shaking?: boolean;
 }) {
   const edge =
     tone === "bad"
@@ -323,7 +327,7 @@ function Field({
     <div>
       <label htmlFor={id} className="block">
         <span className="type-label block text-(--faint)">{label}</span>
-        <span className="relative mt-2 block">
+        <span className={`relative mt-2 block ${shaking ? "field-shake" : ""}`}>
         <input
           id={id}
           type={type}
@@ -384,6 +388,19 @@ export default function AuthDialog({
   const [live, setLive] = useState<{ google: boolean; apple: boolean } | null>(
     null,
   );
+  /* The field's "look here": a beat of shake, cleared on a timer so the next
+     poke can run it again. State rather than a remount, because remounting
+     an input drops the focus this is trying to hand it. */
+  const [shaking, setShaking] = useState(false);
+  const shakeTimer = useRef(0);
+  const poke = (message: string) => {
+    setCheck({ verdict: "invalid", message, final: true });
+    setChecking(false);
+    document.getElementById("auth-email")?.focus();
+    window.clearTimeout(shakeTimer.current);
+    setShaking(true);
+    shakeTimer.current = window.setTimeout(() => setShaking(false), 420);
+  };
 
   /* Closing clears what was typed. Done here rather than from an effect
      watching `open`, because it is a consequence of the close itself — there
@@ -733,16 +750,34 @@ export default function AuthDialog({
           aria-labelledby={`auth-tab-${mode}`}
           onSubmit={(e) => {
             e.preventDefault();
-            /* A known-bad address does not get as far as the notice — there
-               is no point telling someone accounts are not connected when
-               the thing they typed could not receive one either way. */
+            /* The gate, in order of what can be known. An empty field gets
+               told what is missing rather than nothing — the button used to
+               fall through to the accounts notice, which read as the click
+               doing nothing at all. A finished-but-broken address gets its
+               syntax verdict on the spot. And a known-bad domain is stopped
+               on both panes now, not just sign-up: a sign-in link to a
+               domain that takes no mail is the same nowhere. */
+            const address = email.trim();
+            if (!address) {
+              poke(
+                signingUp
+                  ? "Enter your work email first."
+                  : "Enter your email address — the link needs somewhere to go.",
+              );
+              return;
+            }
+            const local = inspect(address);
+            if (local.verdict !== "ok" && local.final) {
+              setCheck(local);
+              poke(local.message);
+              return;
+            }
             if (
-              signingUp &&
-              (check?.verdict === "invalid" ||
-                check?.verdict === "disposable" ||
-                check?.verdict === "typo")
+              check?.verdict === "invalid" ||
+              check?.verdict === "disposable" ||
+              check?.verdict === "typo"
             ) {
-              document.getElementById("auth-email")?.focus();
+              poke(check.message);
               return;
             }
             pending();
@@ -764,6 +799,7 @@ export default function AuthDialog({
               verify(v);
             }}
             onBlur={() => verify(email, true)}
+            shaking={shaking}
             mark={
               checking ? (
                 <Verdict state="checking" />
