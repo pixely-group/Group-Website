@@ -7,6 +7,7 @@ import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
 import AuthDialog from "@/components/chrome/AuthDialog";
 import { onOpenAuth } from "@/lib/auth-trigger";
+import AccountMenu from "@/components/chrome/AccountMenu";
 import { columnFor, linkHref } from "@/lib/menu";
 import NavGlyph from "@/components/chrome/NavGlyph";
 
@@ -243,7 +244,11 @@ export default function Navigation() {
   /* Who is signed in, if anyone — asked once on load. The Login button wears
      the name once a connector has done its work, which is the only visible
      proof the sign-in went anywhere. */
-  const [account, setAccount] = useState<{ name?: string; email?: string } | null>(null);
+  const [account, setAccount] = useState<{
+    provider?: string;
+    name?: string;
+    email?: string;
+  } | null>(null);
   useEffect(() => {
     let gone = false;
     fetch("/api/auth/session")
@@ -1136,26 +1141,22 @@ export default function Navigation() {
                   the solid is the same pairing the hero makes of its two
                   calls — one invitation, one way back in. */}
               {account ? (
-                /* Signed in, the pair collapses to one: the account button,
-                   wearing the first name, standing in Get started's slot —
-                   the persistent one, so it rides into the gathered bar
-                   instead of fading out the way Login does. There is nothing
-                   to get started with once you are in, and nothing to log
-                   into either; what remains is who you are, and a press
-                   signs out. */
+                /* Signed in, the pair collapses to one: the account, wearing
+                   the first name, standing in Get started's slot — the
+                   persistent one, so it rides into the gathered bar instead
+                   of fading out the way Login does. It opens the account
+                   panel; signing out is a deliberate press inside it rather
+                   than the click itself, which was a session dropped by an
+                   idle tap. */
                 <span className="hidden sm:block">
-                  <MagneticButton
-                    onClick={async () => {
+                  <AccountMenu
+                    account={account}
+                    goTo={goTo}
+                    onSignOut={async () => {
                       await fetch("/api/auth/signout", { method: "POST" });
                       window.location.reload();
                     }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {account.name?.split(" ")[0] ??
-                      account.email?.split("@")[0] ??
-                      "Account"}
-                  </MagneticButton>
+                  />
                 </span>
               ) : (
                 <>

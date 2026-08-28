@@ -36,7 +36,7 @@ type Props = {
   onSignup: () => void;
   /** Who is signed in, if anyone. Signed in, the menu's pair collapses the
    *  same way the bar's does: one button, the name, a press signs out. */
-  account: { name?: string; email?: string } | null;
+  account: { provider?: string; name?: string; email?: string } | null;
   onSignOut: () => void;
 };
 
@@ -339,17 +339,31 @@ export default function MobileMenu({
           inert={!open || undefined}
         >
           {account ? (
-            /* Signed in there is nothing to start and nothing to log into —
-               one button, the name, and a press signs out. */
-            <MagneticButton
-              onClick={onSignOut}
-              variant="outline"
-              className="w-full justify-center"
-            >
-              {account.name?.split(" ")[0] ??
-                account.email?.split("@")[0] ??
-                "Account"}
-            </MagneticButton>
+            /* Signed in there is nothing to start and nothing to log into.
+               The identity is said in full — the menu has the room the bar's
+               button does not — and signing out is its own labelled press,
+               not a tap on your own name. */
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="truncate text-[0.95rem] font-semibold text-(--fg)">
+                  {account.name ??
+                    account.email?.split("@")[0] ??
+                    "Account"}
+                </p>
+                {account.email && (
+                  <p className="mt-0.5 truncate text-[0.8rem] text-(--muted)">
+                    {account.email}
+                  </p>
+                )}
+              </div>
+              <MagneticButton
+                onClick={onSignOut}
+                variant="outline"
+                className="w-full justify-center"
+              >
+                Sign out
+              </MagneticButton>
+            </div>
           ) : (
             <>
               {/* Wrapped rather than given `sm:hidden` directly: the

@@ -24,7 +24,16 @@ export default function MagneticButton({
   size = "md",
   className = "",
   children,
-}: Props) {
+  ...rest
+}: Props &
+  /* Pass-through for the attributes a trigger has to carry — the account
+     menu's button announces a popup, and the aria cannot live on a wrapper
+     because the wrapper is not what is pressed. */
+  React.AriaAttributes & {
+    id?: string;
+    onKeyDown?: (e: React.KeyboardEvent) => void;
+    onPointerDown?: (e: React.PointerEvent) => void;
+  }) {
   const ref = useRef<HTMLAnchorElement | HTMLButtonElement | null>(null);
   const quick = useRef<{
     x: gsap.QuickToFunc;
@@ -104,6 +113,7 @@ export default function MagneticButton({
   );
 
   const shared = {
+    ...rest,
     className: `${base} ${sizing} ${skin} ${className}`,
     onPointerMove,
     onPointerLeave,
