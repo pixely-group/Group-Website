@@ -168,7 +168,12 @@ export default function AccountMenu({
             {ITEMS.map((item, i) => (
               <li
                 key={item.label}
-                className="nav-panel-item"
+                /* The exit sits below its own hairline: pages and support
+                   are ways further in, this is the way out, and the rule
+                   says so before the colour does. */
+                className={`nav-panel-item ${
+                  item.act === "signout" ? "mt-2 border-t border-(--line) pt-2" : ""
+                }`}
                 style={{ "--i": i } as React.CSSProperties}
               >
                 {item.act === "page" ? (
@@ -191,7 +196,11 @@ export default function AccountMenu({
                       else onSignOut();
                     }}
                     data-cursor="link"
-                    className="type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left text-(--muted) transition-colors duration-200 hover:bg-(--surface) hover:text-accent focus-visible:bg-(--surface) focus-visible:text-accent"
+                    className={`type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left transition-colors duration-200 hover:bg-(--surface) focus-visible:bg-(--surface) ${
+                      item.act === "signout"
+                        ? "account-signout"
+                        : "text-(--muted) hover:text-accent focus-visible:text-accent"
+                    }`}
                   >
                     {item.label}
                   </button>

@@ -570,6 +570,20 @@
   }
 }
 
+/* The way out, told apart from the ways further in. Mixed toward the
+   ground's own foreground, so the negative lifts to stay legible on ink and
+   deepens on bone — the bar's panel crosses grounds with the bar, and a raw
+   #c2402d is AA-large on one and lost on the other. Hover intensifies it
+   rather than borrowing the accent: the accent is where the site points,
+   and this row points at the door. */
+.account-signout {
+  color: color-mix(in oklab, var(--color-negative) 72%, var(--fg));
+}
+.account-signout:hover,
+.account-signout:focus-visible {
+  color: color-mix(in oklab, var(--color-negative) 88%, var(--fg));
+}
+
 /* The links arrive just behind the panel rather than with it, so the panel
    reads as a surface that opened and then filled, not as one printed thing
    fading up. Sixteen milliseconds apart: enough to be a sequence, not enough

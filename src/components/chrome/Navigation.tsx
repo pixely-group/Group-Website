@@ -8,6 +8,7 @@ import MobileMenu from "@/components/chrome/MobileMenu";
 import AuthDialog from "@/components/chrome/AuthDialog";
 import { onOpenAuth } from "@/lib/auth-trigger";
 import AccountMenu from "@/components/chrome/AccountMenu";
+import SignOutDialog from "@/components/chrome/SignOutDialog";
 import { columnFor, linkHref } from "@/lib/menu";
 import NavGlyph from "@/components/chrome/NavGlyph";
 
@@ -240,6 +241,10 @@ export default function Navigation() {
   /* Which pane the trigger promised: Login opens Sign in, Get started opens
      Create account. */
   const [authMode, setAuthMode] = useState<"in" | "up">("in");
+  /* Sign-out asks first. Every trigger — the panel's row, the compact
+     menu's button — opens the same confirmation; only its Confirm drops the
+     session. */
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   /* Who is signed in, if anyone — asked once on load. The Login button wears
      the name once a connector has done its work, which is the only visible
@@ -1152,10 +1157,7 @@ export default function Navigation() {
                   <AccountMenu
                     account={account}
                     goTo={goTo}
-                    onSignOut={async () => {
-                      await fetch("/api/auth/signout", { method: "POST" });
-                      window.location.reload();
-                    }}
+                    onSignOut={() => setConfirmSignOut(true)}
                   />
                 </span>
               ) : (
@@ -1244,15 +1246,20 @@ export default function Navigation() {
           setAuthOpen(true);
         }}
         account={account}
-        onSignOut={async () => {
-          await fetch("/api/auth/signout", { method: "POST" });
-          window.location.reload();
-        }}
+        onSignOut={() => setConfirmSignOut(true)}
       />
       <AuthDialog
         open={authOpen}
         initialMode={authMode}
         onClose={() => setAuthOpen(false)}
+      />
+      <SignOutDialog
+        open={confirmSignOut}
+        onCancel={() => setConfirmSignOut(false)}
+        onConfirm={async () => {
+          await fetch("/api/auth/signout", { method: "POST" });
+          window.location.reload();
+        }}
       />
     </>
   );
