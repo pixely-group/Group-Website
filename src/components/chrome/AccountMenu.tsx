@@ -65,6 +65,14 @@ export default function AccountMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const timer = useRef(0);
   const lastPointer = useRef("mouse");
+  /* Whether the pointer is on the menu right now. The scroll-shut consults
+     it: the bar is fixed and the panel is anchored inside the bar, so
+     scrolling never breaks their geometry — and Lenis keeps emitting scroll
+     events while its easing settles, which was closing the panel in the
+     same beat a hover opened it. Worse than the flicker: with the pointer
+     already inside, no new pointerenter can ever fire, so one stray scroll
+     left hover dead until the pointer went away and came back. */
+  const hovering = useRef(false);
 
   const first =
     account.name?.split(" ")[0] ?? account.email?.split("@")[0] ?? "Account";
@@ -74,11 +82,15 @@ export default function AccountMenu({
     timer.current = window.setTimeout(() => setOpen(next), ms);
   };
 
-  /* Scrolling or clicking elsewhere puts it away, Escape returns to the
-     button — the sub-menu's manners, kept. */
+  /* Clicking elsewhere puts it away, Escape returns to the button, and
+     scrolling closes it only when the pointer has moved on — the sub-menu's
+     manners, minus the one that fought the pointer. */
   useEffect(() => {
     if (!open) return;
-    const shut = () => setOpen(false);
+    const shut = () => {
+      if (hovering.current) return;
+      setOpen(false);
+    };
     const down = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -104,9 +116,13 @@ export default function AccountMenu({
       ref={rootRef}
       className="relative"
       onPointerEnter={(e) => {
+        hovering.current = e.pointerType !== "touch";
         if (e.pointerType !== "touch") schedule(true, OPEN_MS);
       }}
-      onPointerLeave={() => schedule(false, CLOSE_MS)}
+      onPointerLeave={() => {
+        hovering.current = false;
+        schedule(false, CLOSE_MS);
+      }}
     >
       <MagneticButton
         variant="outline"
