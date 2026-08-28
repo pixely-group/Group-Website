@@ -492,6 +492,22 @@
   [data-nav-panel][data-open] .glyph-cross {
     animation: glyph-cross calc(var(--beat) * 2) var(--ease-inout-soft) infinite;
   }
+  /* The reader's beam, for the service-page check drawings: down the page
+     and back up it, holding briefly at each end the way every travelling
+     element in these drawings holds at its extremes. The distance is the
+     element's own --sweep, so one clock serves scanlines of any height. */
+  .glyph-stage .glyph-scan {
+    animation: glyph-scan calc(var(--beat) * 2) var(--ease-inout-soft) infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  /* Alive, demonstrably: open almost the whole cycle, shut for a film
+     frame or two. Scaling collapses the lid onto its own centreline, which
+     needs the element's own box rather than the drawing's origin. */
+  .glyph-stage .glyph-blink {
+    animation: glyph-blink calc(var(--beat) * 2) linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
 }
 
 @keyframes glyph-flow {
@@ -521,6 +537,34 @@
   100% {
     transform: scale(3.4);
     opacity: 0;
+  }
+}
+@keyframes glyph-scan {
+  0%,
+  6% {
+    transform: translateY(0);
+  }
+  44%,
+  56% {
+    transform: translateY(var(--sweep, 100px));
+  }
+  94%,
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes glyph-blink {
+  0%,
+  91% {
+    transform: scaleY(1);
+  }
+  94%,
+  96% {
+    transform: scaleY(0.08);
+  }
+  99%,
+  100% {
+    transform: scaleY(1);
   }
 }
 @keyframes glyph-node {
