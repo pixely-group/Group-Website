@@ -1277,7 +1277,15 @@ export default function Navigation() {
         onCancel={() => setConfirmSignOut(false)}
         onConfirm={async () => {
           await fetch("/api/auth/signout", { method: "POST" });
-          window.location.reload();
+          /* A state change, not a navigation. The signed-in surface all
+             hangs off `account`, so clearing it swaps the bar's name for
+             the Login pair in place — and the page holds its exact scroll,
+             where a reload re-ran the whole load sequence and left the
+             reader wherever restoration and the smooth-scroll init fought
+             it out. The settings page still navigates home on sign-out,
+             because a page that requires a session cannot keep you on it. */
+          setAccount(null);
+          setConfirmSignOut(false);
         }}
       />
     </>
