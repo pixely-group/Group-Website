@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import MagneticButton from "@/components/ui/MagneticButton";
+import { openAuth } from "@/lib/auth-trigger";
 
 export default function FinalCTA() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -98,7 +99,10 @@ export default function FinalCTA() {
             credentials in the same conversation.
           </p>
           <div data-cta-fade className="flex flex-wrap items-center gap-3">
-            <MagneticButton href="#start" size="lg">
+            {/* It used to point at #start — this very section, a scroll to
+                nowhere. It opens the panel on Create account now, like every
+                Get started on the page. */}
+            <MagneticButton onClick={() => openAuth("up")} size="lg">
               Get started
             </MagneticButton>
             <MagneticButton href="#product" variant="outline" size="lg">

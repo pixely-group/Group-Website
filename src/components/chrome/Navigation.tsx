@@ -6,6 +6,7 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
 import AuthDialog from "@/components/chrome/AuthDialog";
+import { onOpenAuth } from "@/lib/auth-trigger";
 import { columnFor, linkHref } from "@/lib/menu";
 import NavGlyph from "@/components/chrome/NavGlyph";
 
@@ -238,6 +239,16 @@ export default function Navigation() {
   /* Which pane the trigger promised: Login opens Sign in, Get started opens
      Create account. */
   const [authMode, setAuthMode] = useState<"in" | "up">("in");
+  /* Any Get started button anywhere on the page opens the panel here — the
+     hero's, the closing chapter's — on the pane it promises. */
+  useEffect(
+    () =>
+      onOpenAuth((mode) => {
+        setAuthMode(mode);
+        setAuthOpen(true);
+      }),
+    [],
+  );
   /* Who is signed in, if anyone — asked once on load. The Login button wears
      the name once a connector has done its work, which is the only visible
      proof the sign-in went anywhere. */

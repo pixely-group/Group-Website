@@ -10,6 +10,7 @@ import { useLenis } from "@/components/chrome/SmoothScroll";
 import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import MagneticButton from "@/components/ui/MagneticButton";
 import RotatingWord from "@/components/ui/RotatingWord";
+import { openAuth } from "@/lib/auth-trigger";
 
 /* The same device the travelling wrapper flies on wide screens, mounted
    straight into the hero for every other viewport. Client-only, like every
@@ -311,7 +312,10 @@ export default function Hero() {
                 From sm up they fit on one line and the ranged-left wrapping
                 row returns. */}
             <div className="mx-auto mt-6 flex w-fit flex-col items-stretch gap-3 sm:mx-0 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-              <MagneticButton href="#start" size="md">
+              {/* Opens the panel on Create account, like every Get started
+                  on the page. Explore stays a scroll: one goes in, one goes
+                  down. */}
+              <MagneticButton onClick={() => openAuth("up")} size="md">
                 Get started
               </MagneticButton>
               <MagneticButton href="#product" variant="outline" size="md">
