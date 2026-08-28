@@ -24,8 +24,14 @@ export default function MagneticButton({
   size = "md",
   className = "",
   children,
+  /* "button" stays the default — most of these live in navs and dialogs
+     where an accidental submit is the bug — but the two buttons whose whole
+     job is submitting a form pass "submit", or the form never hears them.
+     That mismatch hid for a while: scripted requestSubmit() tests exercise
+     the form directly and pass while every real click does nothing. */
+  type = "button",
   ...rest
-}: Props &
+}: Props & { type?: "button" | "submit" } &
   /* Pass-through for the attributes a trigger has to carry — the account
      menu's button announces a popup, and the aria cannot live on a wrapper
      because the wrapper is not what is pressed. */
@@ -138,7 +144,7 @@ export default function MagneticButton({
     <button
       {...shared}
       onClick={onClick}
-      type="button"
+      type={type}
       ref={setRef as (el: HTMLButtonElement | null) => void}
     >
       {inner}

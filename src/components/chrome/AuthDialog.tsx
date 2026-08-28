@@ -170,7 +170,15 @@ const RULES = [
   { id: "long", met: (v: string) => v.length >= 12, next: null },
 ];
 
-function Strength({ value }: { value: string }) {
+function Strength({
+  value,
+  demanding = false,
+}: {
+  value: string;
+  /** After a submit tried and failed, the helper stops being a suggestion:
+   *  same words, negative colour, until the requirement is met. */
+  demanding?: boolean;
+}) {
   const met = RULES.map((rule) => rule.met(value));
   const core = met.slice(0, 3).filter(Boolean).length;
   const enough = core === 3;
@@ -192,7 +200,9 @@ function Strength({ value }: { value: string }) {
         : "weak";
   const wanting = RULES.find((rule, i) => !met[i] && rule.next);
 
-  const label = !value
+  /* Empty and unasked, it coaches; empty after a submit tried, it counts —
+     "Make it hard to guess" in red is advice where an instruction belongs. */
+  const label = !value && !demanding
     ? "Make it hard to guess."
     : wanting
       ? `Needs ${wanting.next!(value)}.`
@@ -219,46 +229,17 @@ function Strength({ value }: { value: string }) {
            not one yet. */
         aria-live="polite"
         className="mt-2 text-[0.8rem] leading-relaxed transition-colors duration-300"
-        style={{ color: enough ? "var(--color-positive)" : "var(--faint)" }}
+        style={{
+          color: enough
+            ? "var(--color-positive)"
+            : demanding
+              ? "var(--color-negative)"
+              : "var(--faint)",
+        }}
       >
         {label}
       </p>
     </div>
-  );
-}
-
-/** A legal document, linked from inside the form it governs. It opens in a
- *  new tab on purpose: the reader is mid-sign-up with a half-typed form, and
- *  a same-tab navigation throws that away to show them boilerplate. The
- *  arrow says so before they click. */
-function DocLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener"
-      data-cursor="link"
-      className="inline-flex items-baseline gap-[0.35em] text-(--muted) underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-accent"
-    >
-      {children}
-      <svg
-        width="7"
-        height="7"
-        viewBox="0 0 8 8"
-        fill="none"
-        aria-hidden
-        className="shrink-0"
-      >
-        <path
-          d="M1.5 6.5 6.5 1.5M2.5 1.5h4v4"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
   );
 }
 
@@ -401,6 +382,21 @@ export default function AuthDialog({
     setShaking(true);
     shakeTimer.current = window.setTimeout(() => setShaking(false), 420);
   };
+  /* The password's own poke: the field shakes and goes negative, and the
+     strength line under it turns demanding — same words it always says,
+     said in red now, because after a submit they are an error rather than
+     coaching. The demand stands until the requirement is met. */
+  const [pwShaking, setPwShaking] = useState(false);
+  const [pwDemand, setPwDemand] = useState(false);
+  const pwShakeTimer = useRef(0);
+  const pokePassword = () => {
+    setPwDemand(true);
+    document.getElementById("auth-password")?.focus();
+    window.clearTimeout(pwShakeTimer.current);
+    setPwShaking(true);
+    pwShakeTimer.current = window.setTimeout(() => setPwShaking(false), 420);
+  };
+  const passwordEnough = RULES.slice(0, 3).every((rule) => rule.met(password));
 
   /* Closing clears what was typed. Done here rather than from an effect
      watching `open`, because it is a consequence of the close itself — there
@@ -409,6 +405,7 @@ export default function AuthDialog({
   const close = useCallback(() => {
     setNotice(null);
     setPassword("");
+    setPwDemand(false);
     setCheck(null);
     setChecking(false);
     /* The pending check is deliberately left alone. Touching it from here
@@ -780,6 +777,13 @@ export default function AuthDialog({
               poke(check.message);
               return;
             }
+            /* The email cleared; on sign-up the password answers next. The
+               strength line already names what is missing — the poke makes
+               it the field's problem instead of a suggestion. */
+            if (signingUp && !passwordEnough) {
+              pokePassword();
+              return;
+            }
             pending();
           }}
           className="flex flex-col gap-4"
@@ -865,23 +869,26 @@ export default function AuthDialog({
                   autoComplete="new-password"
                   value={password}
                   onChange={setPassword}
+                  tone={pwDemand && !passwordEnough ? "bad" : undefined}
+                  shaking={pwShaking}
                 />
-                <Strength value={password} />
+                <Strength value={password} demanding={pwDemand} />
               </div>
-              <MagneticButton size="md" className="w-full">
+              <MagneticButton type="submit" size="md" className="w-full">
                 Create account
               </MagneticButton>
             </div>
           ) : (
             <div key="in" className="auth-pane flex flex-col gap-4">
-              <MagneticButton size="md" className="w-full">
+              <MagneticButton type="submit" size="md" className="w-full">
                 Send me a sign-in link
               </MagneticButton>
               {/* The button now names the thing, so the line under it keeps
                   only the two facts the button does not say: where it goes,
-                  and that it spends itself. */}
-              <p className="text-[0.82rem] leading-relaxed text-(--muted)">
-                It goes to your registered address and works once.
+                  and that it spends itself. Set exactly like the legal foot —
+                  the panel's small print is one voice, not two. */}
+              <p className="type-label leading-relaxed text-(--faint)">
+                It goes to your registered address.
               </p>
             </div>
           )}
@@ -893,21 +900,6 @@ export default function AuthDialog({
             className="mt-5 rounded-(--radius-control) border border-(--line) bg-(--surface) px-4 py-3 text-[0.82rem] leading-relaxed text-(--muted)"
           >
             {notice}
-          </p>
-        )}
-
-        {/* One sentence, not a link row over an orphaned clause — the last
-            pass split "what you accept" from "that you accept it", and the
-            two read as furniture. The documents are unmistakably links now:
-            underlined, arrowed, a step brighter than the sentence — and they
-            open in a new tab, because leaving a modal with a half-typed form
-            to read boilerplate is how the form dies. Sign-up's alone: terms
-            are accepted where the account is made. */}
-        {signingUp && (
-          <p className="type-label mt-6 border-t border-(--line) pt-5 leading-relaxed text-(--faint)">
-            Creating an account means accepting the{" "}
-            <DocLink href="/terms">terms</DocLink> and the{" "}
-            <DocLink href="/privacy">privacy notice</DocLink>.
           </p>
         )}
 
