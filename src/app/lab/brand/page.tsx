@@ -211,8 +211,8 @@ const PALETTE = [
   {
     name: "Negative",
     token: "--color-negative",
-    hex: "#c2402d",
-    role: "Failed, refused, debits. Semantic only.",
+    hex: "#e01838",
+    role: "Failed, refused, debits. Semantic only — the security chapter's Refused red, promoted.",
   },
 ] as const;
 
@@ -226,7 +226,7 @@ const CONTRAST = [
   { fg: "Signal lift", bg: "Ink", ratio: "6.74:1", grade: "AA" },
   { fg: "Signal", bg: "Bone", ratio: "5.04:1", grade: "AA" },
   { fg: "Bone", bg: "Signal", ratio: "5.04:1", grade: "AA" },
-  { fg: "Negative", bg: "Bone", ratio: "4.26:1", grade: "AA large" },
+  { fg: "Negative", bg: "Bone", ratio: "3.97:1", grade: "AA large" },
   { fg: "Positive", bg: "Bone", ratio: "3.78:1", grade: "AA large" },
   { fg: "Signal", bg: "Ink", ratio: "3.23:1", grade: "AA large" },
 ] as const;

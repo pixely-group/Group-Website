@@ -839,11 +839,13 @@ export default function AuthDialog({
           ) : (
             <div key="in" className="auth-pane flex flex-col gap-4">
               <MagneticButton size="md" className="w-full">
-                Email me a link
+                Send me a sign-in link
               </MagneticButton>
+              {/* The button now names the thing, so the line under it keeps
+                  only the two facts the button does not say: where it goes,
+                  and that it spends itself. */}
               <p className="text-[0.82rem] leading-relaxed text-(--muted)">
-                We&apos;ll send a sign-in link to your registered email
-                address.
+                It goes to your registered address and works once.
               </p>
             </div>
           )}

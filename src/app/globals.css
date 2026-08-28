@@ -31,7 +31,12 @@
   --color-signal-glow: #9fb4ff;
   --color-signal-deep: #1f33d6;
   --color-positive: #23855c;
-  --color-negative: #c2402d;
+  /* The Refused red, promoted. The security chapter chose #e01838 for the
+     refused packet and it was the better red — hotter, and stronger on ink
+     (4.11:1 against the old value's 3.83) for the price of a shade on bone
+     (3.97 vs 4.26), AA-large on both either way. One semantic red now; the
+     chapter's own literals equal it by value. */
+  --color-negative: #e01838;
 
   /* — Families (loaded via next/font in layout) */
   --font-display: var(--font-archivo);
@@ -572,8 +577,8 @@
 
 /* The way out, told apart from the ways further in. Mixed toward the
    ground's own foreground, so the negative lifts to stay legible on ink and
-   deepens on bone — the bar's panel crosses grounds with the bar, and a raw
-   #c2402d is AA-large on one and lost on the other. Hover intensifies it
+   deepens on bone — the bar's panel crosses grounds with the bar, and the
+   raw negative is AA-large on one and lost on the other. Hover intensifies it
    rather than borrowing the accent: the accent is where the site points,
    and this row points at the door. */
 .account-signout {
