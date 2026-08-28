@@ -34,6 +34,10 @@ type Props = {
   onLogin: () => void;
   /** The same panel opened on Create account, for the Get started button. */
   onSignup: () => void;
+  /** Who is signed in, if anyone. Signed in, the menu's pair collapses the
+   *  same way the bar's does: one button, the name, a press signs out. */
+  account: { name?: string; email?: string } | null;
+  onSignOut: () => void;
 };
 
 /** Full-screen ink overlay menu for touch / narrow viewports. */
@@ -47,6 +51,8 @@ export default function MobileMenu({
   onBarGround,
   onLogin,
   onSignup,
+  account,
+  onSignOut,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
@@ -332,34 +338,53 @@ export default function MobileMenu({
           className="mt-9 ms-11 flex max-w-[15rem] flex-col items-stretch gap-3"
           inert={!open || undefined}
         >
-          {/* Wrapped rather than given `sm:hidden` directly: the button's own
-              inline-flex is the same specificity and wins by CSS order. */}
-          <span className="block w-full sm:hidden">
-            {/* Create account, matching the bar's own pair — not a scroll to
-                #start, which stays the in-page CTAs' destination. */}
+          {account ? (
+            /* Signed in there is nothing to start and nothing to log into —
+               one button, the name, and a press signs out. */
             <MagneticButton
-              onClick={() => {
-                onClose();
-                onSignup();
-              }}
+              onClick={onSignOut}
+              variant="outline"
               className="w-full justify-center"
             >
-              Get started
+              {account.name?.split(" ")[0] ??
+                account.email?.split("@")[0] ??
+                "Account"}
             </MagneticButton>
-          </span>
-          {/* No href: it opens the sign-in panel rather than going anywhere,
-              so it is a button and announces itself as one. The menu shuts
-              first — two layers of dialog over each other is one too many. */}
-          <MagneticButton
-            onClick={() => {
-              onClose();
-              onLogin();
-            }}
-            variant="outline"
-            className="w-full justify-center"
-          >
-            Login
-          </MagneticButton>
+          ) : (
+            <>
+              {/* Wrapped rather than given `sm:hidden` directly: the
+                  button's own inline-flex is the same specificity and wins
+                  by CSS order. */}
+              <span className="block w-full sm:hidden">
+                {/* Create account, matching the bar's own pair — not a
+                    scroll to #start, which stays the in-page CTAs'
+                    destination. */}
+                <MagneticButton
+                  onClick={() => {
+                    onClose();
+                    onSignup();
+                  }}
+                  className="w-full justify-center"
+                >
+                  Get started
+                </MagneticButton>
+              </span>
+              {/* No href: it opens the sign-in panel rather than going
+                  anywhere, so it is a button and announces itself as one.
+                  The menu shuts first — two layers of dialog over each
+                  other is one too many. */}
+              <MagneticButton
+                onClick={() => {
+                  onClose();
+                  onLogin();
+                }}
+                variant="outline"
+                className="w-full justify-center"
+              >
+                Login
+              </MagneticButton>
+            </>
+          )}
         </div>
       </nav>
       <div className="mx-6 flex items-end justify-between border-t border-(--line) pt-6 sm:mx-10">

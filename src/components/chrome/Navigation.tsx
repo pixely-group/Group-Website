@@ -1101,51 +1101,68 @@ export default function Navigation() {
                   below it the mobile menu carries both. The outline against
                   the solid is the same pairing the hero makes of its two
                   calls — one invitation, one way back in. */}
-              <span
-                data-nav-link
-                inert={gathered}
-                className="nav-aside hidden sm:block"
-              >
-                {/* No href: it opens the sign-in panel rather than going
-                    anywhere on the page, so it is a button. Signed in, it
-                    wears the name instead and a press signs out — the
-                    smallest possible account surface, and the proof a
-                    connector actually connected. */}
-                <MagneticButton
-                  onClick={
-                    account
-                      ? async () => {
-                          await fetch("/api/auth/signout", { method: "POST" });
-                          window.location.reload();
-                        }
-                      : () => {
-                          setAuthMode("in");
-                          setAuthOpen(true);
-                        }
-                  }
-                  variant="outline"
-                  size="sm"
-                >
-                  {account?.name?.split(" ")[0] ?? account?.email?.split("@")[0] ?? "Login"}
-                </MagneticButton>
-              </span>
-              {/* Wrapped rather than given `hidden` directly: the button's own
-                  `inline-flex` is the same specificity and wins by CSS order. */}
-              <span className="hidden sm:block">
-                {/* Opens the panel on Create account — the pair beside it:
-                    one way in for people with accounts, one for people
-                    without. The in-page CTAs still scroll to #start, which
-                    is the talk-to-an-engineer chapter. */}
-                <MagneticButton
-                  onClick={() => {
-                    setAuthMode("up");
-                    setAuthOpen(true);
-                  }}
-                  size="sm"
-                >
-                  Get started
-                </MagneticButton>
-              </span>
+              {account ? (
+                /* Signed in, the pair collapses to one: the account button,
+                   wearing the first name, standing in Get started's slot —
+                   the persistent one, so it rides into the gathered bar
+                   instead of fading out the way Login does. There is nothing
+                   to get started with once you are in, and nothing to log
+                   into either; what remains is who you are, and a press
+                   signs out. */
+                <span className="hidden sm:block">
+                  <MagneticButton
+                    onClick={async () => {
+                      await fetch("/api/auth/signout", { method: "POST" });
+                      window.location.reload();
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {account.name?.split(" ")[0] ??
+                      account.email?.split("@")[0] ??
+                      "Account"}
+                  </MagneticButton>
+                </span>
+              ) : (
+                <>
+                  <span
+                    data-nav-link
+                    inert={gathered}
+                    className="nav-aside hidden sm:block"
+                  >
+                    {/* No href: it opens the sign-in panel rather than going
+                        anywhere on the page, so it is a button. */}
+                    <MagneticButton
+                      onClick={() => {
+                        setAuthMode("in");
+                        setAuthOpen(true);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Login
+                    </MagneticButton>
+                  </span>
+                  {/* Wrapped rather than given `hidden` directly: the
+                      button's own `inline-flex` is the same specificity and
+                      wins by CSS order. */}
+                  <span className="hidden sm:block">
+                    {/* Opens the panel on Create account — the pair beside
+                        it: one way in for people with accounts, one for
+                        people without. The in-page CTAs still scroll to
+                        #start, which is the talk-to-an-engineer chapter. */}
+                    <MagneticButton
+                      onClick={() => {
+                        setAuthMode("up");
+                        setAuthOpen(true);
+                      }}
+                      size="sm"
+                    >
+                      Get started
+                    </MagneticButton>
+                  </span>
+                </>
+              )}
               <button
                 type="button"
                 aria-expanded={menuOpen}
@@ -1190,6 +1207,11 @@ export default function Navigation() {
         onSignup={() => {
           setAuthMode("up");
           setAuthOpen(true);
+        }}
+        account={account}
+        onSignOut={async () => {
+          await fetch("/api/auth/signout", { method: "POST" });
+          window.location.reload();
         }}
       />
       <AuthDialog
