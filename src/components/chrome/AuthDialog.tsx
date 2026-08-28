@@ -353,7 +353,11 @@ function Field({
           onBlur={onBlur}
           aria-describedby={note ? `${id}-note` : undefined}
           aria-invalid={tone === "bad" || undefined}
-          className={`block w-full rounded-(--radius-control) border bg-(--surface) py-3 pr-11 pl-4 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:bg-transparent ${edge}`}
+          /* Focus is the blue it always was — carried by the field's own
+             edge now instead of a second ring around it. While focused the
+             accent wins over the verdict's colour; the verdict returns on
+             blur, and its message never left. */
+          className={`block w-full rounded-(--radius-control) border bg-(--surface) py-3 pr-11 pl-4 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:border-(--color-signal) focus:bg-transparent ${edge}`}
         />
         {mark}
         </span>
@@ -732,7 +736,7 @@ export default function AuthDialog({
               the panel, and both connectors are configured everywhere this
               runs. */}
           <Provider
-            label="Continue with Google"
+            label={signingUp ? "Sign up with Google" : "Continue with Google"}
             onPress={() =>
               live?.google &&
               window.location.assign(
@@ -743,7 +747,7 @@ export default function AuthDialog({
             <GoogleMark />
           </Provider>
           <Provider
-            label="Continue with Apple"
+            label={signingUp ? "Sign up with Apple" : "Continue with Apple"}
             onPress={() =>
               live?.apple &&
               window.location.assign(
