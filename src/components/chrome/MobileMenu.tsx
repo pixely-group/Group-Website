@@ -8,6 +8,7 @@ import {
   NAV_GEOMETRY,
   NAV_INSETS,
   NAV_LINKS,
+  useAnchor,
 } from "@/components/chrome/Navigation";
 
 type Props = {
@@ -54,6 +55,7 @@ export default function MobileMenu({
   account,
   onSignOut,
 }: Props) {
+  const anchor = useAnchor();
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
 
@@ -281,7 +283,7 @@ export default function MobileMenu({
             return (
               <li key={link.href} className="overflow-hidden">
                 <a
-                  href={link.href}
+                  href={anchor(link.href)}
                   onClick={onNavigate(link.href)}
                   data-menu-link
                   aria-current={active ? "true" : undefined}

@@ -57,8 +57,9 @@ export default function AccountMenu({
   onSignOut,
 }: {
   account: Account;
-  /** The navigation's own scroll — same glide, same travelling dot. */
-  goTo: (href: string) => void;
+  /** The navigation's own scroll — same glide, same travelling dot. False
+   *  when the target is not on this page. */
+  goTo: (href: string) => boolean;
   onSignOut: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -208,8 +209,15 @@ export default function AccountMenu({
                     tabIndex={open ? undefined : -1}
                     onClick={() => {
                       setOpen(false);
-                      if (item.act === "goto") goTo(item.href!);
-                      else onSignOut();
+                      if (item.act === "goto") {
+                        /* On a service page the chapter is not here to
+                           scroll to — goTo says so, and the press becomes a
+                           navigation home instead of a dead click. */
+                        if (!goTo(item.href!))
+                          window.location.assign(
+                            new URL(`/${item.href!}`, window.location.origin),
+                          );
+                      } else onSignOut();
                     }}
                     data-cursor="link"
                     className={`type-label -mx-2 block w-full rounded-(--radius-mock) px-2 py-2 text-left transition-colors duration-200 hover:bg-(--surface) focus-visible:bg-(--surface) ${

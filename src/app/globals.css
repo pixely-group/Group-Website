@@ -419,21 +419,27 @@
    travelling fast enough to hide one. The first version held at the far end
    and jumped back to the start, which is a reset with a rest in it.
    ———————————————————————————————————————— */
-[data-nav-panel] {
+[data-nav-panel],
+.glyph-stage {
   /* One tempo for the sub-menu drawings, so nothing in them can drift out of
      phase with anything else. The beat is Solutions' front; the turn is
-     Company's whole cycle, and its square is written to the same one. */
+     Company's whole cycle, and its square is written to the same one.
+     `.glyph-stage` is the same clock on a page: the service pages carry
+     grown-up versions of these drawings, and a fragment that ticks at the
+     dropdown's own beat is what makes it read as the same drawing. */
   --beat: 3.6s;
   --turn: 16s;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-nav-panel][data-open] .glyph-flow {
+  [data-nav-panel][data-open] .glyph-flow,
+  .glyph-stage .glyph-flow {
     animation: glyph-flow var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
   /* The same trip the other way, for the rail that runs back. */
-  [data-nav-panel][data-open] .glyph-flow-back {
+  [data-nav-panel][data-open] .glyph-flow-back,
+  .glyph-stage .glyph-flow-back {
     animation: glyph-flow-back var(--dur, 3.4s) linear infinite;
     animation-delay: var(--delay, 0s);
   }
@@ -455,7 +461,8 @@
   /* The record under the seal, and the nodes on the fabric: a slow breath so
      the drawing is never entirely still, well under the accent so it never
      competes with it. */
-  [data-nav-panel][data-open] .glyph-node {
+  [data-nav-panel][data-open] .glyph-node,
+  .glyph-stage .glyph-node {
     animation: glyph-node 3.2s var(--ease-inout-soft) infinite;
     animation-delay: calc(var(--i) * 260ms);
   }

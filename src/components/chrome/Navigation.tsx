@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
@@ -62,6 +63,20 @@ const CONDENSE_OVER = 200;
  * inset, is what governs from 1024 up: max() takes the inset only on screens
  * too narrow for the measure to fit.
  */
+/** Resolve an in-page anchor for wherever the chrome is standing. The bar,
+ *  the compact menu and the footer travel to the service pages now, and a
+ *  bare "#product" there is a door painted on a wall — prefixing the home
+ *  route turns it back into a navigation. Real paths pass through untouched.
+ */
+export function useAnchor() {
+  const pathname = usePathname();
+  return useCallback(
+    (href: string) =>
+      pathname === "/" || !href.startsWith("#") ? href : `/${href}`,
+    [pathname],
+  );
+}
+
 export const NAV_INSETS =
   "[--nav-gutter:24px] [--nav-inset:48px] [--nav-max:52rem] " +
   "[--nav-row-right:20px] " +
@@ -225,6 +240,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
  */
 export default function Navigation() {
   const lenis = useLenis();
+  const anchor = useAnchor();
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
   /** Raised while the bar is between grounds. Only the links care: theirs is
    *  the one colour in here with a transition of its own, for the pointer,
@@ -714,6 +730,9 @@ export default function Navigation() {
      signed-in Get started presses here, and it has no event to prevent. */
   const goTo = useCallback(
     (href: string) => {
+      /* Only in-page anchors are scrollable; a route is a navigation, and
+         querySelector("/platform/…") is not even a valid selector. */
+      if (!href.startsWith("#")) return false;
       const el = document.querySelector(href);
       if (!el) return false;
       setMenu(false);
@@ -952,7 +971,7 @@ export default function Navigation() {
             />
 
             <a
-              href="#top"
+              href={anchor("#top")}
               onClick={scrollTo("#top")}
               aria-label="Pixely — back to top"
               data-cursor="link"
@@ -1028,7 +1047,7 @@ export default function Navigation() {
                       {/* This transition is for the pointer only; the bar
                           switches it off while it is crossing grounds. */}
                       <a
-                        href={link.href}
+                        href={anchor(link.href)}
                         id={`nav-item-${link.href.slice(1)}`}
                         onPointerDown={(e) => {
                           lastPointer.current = e.pointerType;
@@ -1136,7 +1155,7 @@ export default function Navigation() {
                               }
                             >
                               <a
-                                href={href}
+                                href={anchor(href)}
                                 tabIndex={openMenu ? undefined : -1}
                                 onClick={(e) => {
                                   closeSub(true);

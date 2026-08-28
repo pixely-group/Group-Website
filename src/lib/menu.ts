@@ -37,9 +37,9 @@ export const MENU: MenuColumn[] = [
     links: [
       { label: "Payments" },
       { label: "eWallets" },
-      /* Identity has the network chapter to itself, and the navigation's own
-         Identity item already points there. */
-      { label: "Identity", href: "#network" },
+      /* The first service with a page of its own — the template the other
+         five will follow. */
+      { label: "Identity", href: "/platform/identity" },
       { label: "AI services" },
       { label: "Compliance", href: "#security" },
       { label: "APIs and SDKs" },

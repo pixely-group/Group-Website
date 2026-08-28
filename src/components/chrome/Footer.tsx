@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wordmark } from "@/components/chrome/Navigation";
+import { Wordmark, useAnchor } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import WordmarkTrace from "@/components/ui/WordmarkTrace";
 /* The same five columns the navigation opens as sub-menus. Written once, in
@@ -66,8 +66,11 @@ function ClockStrip() {
 
 export default function Footer() {
   const lenis = useLenis();
+  const anchor = useAnchor();
 
   const scrollTo = (href: string) => (e: React.MouseEvent) => {
+    /* Routes and off-home anchors fall through to the browser. */
+    if (!href.startsWith("#")) return;
     const el = document.querySelector(href);
     if (!el) return;
     e.preventDefault();
@@ -117,7 +120,7 @@ export default function Footer() {
                     return (
                       <li key={link.label}>
                         <a
-                          href={href}
+                          href={anchor(href)}
                           onClick={scrollTo(href)}
                           data-cursor="link"
                           className="text-[0.88rem] text-(--muted) transition-colors duration-300 hover:text-accent"
@@ -154,7 +157,7 @@ export default function Footer() {
               (link) => (
                 <a
                   key={link}
-                  href="#top"
+                  href={anchor("#top")}
                   onClick={scrollTo("#top")}
                   data-cursor="link"
                   className="type-label text-(--muted) transition-colors duration-300 hover:text-accent"
