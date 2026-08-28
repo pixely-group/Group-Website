@@ -39,23 +39,52 @@ type Mode = "in" | "up";
    admits no image host, and a sign-in button whose logo silently fails to
    load is a button nobody trusts. */
 function GoogleMark() {
+  /* The gradient G Google moved to in 2025 — the four canonical colours
+     bleeding through the seams instead of butting against them. Google does
+     not publish the vector, so this is the same four-segment geometry with
+     each segment's gradient handing off to its neighbour's colour: red into
+     yellow across the top, yellow into green down the left, green into blue
+     along the bottom (teal falls out of that blend on its own), and the blue
+     bar deepening as it rises. The stops hold their own colour past the
+     midpoint so each region still reads as itself at 17px. */
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id="px-g-red" gradientUnits="userSpaceOnUse" x1="19" y1="3" x2="3" y2="7">
+          <stop offset="0" stopColor="#EA4335" />
+          <stop offset="0.55" stopColor="#EA4335" />
+          <stop offset="1" stopColor="#FBBC04" />
+        </linearGradient>
+        <linearGradient id="px-g-yellow" gradientUnits="userSpaceOnUse" x1="3" y1="7" x2="3.5" y2="17">
+          <stop offset="0" stopColor="#FBBC04" />
+          <stop offset="0.5" stopColor="#FBBC04" />
+          <stop offset="1" stopColor="#34A853" />
+        </linearGradient>
+        <linearGradient id="px-g-green" gradientUnits="userSpaceOnUse" x1="4" y1="22" x2="19.5" y2="19">
+          <stop offset="0" stopColor="#34A853" />
+          <stop offset="0.55" stopColor="#34A853" />
+          <stop offset="1" stopColor="#4285F4" />
+        </linearGradient>
+        <linearGradient id="px-g-blue" gradientUnits="userSpaceOnUse" x1="17" y1="21" x2="22" y2="10">
+          <stop offset="0" stopColor="#4285F4" />
+          <stop offset="1" stopColor="#2A6DE9" />
+        </linearGradient>
+      </defs>
       <path
         d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.63h6.2a5.3 5.3 0 0 1-2.3 3.48v2.89h3.72c2.18-2 3.44-4.96 3.44-8.55z"
-        fill="#4285F4"
+        fill="url(#px-g-blue)"
       />
       <path
         d="M12 23.5c3.11 0 5.72-1.03 7.62-2.79l-3.72-2.89c-1.03.69-2.35 1.1-3.9 1.1-3 0-5.54-2.02-6.45-4.74H1.7v2.98A11.5 11.5 0 0 0 12 23.5z"
-        fill="#34A853"
+        fill="url(#px-g-green)"
       />
       <path
         d="M5.55 14.18a6.9 6.9 0 0 1 0-4.36V6.84H1.7a11.5 11.5 0 0 0 0 10.32l3.85-2.98z"
-        fill="#FBBC05"
+        fill="url(#px-g-yellow)"
       />
       <path
         d="M12 4.98c1.69 0 3.21.58 4.4 1.72l3.3-3.3C17.72 1.55 15.11.5 12 .5A11.5 11.5 0 0 0 1.7 6.84l3.85 2.98C6.46 7.1 9 4.98 12 4.98z"
-        fill="#EA4335"
+        fill="url(#px-g-red)"
       />
     </svg>
   );
