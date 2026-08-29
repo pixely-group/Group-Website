@@ -581,21 +581,24 @@ const VERTEX = /* glsl */ `
     // into the steady read-state. Characters swell AND lift as the bar
     // takes them; the right end closes with the zone holding lit while
     // the check digits burn green, then the swipe begins again.
+    // No wholesale highlight, ever: the zone is ghost text at rest, and
+    // only the bar and a short wake trailing it carry light. What the bar
+    // has passed falls back to ghost. At the end of a swipe the check
+    // digits alone flash green, then the next swipe begins.
     float T = 3.2;
-    float HOLD = 1.4;
-    float P = mod(uTime, T + HOLD);
+    float GAP = 0.9;
+    float P = mod(uTime, T + GAP);
     float lp = clamp(P / T, 0.0, 1.0);
     float waveX = mix(-3.3, 3.35, lp);
-    float allLit = step(T, P);
+    float sweeping = 1.0 - step(T, P);
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
-    float behindBar = step(pos.x, waveX);
-    float trail = exp(-max(0.0, waveX - pos.x) * 0.5);
-    vLit = max(allLit * 0.8, behindBar * (0.45 + 0.55 * trail))
-      * inZone * w0v;
-    vHot = (1.0 - allLit) * exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
-    float holdT = clamp((P - T) / HOLD, 0.0, 1.0);
-    vPing = allLit * (1.0 - smoothstep(0.6, 1.0, holdT)) * w0v;
+    float behindBar = step(pos.x, waveX) * sweeping;
+    float trail = exp(-max(0.0, waveX - pos.x) * 1.4);
+    vLit = behindBar * trail * inZone * w0v;
+    vHot = sweeping * exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
+    float endT = clamp((P - T) / GAP, 0.0, 1.0);
+    vPing = step(T, P) * (1.0 - smoothstep(0.0, 0.75, endT)) * w0v;
     // The bar is felt, not just seen: the characters under it ripple up.
     pos.y += vHot * 0.055;
 
