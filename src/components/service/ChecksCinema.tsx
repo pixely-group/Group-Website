@@ -2,10 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { IdentityBus } from "@/components/three/IdentityScene";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 
+import IdentityCard, { type CardAct } from "@/components/service/IdentityCard";
+import KycScreen, { type KycAct } from "@/components/service/KycScreen";
 import {
   FaceMatchGlyph,
   LivenessGlyph,
@@ -14,21 +15,24 @@ import {
   OcrGlyph,
 } from "@/components/service/CheckGlyphs";
 
-const IdentityScene = dynamic(
-  () => import("@/components/three/IdentityScene"),
-  { ssr: false, loading: () => <ChecksPoster /> },
-);
+/* The front page's device, running the verification app instead of the
+   wallet — client-only for the same reasons it is there. */
+const HeroDevice = dynamic(() => import("@/components/ui/HeroDevice"), {
+  ssr: false,
+});
 
 /**
- * The five checks as the page's set piece, staged exactly the way the
- * front page stages its network: the section is five viewports tall, a
- * sticky stage holds a scroll-scrubbed particle scene (one system
- * morphing through the five acts of a verification), the copy crossfades
- * through the stages on the same scrub, and a rail at the foot tracks
- * where in the exam you are.
+ * The five checks as one continuous scene: the specimen document on the
+ * stage, and the front page's own device travelling through the acts —
+ * hovering to scan the machine zone, standing beside the page while the
+ * print lifts into its screen, lying on the card to read the chip, turning
+ * to the face, then holding document and person side by side for the
+ * match. The section is five viewports tall; the copy crossfades through
+ * the stages on the scrub; a rail tracks the exam; and the device's
+ * screen runs the actual flow, step by step.
  *
- * Reduced motion swaps the whole theatre for the five hairline drawings,
- * stacked and still — the same checks, held instead of performed.
+ * Reduced motion swaps the theatre for the five hairline drawings,
+ * stacked and still.
  */
 
 const STAGES = [
@@ -74,16 +78,32 @@ const STAGES = [
   },
 ] as const;
 
-/** Static fallback: reduced motion, no WebGL, or the chunk still loading —
- *  the contour face as a still. */
+const DEVICE_ACT: KycAct[] = ["mrz", "ocr", "nfc", "live", "match"];
+const CARD_ACT: CardAct[] = ["mrz", "ocr", "nfc", "idle", "idle"];
+
+/**
+ * The blocking, act by act. Card and device are both centred in the stage
+ * and posed with transforms — xPercent/yPercent are percentages of each
+ * element's own size, which keeps the composition honest across viewports.
+ * The theatre always stands opposite the copy column.
+ */
+const CARD_POSE = [
+  { xPercent: 18, yPercent: -6, scale: 1, rotate: 0, opacity: 1 },
+  { xPercent: -58, yPercent: -6, scale: 0.92, rotate: 0, opacity: 1 },
+  { xPercent: 22, yPercent: -2, scale: 1, rotate: 0, opacity: 1 },
+  { xPercent: -40, yPercent: -6, scale: 0.9, rotate: 0, opacity: 0 },
+  { xPercent: 2, yPercent: -2, scale: 0.82, rotate: -2, opacity: 1 },
+];
+const DEVICE_POSE = [
+  { xPercent: 118, yPercent: -46, scale: 0.6, rotate: -7, opacity: 1 },
+  { xPercent: -6, yPercent: -44, scale: 0.62, rotate: 5, opacity: 1 },
+  { xPercent: 38, yPercent: -40, scale: 0.54, rotate: -8, opacity: 1 },
+  { xPercent: -68, yPercent: -44, scale: 0.78, rotate: 0, opacity: 1 },
+  { xPercent: 78, yPercent: -44, scale: 0.62, rotate: 4, opacity: 1 },
+];
+
+/** Static fallback backdrop: the near field's rings, stilled. */
 function ChecksPoster() {
-  const slices = Array.from({ length: 15 }, (_, i) => {
-    const y = -140 + i * 20;
-    const crown = Math.min(1, Math.max(0, 1 - (y - 70) / 80));
-    const jaw = Math.min(1, Math.max(0, 1 - (-y - 55) / 95));
-    const r = 34 + 86 * Math.min(crown, jaw);
-    return { y, r };
-  });
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden bg-ink">
       <svg
@@ -91,26 +111,17 @@ function ChecksPoster() {
         viewBox="-280 -280 560 560"
         fill="none"
       >
-        {slices.map(({ y, r }) => (
-          <ellipse
-            key={y}
-            cy={-y}
-            rx={r}
-            ry={r * 0.22}
+        {[70, 118, 166, 214, 262].map((r) => (
+          <circle
+            key={r}
+            r={r}
             stroke="#ece9e1"
-            strokeOpacity="0.1"
+            strokeOpacity="0.09"
             strokeWidth="0.75"
+            strokeDasharray="2 6"
           />
         ))}
-        <circle r="196" stroke="#ece9e1" strokeOpacity="0.14" />
-        <line
-          x1="-280"
-          y1="150"
-          x2="280"
-          y2="150"
-          stroke="#2d46ff"
-          strokeOpacity="0.4"
-        />
+        <circle r="30" stroke="#2d46ff" strokeOpacity="0.4" />
       </svg>
       <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_30%,#0a0a0b_100%)]" />
     </div>
@@ -120,52 +131,10 @@ function ChecksPoster() {
 export default function ChecksCinema() {
   const sectionRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
-  const bus = useRef<IdentityBus>({ progress: 0, pointer: [0, 0], spread: 0 });
-  const [active, setActive] = useState(false);
-  // The canvas allocates a WebGL context as soon as it mounts, and this
-  // section sits below the hero — hold off until it is approached.
-  const [near, setNear] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const deviceRef = useRef<HTMLDivElement>(null);
+  const [act, setAct] = useState(0);
   const reduced = useReducedMotion();
-
-  // Wide viewports alternate the copy column, so the subject swings aside.
-  useEffect(() => {
-    const mql = window.matchMedia("(min-width: 1024px)");
-    const apply = () => {
-      bus.current.spread = mql.matches ? 1 : 0;
-    };
-    apply();
-    mql.addEventListener("change", apply);
-    return () => mql.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    if (reduced) return;
-    const onMove = (e: PointerEvent) => {
-      bus.current.pointer = [
-        (e.clientX / window.innerWidth) * 2 - 1,
-        -((e.clientY / window.innerHeight) * 2 - 1),
-      ];
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [reduced]);
-
-  // Mount roughly a viewport early, then keep it.
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setNear(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: "100% 0px" },
-    );
-    io.observe(section);
-    return () => io.disconnect();
-  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -173,36 +142,19 @@ export default function ChecksCinema() {
     if (!section || !sticky) return;
 
     const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => {
-          bus.current.progress = self.progress;
-        },
-      });
-      // Only render while the section can be seen. onToggle alone is not
-      // enough: it fires on crossings, and a visitor can arrive without
-      // one (a hash landing, a programmatic jump) — so sync the initial
-      // state and re-sync on every refresh too.
-      const vis = ScrollTrigger.create({
-        trigger: section,
-        start: "top bottom",
-        end: "bottom top",
-        onToggle: (self) => setActive(self.isActive),
-        onRefresh: (self) => setActive(self.isActive),
-      });
-      setActive(vis.isActive);
-
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const copies = sticky.querySelectorAll("[data-check-copy]");
         const marks = sticky.querySelectorAll("[data-check-mark]");
-        if (copies.length === 0) return;
+        const card = cardRef.current;
+        const device = deviceRef.current;
+        if (copies.length === 0 || !card || !device) return;
 
         gsap.set(copies, { opacity: 0, y: 34 });
         gsap.set(copies[0], { opacity: 1, y: 0 });
         marks[0]?.classList.add("bg-accent");
+        gsap.set(card, CARD_POSE[0]);
+        gsap.set(device, DEVICE_POSE[0]);
 
         // Timeline units == stage units: stage i is centred at time i.
         const tl = gsap.timeline({
@@ -220,11 +172,24 @@ export default function ChecksCinema() {
             copies[i - 1],
             { opacity: 0, y: -34, duration: 0.3, ease: "power2.in" },
             i - 0.4,
-          ).to(
-            copies[i],
-            { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
-            i - 0.15,
-          );
+          )
+            .to(
+              copies[i],
+              { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
+              i - 0.15,
+            )
+            // The players move with the copy: the device travels to its
+            // next mark, the document takes its next place.
+            .to(
+              card,
+              { ...CARD_POSE[i], duration: 0.5, ease: "power2.inOut" },
+              i - 0.42,
+            )
+            .to(
+              device,
+              { ...DEVICE_POSE[i], duration: 0.5, ease: "power2.inOut" },
+              i - 0.42,
+            );
         });
 
         const st = ScrollTrigger.create({
@@ -239,6 +204,7 @@ export default function ChecksCinema() {
                 Math.round(self.progress * (STAGES.length - 1)),
               ),
             );
+            setAct(i);
             marks.forEach((m, mi) => m.classList.toggle("bg-accent", mi === i));
           },
         });
@@ -247,7 +213,7 @@ export default function ChecksCinema() {
           tl.scrollTrigger?.kill();
           tl.kill();
           st.kill();
-          gsap.set(copies, { clearProps: "all" });
+          gsap.set([copies, card, device], { clearProps: "all" });
           marks.forEach((m) => m.classList.remove("bg-accent"));
         };
       });
@@ -273,13 +239,7 @@ export default function ChecksCinema() {
             : "sticky top-0 h-[100svh] overflow-hidden"
         }
       >
-        {reduced || !near ? (
-          <div className="absolute inset-0">
-            <ChecksPoster />
-          </div>
-        ) : (
-          <IdentityScene bus={bus} active={active} />
-        )}
+        <ChecksPoster />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(125%_85%_at_50%_50%,transparent_38%,rgba(10,10,11,0.55)_100%)]"
@@ -313,7 +273,32 @@ export default function ChecksCinema() {
           </div>
         ) : (
           <>
-            <div className="absolute inset-0 z-10 flex items-center px-6 sm:px-10 lg:px-14">
+            {/* The theatre: document and device, centred and posed. It
+                cannot swallow the pointer — the copy under it must stay
+                readable and the page must stay scrollable. */}
+            {/* On small screens the theatre takes the upper half and the
+                copy the lower — a bone card behind running text is a
+                fight nobody wins. */}
+            <div className="pointer-events-none absolute inset-0 z-[5] max-lg:-top-[24%] max-lg:scale-[0.62] [&_*]:!pointer-events-none">
+              <div
+                ref={cardRef}
+                className="absolute top-1/2 left-1/2 w-[min(46vw,560px)] max-lg:w-[min(78vw,480px)] -translate-x-1/2 -translate-y-1/2"
+              >
+                <IdentityCard act={CARD_ACT[act]} />
+              </div>
+              <div
+                ref={deviceRef}
+                className="absolute top-1/2 left-1/2 h-[min(64vh,620px)] -translate-x-1/2 -translate-y-1/2"
+                style={{ aspectRatio: "420 / 892" }}
+              >
+                <HeroDevice
+                  className="size-full"
+                  screen={<KycScreen act={DEVICE_ACT[act]} />}
+                />
+              </div>
+            </div>
+
+            <div className="absolute inset-0 z-10 flex items-center px-6 max-lg:translate-y-[22%] sm:px-10 lg:px-14">
               <div className="relative mx-auto w-full max-w-7xl">
                 {STAGES.map((stage, i) => (
                   <div
