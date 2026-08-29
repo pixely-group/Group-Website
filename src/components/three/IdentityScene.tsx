@@ -605,7 +605,7 @@ const VERTEX = /* glsl */ `
     gl_Position = projectionMatrix * mv;
 
     float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
-    float pulse = 0.88 + 0.12 * sin(uTime * 1.3 + aInfo.x * 40.0);
+    float pulse = 0.95 + 0.05 * sin(uTime * 1.3 + aInfo.x * 40.0);
     // The pop: a character swells under the bar as it is taken.
     gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse
       * (1.0 + vHot * 1.5);
@@ -635,7 +635,9 @@ const FRAGMENT = /* glsl */ `
 
   void main() {
     float d = length(gl_PointCoord - 0.5);
-    float disc = smoothstep(0.5, 0.1, d);
+    // A document is print, not glow: the disc holds a hard core and
+    // feathers only a thin anti-aliased rim at its edge.
+    float disc = smoothstep(0.5, 0.4, d);
 
     float w0 = win(0.0);
     float w1 = win(1.0);
@@ -1043,7 +1045,7 @@ export default function IdentityScene({
   return (
     <Canvas
       frameloop={active ? "always" : "never"}
-      dpr={[1, 1.8]}
+      dpr={[1, 2]}
       camera={{ position: [0, -0.15, 10.4], fov: 46, near: 0.1, far: 80 }}
       gl={{
         antialias: true,
