@@ -573,17 +573,14 @@ const VERTEX = /* glsl */ `
       cos(uTime * 0.6 + aInfo.x * 29.0),
       sin(uTime * 0.8 + aInfo.x * 61.0)
     );
-    vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-    gl_Position = projectionMatrix * mv;
-
-    // The machine zone's own clock — and the scan is the swipe: a
-    // VERTICAL bar of light spanning all three lines at once, travelling
-    // LEFT TO RIGHT across the zone the way a document is actually
-    // swiped. Columns behind the bar hold their light — already read —
-    // columns ahead wait dim; characters swell as the bar crosses them;
-    // the bar reaches the right end and the whole zone holds lit for a
-    // beat while the check digits burn green — the checksums agreeing —
-    // then the swipe begins again.
+    // The machine zone's own clock — the swipe: a VERTICAL bar of light
+    // spanning all three lines at once, travelling LEFT TO RIGHT the way
+    // a document is actually swiped. The unread text ahead of the bar is
+    // a ghost — barely there, so the bar has something to reveal — the
+    // bar itself is a hot column, and behind it a trail of light decays
+    // into the steady read-state. Characters swell AND lift as the bar
+    // takes them; the right end closes with the zone holding lit while
+    // the check digits burn green, then the swipe begins again.
     float T = 3.2;
     float HOLD = 1.4;
     float P = mod(uTime, T + HOLD);
@@ -592,16 +589,24 @@ const VERTEX = /* glsl */ `
     float allLit = step(T, P);
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
-    vLit = max(allLit, step(pos.x, waveX)) * inZone * w0v;
-    vHot = (1.0 - allLit) * exp(-pow((pos.x - waveX) * 2.2, 2.0)) * inZone * w0v;
+    float behindBar = step(pos.x, waveX);
+    float trail = exp(-max(0.0, waveX - pos.x) * 0.5);
+    vLit = max(allLit * 0.8, behindBar * (0.45 + 0.55 * trail))
+      * inZone * w0v;
+    vHot = (1.0 - allLit) * exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
     float holdT = clamp((P - T) / HOLD, 0.0, 1.0);
     vPing = allLit * (1.0 - smoothstep(0.6, 1.0, holdT)) * w0v;
+    // The bar is felt, not just seen: the characters under it ripple up.
+    pos.y += vHot * 0.055;
+
+    vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mv;
 
     float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
     float pulse = 0.88 + 0.12 * sin(uTime * 1.3 + aInfo.x * 40.0);
-    // The pop: a character swells under the head as it is taken.
+    // The pop: a character swells under the bar as it is taken.
     gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse
-      * (1.0 + vHot * 0.9);
+      * (1.0 + vHot * 1.5);
     vRand = aInfo.x;
     vRole = aInfo.y;
     vVerdict = aInfo.z;
@@ -657,8 +662,12 @@ const FRAGMENT = /* glsl */ `
     // The screen's arriving text holds its own light beside the streams.
     alpha += (1.0 - vRole)
       * (0.45 * commit + 0.2 * w1 * step(0.9, vPos.x));
-    // The read: taken characters hold their light, the head burns.
-    alpha += 0.55 * vLit + 1.35 * vHot;
+    // The read: unread text is a ghost the bar reveals; taken characters
+    // hold their light; the bar itself burns.
+    float zoneMask = w0 * step(-2.02, vPos.y) * (1.0 - step(-1.2, vPos.y));
+    float ghost = zoneMask * (1.0 - clamp(vLit * 2.6 + vHot * 2.0, 0.0, 1.0));
+    alpha *= 1.0 - 0.72 * ghost;
+    alpha += 0.9 * vLit + 1.9 * vHot;
     alpha += ripple * (0.35 + vRole * 0.5);
     alpha += scan * 0.5;
     alpha += vRole * packet * 0.9;
@@ -675,6 +684,8 @@ const FRAGMENT = /* glsl */ `
     float signalness = vRole * clamp(0.3 + 0.6 * vLit + vHot + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
     vec3 col = mix(bone, signal, signalness);
     col = mix(col, signal, (1.0 - vRole) * clamp(vHot + 0.4 * vLit + ripple + scan, 0.0, 0.7) * 0.6);
+    // The bar's core runs near-white — light, not paint.
+    col = mix(col, vec3(0.84, 0.88, 1.0), clamp(vHot * 1.2, 0.0, 1.0) * 0.85);
     col = mix(col, positive, vVerdict * max(smoothstep(3.2, 3.9, uProgress), vPing));
     gl_FragColor = vec4(col, alpha * 0.9);
   }
