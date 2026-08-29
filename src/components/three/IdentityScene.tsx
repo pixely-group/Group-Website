@@ -72,6 +72,40 @@ function buildModel(): Model {
     arr[i * 3 + 2] = z;
   };
 
+  /* The machine zone, patterned after the real card the user supplied:
+     22 large cells per line, the letter blocks up front and LONG runs of
+     chevrons filling the rest — IDDZA109... then < < < < < to the edge.
+     A chevron is drawn as dots along the two strokes of a "<", big
+     enough to read as one at a glance. */
+  const MRZ_CHEV = (row: number, cell: number) =>
+    row === 0
+      ? cell >= 11
+      : row === 1
+        ? cell >= 14 && cell <= 20
+        : cell === 3 || cell === 9 || cell === 10 || cell >= 16;
+  const mrzGlyph = (row: number, cell: number): [number, number] => {
+    if (MRZ_CHEV(row, cell)) {
+      const t = rand();
+      let dx: number;
+      let dy: number;
+      if (t < 0.5) {
+        dx = 0.095 - t * 2 * 0.19;
+        dy = -0.085 + t * 2 * 0.085;
+      } else {
+        dx = -0.095 + (t - 0.5) * 2 * 0.19;
+        dy = (t - 0.5) * 2 * 0.085;
+      }
+      return [dx + (rand() - 0.5) * 0.01, dy + (rand() - 0.5) * 0.01];
+    }
+    const sub = Math.floor(rand() * 9);
+    return [
+      ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
+      (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
+    ];
+  };
+  const MRZ_X = (cell: number) => -3.15 + cell * 0.295;
+  const MRZ_Y = (row: number) => -1.34 - row * 0.27;
+
   for (let i = 0; i < N; i += 1) {
     const isSignal = i < SIGNAL;
     const isVerdict = isSignal && i >= SIGNAL - VERDICT;
@@ -81,54 +115,22 @@ function buildModel(): Model {
 
     /* ——— 0 DOCUMENT ——— */
     if (isVerdict) {
-      // The check digits: the last two character blocks of each row,
-      // set in the same dot-matrix as the text they check.
-      const row = Math.floor(u * 300) % 3;
-      const cell = Math.floor(rand() * 2);
+      // The composite check digit: the lone character closing line two,
+      // exactly where the real card prints its trailing 8.
       const sub = Math.floor(rand() * 9);
       set(
         forms[0],
         i,
-        2.75 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
-        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        MRZ_X(21) + ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
+        MRZ_Y(1) + (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
         (rand() - 0.5) * 0.03,
       );
     } else if (isSignal) {
-      // Machine characters, written like real MRZ: letter blocks first,
-      // then runs of chevrons in the filler positions — the < < < < that
-      // makes a machine zone recognisable at a glance.
+      // The machine text at the reference card's own proportions.
       const row = i % 3;
-      const cell = Math.floor(rand() * 26);
-      const chev =
-        (row === 0 && cell >= 14) ||
-        (row === 1 && cell >= 17) ||
-        (row === 2 && (cell === 6 || cell === 7 || cell >= 12));
-      let dx: number;
-      let dy: number;
-      if (chev) {
-        // Dots sampled along the two strokes of a "<".
-        const t2 = rand();
-        if (t2 < 0.5) {
-          dx = 0.055 - t2 * 2 * 0.11;
-          dy = -0.06 + t2 * 2 * 0.06;
-        } else {
-          dx = -0.055 + (t2 - 0.5) * 2 * 0.11;
-          dy = (t2 - 0.5) * 2 * 0.06;
-        }
-        dx += (rand() - 0.5) * 0.012;
-        dy += (rand() - 0.5) * 0.012;
-      } else {
-        const sub = Math.floor(rand() * 9);
-        dx = ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014;
-        dy = (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014;
-      }
-      set(
-        forms[0],
-        i,
-        -3.0 + cell * 0.215 + dx,
-        -1.34 - row * 0.27 + dy,
-        (rand() - 0.5) * 0.03,
-      );
+      const cell = Math.floor(rand() * 21);
+      const [dx, dy] = mrzGlyph(row, cell);
+      set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     } else if (u < 0.2) {
       // Outline: the card's own perimeter, drawn tight. Each edge re-zeroes
       // the parameter — carried raw, the odd branches kept drawing past
@@ -179,51 +181,31 @@ function buildModel(): Model {
       // beside the photo — label then value, every row starting where
       // every other row starts — and clear air between them and the
       // machine zone below.
+      // Typed rows, like the reference: a short label block, a gap, then
+      // the value as word cells — longest line first, the name.
       const row = Math.floor(rand() * 3);
-      const isLabel = rand() < 0.3;
-      // Longest line first — the name — then shorter details under it.
-      const valueEnd = 2.6 - row * 0.65;
-      set(
-        forms[0],
-        i,
-        isLabel ? -1.1 + rand() * 0.62 : -0.28 + rand() * valueEnd,
-        1.32 - row * 0.5 + (rand() - 0.5) * 0.03,
-        (rand() - 0.5) * 0.04,
-      );
-    } else {
-      // The freed fill budget joins the machine zone, writing the same
-      // text: blocks where the letters are, chevrons where the filler is.
-      const row = Math.floor(rand() * 3);
-      const cell = Math.floor(rand() * 26);
-      const chev =
-        (row === 0 && cell >= 14) ||
-        (row === 1 && cell >= 17) ||
-        (row === 2 && (cell === 6 || cell === 7 || cell >= 12));
-      let dx: number;
-      let dy: number;
-      if (chev) {
-        const t2 = rand();
-        if (t2 < 0.5) {
-          dx = 0.055 - t2 * 2 * 0.11;
-          dy = -0.06 + t2 * 2 * 0.06;
-        } else {
-          dx = -0.055 + (t2 - 0.5) * 2 * 0.11;
-          dy = (t2 - 0.5) * 2 * 0.06;
-        }
-        dx += (rand() - 0.5) * 0.012;
-        dy += (rand() - 0.5) * 0.012;
+      const isLabel = rand() < 0.28;
+      const valueCells = [9, 6, 4][row];
+      let fx: number;
+      if (isLabel) {
+        fx = -1.1 + Math.floor(rand() * 2) * 0.24 + (rand() - 0.5) * 0.09;
       } else {
-        const sub = Math.floor(rand() * 9);
-        dx = ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014;
-        dy = (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014;
+        fx = -0.3 + Math.floor(rand() * valueCells) * 0.27 + (rand() - 0.5) * 0.1;
       }
       set(
         forms[0],
         i,
-        -3.0 + cell * 0.215 + dx,
-        -1.34 - row * 0.27 + dy,
-        (rand() - 0.5) * 0.03,
+        fx,
+        1.32 - row * 0.5 + (rand() - 0.5) * 0.028,
+        (rand() - 0.5) * 0.04,
       );
+    } else {
+      // The freed fill budget joins the machine zone, writing the same
+      // text at the same size.
+      const row = Math.floor(rand() * 3);
+      const cell = Math.floor(rand() * 21);
+      const [dx, dy] = mrzGlyph(row, cell);
+      set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     }
 
     /* ——— 1 OCR: the phone scanning the document ——— */
@@ -791,9 +773,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       return g;
     };
 
-    /* The scanner, as simple as it can honestly be: one vertical line
-       spanning the machine zone with a little overshoot. Nothing else. */
-    const scanCore = segs([[0, -2.24, 0.05, 0, -1.08, 0.05]]);
+
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -867,10 +847,9 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { scanCore, fields, halo, match, green };
+    return { fields, halo, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
-  const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
   const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
@@ -897,8 +876,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     // The scan line rides the same sine as the shader's bar.
     if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
-    if (scanCoreMat.current) scanCoreMat.current.opacity = 0.9 * win(0);
-    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.1 * win(0);
+    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.16 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -953,9 +931,11 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           blending={THREE.AdditiveBlending}
         />
       </points>
+      {/* The scan is light, not hardware: one soft column passing over
+          the code — the characters flaring under it do the rest. */}
       <group ref={scanRef}>
-        <mesh position={[0, -1.66, 0.01]}>
-          <planeGeometry args={[0.26, 1.16]} />
+        <mesh position={[0, -1.64, 0.01]}>
+          <planeGeometry args={[0.5, 1.14]} />
           <meshBasicMaterial
             ref={scanGlowMat}
             color="#2d46ff"
@@ -965,14 +945,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
             blending={THREE.AdditiveBlending}
           />
         </mesh>
-        <lineSegments geometry={lineGeo.scanCore}>
-          <lineBasicMaterial
-            ref={scanCoreMat}
-            color="#7290ff"
-            transparent
-            opacity={0}
-          />
-        </lineSegments>
       </group>
       <lineSegments geometry={lineGeo.fields}>
         <lineBasicMaterial
