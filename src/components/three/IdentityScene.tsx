@@ -576,23 +576,24 @@ const VERTEX = /* glsl */ `
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
 
-    // The machine zone's own clock — and the scan is a scanner's: a
-    // horizontal band of light passing VERTICALLY down the zone, the way
-    // an MRZ is actually swiped. Rows above the band hold their light —
-    // already read — rows below wait dim; characters swell as the band
-    // crosses them; the pass reaches the foot and the whole zone holds
-    // lit for a beat while the check digits burn green — the checksums
-    // agreeing — then the pass begins again.
+    // The machine zone's own clock — and the scan is the swipe: a
+    // VERTICAL bar of light spanning all three lines at once, travelling
+    // LEFT TO RIGHT across the zone the way a document is actually
+    // swiped. Columns behind the bar hold their light — already read —
+    // columns ahead wait dim; characters swell as the bar crosses them;
+    // the bar reaches the right end and the whole zone holds lit for a
+    // beat while the check digits burn green — the checksums agreeing —
+    // then the swipe begins again.
     float T = 3.2;
     float HOLD = 1.4;
     float P = mod(uTime, T + HOLD);
     float lp = clamp(P / T, 0.0, 1.0);
-    float waveY = mix(-1.14, -2.08, lp);
+    float waveX = mix(-3.3, 3.35, lp);
     float allLit = step(T, P);
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
-    vLit = max(allLit, step(waveY, pos.y)) * inZone * w0v;
-    vHot = (1.0 - allLit) * exp(-pow((pos.y - waveY) * 9.0, 2.0)) * inZone * w0v;
+    vLit = max(allLit, step(pos.x, waveX)) * inZone * w0v;
+    vHot = (1.0 - allLit) * exp(-pow((pos.x - waveX) * 2.2, 2.0)) * inZone * w0v;
     float holdT = clamp((P - T) / HOLD, 0.0, 1.0);
     vPing = allLit * (1.0 - smoothstep(0.6, 1.0, holdT)) * w0v;
 
