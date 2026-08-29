@@ -519,6 +519,18 @@
       infinite;
     animation-delay: var(--delay, 0s);
   }
+  /* The fraud chapter's stream: the list rendered twice and slid by half
+     its own height, so the loop has no seam. Reduced motion never starts
+     it, and the first screenful of rows simply stands. */
+  .signal-stream {
+    animation: stream-up 18s linear infinite;
+  }
+}
+
+@keyframes stream-up {
+  to {
+    transform: translateY(-50%);
+  }
 }
 
 @keyframes glyph-flow {

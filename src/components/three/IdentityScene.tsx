@@ -101,21 +101,23 @@ function buildModel(): Model {
         forms[0],
         i,
         2.72 + rand() * 0.34,
-        -1.34 - row * 0.27 + (rand() - 0.5) * 0.07,
-        (rand() - 0.5) * 0.05,
+        -1.34 - row * 0.27 + (rand() - 0.5) * 0.06,
+        (rand() - 0.5) * 0.04,
       );
     } else if (isSignal) {
-      // Machine characters: three tight rows across the card's foot.
+      // Machine characters: three rows of quantised cells — the text
+      // reads as text because it clumps the way typeset characters do.
       const row = i % 3;
+      const cell = Math.floor(rand() * 26);
       set(
         forms[0],
         i,
-        -3.0 + rand() * 5.5,
-        -1.34 - row * 0.27 + (rand() - 0.5) * 0.06,
-        (rand() - 0.5) * 0.05,
+        -3.0 + cell * 0.215 + (rand() - 0.5) * 0.055,
+        -1.34 - row * 0.27 + (rand() - 0.5) * 0.045,
+        (rand() - 0.5) * 0.04,
       );
     } else if (u < 0.2) {
-      // Outline: the card's own perimeter.
+      // Outline: the card's own perimeter, drawn tight.
       const t = rand() * 2;
       const w = 3.4;
       const h = 2.2;
@@ -124,28 +126,39 @@ function buildModel(): Model {
       else if (t < 1) set(forms[0], i, w, h - along * 2 * h * 2, 0);
       else if (t < 1.5) set(forms[0], i, w - along * 2 * w * 2, -h, 0);
       else set(forms[0], i, -w, -h + along * 2 * h * 2, 0);
-      forms[0][i * 3] += (rand() - 0.5) * 0.05;
-      forms[0][i * 3 + 1] += (rand() - 0.5) * 0.05;
-    } else if (u < 0.42) {
-      // Portrait: an oval of a person, upper left.
+      forms[0][i * 3] += (rand() - 0.5) * 0.03;
+      forms[0][i * 3 + 1] += (rand() - 0.5) * 0.03;
+    } else if (u < 0.34) {
+      // Portrait, head: a ring, not a smudge — outlines survive
+      // distance where fills blur.
       const a = rand() * Math.PI * 2;
-      const rr = Math.sqrt(rand());
       set(
         forms[0],
         i,
-        -2.2 + Math.cos(a) * rr * 0.62,
-        0.62 + Math.sin(a) * rr * 0.82,
-        (rand() - 0.5) * 0.08,
-      );
-    } else if (u < 0.68) {
-      // Data lines: four printed rows right of the portrait.
-      const row = Math.floor(rand() * 4);
-      set(
-        forms[0],
-        i,
-        -1.1 + rand() * (3.6 - row * 0.5),
-        1.55 - row * 0.5 + (rand() - 0.5) * 0.05,
+        -2.2 + Math.cos(a) * 0.5 + (rand() - 0.5) * 0.05,
+        0.72 + Math.sin(a) * 0.56 + (rand() - 0.5) * 0.05,
         (rand() - 0.5) * 0.05,
+      );
+    } else if (u < 0.44) {
+      // Portrait, shoulders: the bust arc under the head.
+      const t = rand() * 2 - 1;
+      set(
+        forms[0],
+        i,
+        -2.2 + Math.sin(t * 1.25) * 0.72 + (rand() - 0.5) * 0.04,
+        -0.62 + Math.cos(t * 1.25) * 0.42 + (rand() - 0.5) * 0.04,
+        (rand() - 0.5) * 0.05,
+      );
+    } else if (u < 0.72) {
+      // Printed fields: four rows of word-clumps right of the portrait.
+      const row = Math.floor(rand() * 4);
+      const word = Math.floor(rand() * 4);
+      set(
+        forms[0],
+        i,
+        -1.1 + word * 1.05 + rand() * 0.6,
+        1.55 - row * 0.52 + (rand() - 0.5) * 0.035,
+        (rand() - 0.5) * 0.04,
       );
     } else {
       // The card's body: a faint fill sitting slightly behind.
@@ -154,7 +167,7 @@ function buildModel(): Model {
         i,
         (rand() - 0.5) * 6.6,
         (rand() - 0.5) * 4.2,
-        -0.18 - rand() * 0.1,
+        -0.2 - rand() * 0.1,
       );
     }
 
@@ -181,12 +194,14 @@ function buildModel(): Model {
           z + (rand() - 0.5) * 0.06,
         );
       } else {
-        const lane = rand() < 0.5 ? 0.15 : -0.15;
+        // The value: tokens with gaps between them, the way extracted
+        // text actually sits in a field.
+        const token = Math.floor(rand() * 4);
         set(
           forms[1],
           i,
-          -2.1 + rand() * 4.5,
-          y + lane + (rand() - 0.5) * 0.05,
+          -2.1 + token * 1.2 + rand() * 0.62,
+          y + (rand() < 0.5 ? 0.12 : -0.12) + (rand() - 0.5) * 0.04,
           z + (rand() - 0.5) * 0.06,
         );
       }
@@ -216,17 +231,28 @@ function buildModel(): Model {
     /* ——— 3 FACE ——— */
     {
       if (isSignal && !isVerdict) {
-        if (u < 0.36) {
-          // Eyes: two watching clusters.
-          const side = u < 0.18 ? -1 : 1;
+        if (u < 0.28) {
+          // Eyes: two watching clusters, small and dense.
+          const side = u < 0.14 ? -1 : 1;
           const a = rand() * Math.PI * 2;
-          const rr = Math.sqrt(rand()) * 0.17;
+          const rr = Math.sqrt(rand()) * 0.13;
           set(
             forms[3],
             i,
             side * 0.6 + Math.cos(a) * rr,
             0.5 + Math.sin(a) * rr * 0.7,
-            1.18 + (rand() - 0.5) * 0.06,
+            1.18 + (rand() - 0.5) * 0.05,
+          );
+        } else if (u < 0.42) {
+          // Brows: the arcs that make the eyes a face.
+          const side = u < 0.35 ? -1 : 1;
+          const t = rand() * 2 - 1;
+          set(
+            forms[3],
+            i,
+            side * 0.6 + t * 0.3,
+            0.88 + (1 - t * t) * 0.09 + (rand() - 0.5) * 0.03,
+            1.06 + (rand() - 0.5) * 0.05,
           );
         } else if (u < 0.58) {
           // The mouth: a short front arc.
@@ -268,7 +294,7 @@ function buildModel(): Model {
         const x = Math.cos(a) * prof;
         // The nose: the front of the middle slices pushed out.
         if (z > 0 && Math.abs(x) < 0.42 && y > -0.7 && y < 0.35) {
-          z += 0.42 * (1 - Math.abs(x) / 0.42) * (1 - Math.abs(y + 0.18) / 1.05);
+          z += 0.48 * (1 - Math.abs(x) / 0.42) * (1 - Math.abs(y + 0.18) / 1.05);
         }
         set(forms[3], i, x, y, z);
       }
@@ -286,32 +312,66 @@ function buildModel(): Model {
           (rand() - 0.5) * 0.14,
         );
       } else if (isSignal) {
-        // The bridge: two packet lanes between the subjects.
-        const lane = rand() < 0.5 ? 0.16 : -0.16;
+        // The bridge: three lanes of clumped packets between the
+        // subjects — traffic, not a dotted line.
+        const lane = (Math.floor(rand() * 3) - 1) * 0.18;
+        const clump = Math.floor(rand() * 6);
         set(
           forms[4],
           i,
-          -1.25 + rand() * 2.8,
-          lane + (rand() - 0.5) * 0.05,
+          -1.25 + clump * 0.47 + rand() * 0.22,
+          lane + (rand() - 0.5) * 0.04,
           (rand() - 0.5) * 0.08,
         );
       } else if (r < 0.45) {
-        // The document self: the portrait flattened, standing left.
-        const a = rand() * Math.PI * 2;
-        const rr = Math.sqrt(rand());
-        if (rand() < 0.6) {
+        // The document self: the act-0 card in miniature, so the left
+        // subject is unmistakably the document.
+        const kind = rand();
+        if (kind < 0.28) {
+          // Head ring.
+          const a = rand() * Math.PI * 2;
           set(
             forms[4],
             i,
-            -2.75 + Math.cos(a) * rr * 0.66,
-            0.2 + Math.sin(a) * rr * 0.9,
-            (rand() - 0.5) * 0.08,
+            -3.2 + Math.cos(a) * 0.32 + (rand() - 0.5) * 0.03,
+            0.62 + Math.sin(a) * 0.36 + (rand() - 0.5) * 0.03,
+            (rand() - 0.5) * 0.05,
+          );
+        } else if (kind < 0.42) {
+          // Shoulders.
+          const t = rand() * 2 - 1;
+          set(
+            forms[4],
+            i,
+            -3.2 + Math.sin(t * 1.25) * 0.46 + (rand() - 0.5) * 0.03,
+            -0.22 + Math.cos(t * 1.25) * 0.28 + (rand() - 0.5) * 0.03,
+            (rand() - 0.5) * 0.05,
+          );
+        } else if (kind < 0.66) {
+          // Data rows beside the portrait.
+          const row = Math.floor(rand() * 3);
+          set(
+            forms[4],
+            i,
+            -2.62 + rand() * 0.9,
+            0.86 - row * 0.42 + (rand() - 0.5) * 0.03,
+            (rand() - 0.5) * 0.05,
+          );
+        } else if (kind < 0.82) {
+          // Its machine line, quantised like the big one.
+          const cell = Math.floor(rand() * 12);
+          set(
+            forms[4],
+            i,
+            -3.6 + cell * 0.18 + (rand() - 0.5) * 0.04,
+            -1.05 + (rand() - 0.5) * 0.04,
+            (rand() - 0.5) * 0.04,
           );
         } else {
           // Its card edge.
           const t = rand() * 2;
           const w = 1.15;
-          const h = 1.65;
+          const h = 1.55;
           const along = t % 1;
           let x = 0;
           let y = 0;
@@ -328,7 +388,7 @@ function buildModel(): Model {
             x = -w;
             y = -h + along * 2 * h * 2;
           }
-          set(forms[4], i, -2.75 + x, 0.2 + y, (rand() - 0.5) * 0.06);
+          set(forms[4], i, -2.75 + x, 0.1 + y, (rand() - 0.5) * 0.04);
         }
       } else {
         // The live self: the same contour face, smaller, standing right.
@@ -371,8 +431,11 @@ const VERTEX = /* glsl */ `
     float f = clamp(s, 0.0, 4.0);
     int i = int(floor(min(f, 3.0)));
     float t = f - float(i);
-    // Per-particle stagger: the morph travels as a wave, not a cut.
-    t = clamp((t - aInfo.x * 0.22) / 0.78, 0.0, 1.0);
+    // Hold, then travel: each act stands for most of its interval and
+    // crosses in the last third — so every formation is actually seen,
+    // and the copy crossfade lands on a formed subject, not a cloud.
+    // Per-particle stagger keeps the crossing a wave, not a cut.
+    t = clamp((t - (0.58 + aInfo.x * 0.14)) / 0.28, 0.0, 1.0);
     t = t * t * (3.0 - 2.0 * t);
     vec3 a; vec3 b;
     if (i == 0) { a = aP0; b = aP1; }
@@ -384,8 +447,9 @@ const VERTEX = /* glsl */ `
 
   void main() {
     vec3 formed = pick(uProgress);
-    // Assembly out of scatter across the first act's approach.
-    float assemble = smoothstep(0.02, 0.5, uProgress + 0.5 - aInfo.x * 0.3);
+    // Assembly out of scatter, quick: the card must be standing well
+    // before its own crossing begins, or the first act is never seen.
+    float assemble = smoothstep(0.0, 0.22, uProgress + 0.02 - aInfo.x * 0.08);
     vec3 pos = mix(aScatter, formed, assemble);
     // Breath: nothing organic is perfectly still.
     pos += 0.035 * vec3(
@@ -414,7 +478,10 @@ const FRAGMENT = /* glsl */ `
   varying float vVerdict;
   varying vec3 vPos;
 
-  float win(float k) { return max(0.0, 1.0 - abs(uProgress - k)); }
+  // Sharper than the morph: an act's light belongs to its act. At each
+  // act's centre this is exactly 1, so tightening the tails never changes
+  // how an act looks when it is fully on stage.
+  float win(float k) { return max(0.0, 1.0 - abs(uProgress - k) * 1.4); }
 
   void main() {
     float d = length(gl_PointCoord - 0.5);
@@ -456,17 +523,19 @@ const FRAGMENT = /* glsl */ `
 /** World-space x of the subject per act, opposite that act's copy column.
  *  The last act swings widest: it holds two subjects side by side, and the
  *  leftmost of them still has to clear the copy. */
-const STAGE_OFFSET = [3.1, -3.1, 3.1, -3.1, 3.6];
+const STAGE_OFFSET = [3.1, -2.7, 3.1, -3.1, 3.6];
 /** Camera distance per act: close on the card, out for the field, close
  *  on the face, out again to hold both subjects. */
 const STAGE_Z = [10.4, 9.8, 11.8, 8.6, 11.6];
 
+/** Camera and swing keep the morph's own rhythm: hold through the act,
+ *  travel with the crossing. */
 function interpStage(values: number[], p: number) {
   const seg = Math.max(0, Math.min(values.length - 2, Math.floor(p)));
   return THREE.MathUtils.lerp(
     values[seg],
     values[seg + 1],
-    THREE.MathUtils.smoothstep(p - seg, 0, 1),
+    THREE.MathUtils.smoothstep(p - seg, 0.58, 0.95),
   );
 }
 
@@ -484,10 +553,31 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     [],
   );
 
-  /* The line accents: the card's edge in act 0, the halo in act 3, the
-     verdict's square in act 4 — hairline geometry over the particles,
-     each shown only for its act. */
+  /* The line accents: each act's hairline furniture, shown only for its
+     act — the card edge and printed rules for the document, the field
+     boxes, the halo, the miniature card, the bridge rails, the verdict's
+     square with the site's own drawn tick inside it. */
   const lineGeo = useMemo(() => {
+    const rect = (
+      cx: number,
+      cy: number,
+      hw: number,
+      hh: number,
+      z = 0,
+    ): number[][] => [
+      [cx - hw, cy + hh, z, cx + hw, cy + hh, z],
+      [cx + hw, cy + hh, z, cx + hw, cy - hh, z],
+      [cx + hw, cy - hh, z, cx - hw, cy - hh, z],
+      [cx - hw, cy - hh, z, cx - hw, cy + hh, z],
+    ];
+    const segs = (pairs: number[][]) => {
+      const arr = new Float32Array(pairs.length * 6);
+      pairs.forEach((p, i) => arr.set(p, i * 6));
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+      return g;
+    };
+
     const card = new THREE.BufferGeometry().setFromPoints(
       [
         [-3.4, 2.2],
@@ -495,6 +585,19 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         [3.4, -2.2],
         [-3.4, -2.2],
       ].map(([x, y]) => new THREE.Vector3(x, y, 0)),
+    );
+    // The document's printed furniture: portrait window, machine rule.
+    const doc = segs([
+      ...rect(-2.2, 0.1, 0.78, 1.28),
+      [-3.1, -1.12, 0, 3.1, -1.12, 0],
+    ]);
+    // The read head, sweeping the machine zone.
+    const head = segs([[0, -2.06, 0, 0, -1.18, 0]]);
+    // The five field boxes, stacked in the rows' own depth.
+    const fields = segs(
+      Array.from({ length: 5 }, (_, row) =>
+        rect(-0.05, 1.8 - row * 0.9, 3.0, 0.31, (2 - row) * 0.5),
+      ).flat(),
     );
     const haloPts: THREE.Vector3[] = [];
     for (let i = 0; i <= 72; i += 1) {
@@ -504,20 +607,31 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       );
     }
     const halo = new THREE.BufferGeometry().setFromPoints(haloPts);
-    const verdict = new THREE.BufferGeometry().setFromPoints(
-      [
-        [-0.1, 0.25],
-        [0.4, 0.25],
-        [0.4, -0.25],
-        [-0.1, -0.25],
-      ].map(([x, y]) => new THREE.Vector3(x, y, 0)),
-    );
-    return { card, halo, verdict };
+    // The match act's structure: the miniature card, the bridge rails.
+    const match = segs([
+      ...rect(-2.75, 0.1, 1.15, 1.55),
+      [-1.3, 0.34, 0, 1.6, 0.34, 0],
+      [-1.3, -0.34, 0, 1.6, -0.34, 0],
+    ]);
+    // Agreement: the square, and the tick the whole site draws verdicts
+    // with.
+    const green = segs([
+      ...rect(0.15, 0, 0.25, 0.25),
+      [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
+      [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
+    ]);
+    return { card, doc, head, fields, halo, match, green };
   }, []);
   const cardMat = useRef<THREE.LineBasicMaterial>(null);
+  const docMat = useRef<THREE.LineBasicMaterial>(null);
+  const headMat = useRef<THREE.LineBasicMaterial>(null);
+  const headRef = useRef<THREE.LineSegments>(null);
+  const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
-  const verdictMat = useRef<THREE.LineBasicMaterial>(null);
+  const matchMat = useRef<THREE.LineBasicMaterial>(null);
+  const greenMat = useRef<THREE.LineBasicMaterial>(null);
   const haloRef = useRef<THREE.LineLoop>(null);
+  const clock = useRef(0);
 
   useFrame((state, delta) => {
     const p = bus.current.progress * 4;
@@ -528,11 +642,19 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       mat.current.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
     }
 
-    const win = (k: number) => Math.max(0, 1 - Math.abs(p - k));
+    clock.current += dt;
+    const t = clock.current;
+    // Furniture is stricter than light: hairlines belong to one act only.
+    const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     if (cardMat.current) cardMat.current.opacity = 0.34 * win(0);
+    if (docMat.current) docMat.current.opacity = 0.3 * win(0);
+    if (headMat.current) headMat.current.opacity = 0.75 * win(0);
+    if (headRef.current) headRef.current.position.x = Math.sin(t * 0.7) * 2.9;
+    if (fieldsMat.current) fieldsMat.current.opacity = 0.28 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
-    if (verdictMat.current)
-      verdictMat.current.opacity = 0.85 * Math.max(0, win(4) - 0.15);
+    if (matchMat.current) matchMat.current.opacity = 0.3 * win(4);
+    if (greenMat.current)
+      greenMat.current.opacity = 0.85 * Math.max(0, win(4) - 0.15);
     if (haloRef.current) haloRef.current.rotation.z += dt * 0.25;
 
     if (groupRef.current) {
@@ -540,7 +662,11 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       groupRef.current.position.x +=
         (swing - groupRef.current.position.x) * (1 - Math.pow(0.0025, dt));
       const targetX = -0.06 + bus.current.pointer[1] * 0.07;
-      const targetY = bus.current.pointer[0] * 0.16;
+      // The face turns slightly of its own accord in its act — the small
+      // yaw a liveness check asks for, and the cheapest proof on the page
+      // that the head is a solid.
+      const targetY =
+        bus.current.pointer[0] * 0.16 + Math.sin(t * 0.5) * 0.16 * win(3);
       groupRef.current.rotation.x +=
         (targetX - groupRef.current.rotation.x) * (1 - Math.pow(0.002, dt));
       groupRef.current.rotation.y +=
@@ -582,6 +708,30 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           opacity={0}
         />
       </lineLoop>
+      <lineSegments geometry={lineGeo.doc}>
+        <lineBasicMaterial
+          ref={docMat}
+          color="#ece9e1"
+          transparent
+          opacity={0}
+        />
+      </lineSegments>
+      <lineSegments ref={headRef} geometry={lineGeo.head}>
+        <lineBasicMaterial
+          ref={headMat}
+          color="#7290ff"
+          transparent
+          opacity={0}
+        />
+      </lineSegments>
+      <lineSegments geometry={lineGeo.fields}>
+        <lineBasicMaterial
+          ref={fieldsMat}
+          color="#ece9e1"
+          transparent
+          opacity={0}
+        />
+      </lineSegments>
       <lineLoop ref={haloRef} geometry={lineGeo.halo}>
         <lineBasicMaterial
           ref={haloMat}
@@ -590,14 +740,22 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           opacity={0}
         />
       </lineLoop>
-      <lineLoop geometry={lineGeo.verdict}>
+      <lineSegments geometry={lineGeo.match}>
         <lineBasicMaterial
-          ref={verdictMat}
+          ref={matchMat}
+          color="#ece9e1"
+          transparent
+          opacity={0}
+        />
+      </lineSegments>
+      <lineSegments geometry={lineGeo.green}>
+        <lineBasicMaterial
+          ref={greenMat}
           color="#4dd995"
           transparent
           opacity={0}
         />
-      </lineLoop>
+      </lineSegments>
     </group>
   );
 }

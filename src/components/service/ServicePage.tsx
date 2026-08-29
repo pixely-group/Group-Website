@@ -244,6 +244,14 @@ export function ServiceHero({
             {glyph}
           </div>
         </div>
+
+        {/* The invitation down: the exam is pinned right below. */}
+        <div data-fade className="mt-16 flex items-center gap-3">
+          <span className="type-label text-(--faint)">Scroll</span>
+          <span className="scroll-hint relative h-10 w-px overflow-hidden bg-(--line)">
+            <span className="absolute inset-x-0 h-1/2 bg-accent" />
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -301,11 +309,17 @@ export function ServiceBand({
  *  the scroll arrives. */
 export function FeatureGrid({
   items,
+  cols = 3,
 }: {
   items: { label: string; body: string }[];
+  cols?: 2 | 3;
 }) {
   return (
-    <div className="grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={`grid gap-x-10 gap-y-12 sm:grid-cols-2 ${
+        cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+      }`}
+    >
       {items.map((item, i) => (
         <div key={item.label}>
           <span
@@ -347,13 +361,46 @@ export function FlowSteps({
             <span className="type-label text-(--faint)">
               {String(i + 1).padStart(2, "0")}
             </span>
-            {/* The joint to the next step, drawn only where there is one. */}
+            {/* The joint to the next step: it draws open on arrival, then
+                carries the drawings' own pulse — the attestation
+                travelling the pipeline, one beat behind per step. */}
             {i < steps.length - 1 && (
-              <span
+              <svg
                 aria-hidden
                 data-draw
-                className="hidden h-px flex-1 bg-(--line) lg:block"
-              />
+                className="glyph-stage hidden h-[3px] flex-1 lg:block"
+                viewBox="0 0 100 3"
+                preserveAspectRatio="none"
+              >
+                <line
+                  x1="0"
+                  y1="1.5"
+                  x2="100"
+                  y2="1.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  opacity="0.25"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <line
+                  className="glyph-flow"
+                  x1="0"
+                  y1="1.5"
+                  x2="100"
+                  y2="1.5"
+                  pathLength={100}
+                  strokeDasharray="14 86"
+                  stroke="var(--accent)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                  style={
+                    {
+                      "--delay": `${i * 0.9}s`,
+                      "--dur": "3.6s",
+                    } as React.CSSProperties
+                  }
+                />
+              </svg>
             )}
           </div>
           <div data-fade>

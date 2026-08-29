@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import ChecksCinema from "@/components/service/ChecksCinema";
 import IdentityGlyph from "@/components/service/IdentityGlyph";
+import SignalStream from "@/components/service/SignalStream";
 import {
   FeatureGrid,
   FlowSteps,
@@ -53,10 +54,12 @@ export default function IdentityPage() {
           fraudster is still holding the camera."
         ground="ink"
       >
-        <FeatureGrid
-          items={[
-            {
-              label: "Document forensics",
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
+          <FeatureGrid
+            cols={2}
+            items={[
+              {
+                label: "Document forensics",
               body: "Tamper detection on every capture — replaced portraits, edited text, print artefacts and screen recaptures, judged against how the genuine document is actually built.",
             },
             {
@@ -79,8 +82,12 @@ export default function IdentityPage() {
               label: "Your rules, in the loop",
               body: "Every signal streams into your policy engine: approve, refuse or route to review in the same call, with the evidence attached to the verdict.",
             },
-          ]}
-        />
+            ]}
+          />
+          <div data-fade>
+            <SignalStream />
+          </div>
+        </div>
       </ServiceBand>
 
       <ServiceBand
