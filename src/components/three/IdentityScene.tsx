@@ -72,38 +72,33 @@ function buildModel(): Model {
     arr[i * 3 + 2] = z;
   };
 
-  /* The machine zone, patterned after the real card the user supplied:
-     22 large cells per line, the letter blocks up front and LONG runs of
-     chevrons filling the rest — IDDZA109... then < < < < < to the edge.
-     A chevron is drawn as dots along the two strokes of a "<", big
-     enough to read as one at a glance. */
+  /* The machine zone's chevron pattern: letter blocks first, then runs
+     of chevrons in the filler positions, cell by cell. */
   const MRZ_CHEV = (row: number, cell: number) =>
-    row === 0
-      ? cell >= 11
-      : row === 1
-        ? cell >= 14 && cell <= 20
-        : cell === 3 || cell === 9 || cell === 10 || cell >= 16;
+    (row === 0 && cell >= 14) ||
+    (row === 1 && cell >= 17) ||
+    (row === 2 && (cell === 6 || cell === 7 || cell >= 12));
   const mrzGlyph = (row: number, cell: number): [number, number] => {
     if (MRZ_CHEV(row, cell)) {
       const t = rand();
       let dx: number;
       let dy: number;
       if (t < 0.5) {
-        dx = 0.095 - t * 2 * 0.19;
-        dy = -0.085 + t * 2 * 0.085;
+        dx = 0.055 - t * 2 * 0.11;
+        dy = -0.06 + t * 2 * 0.06;
       } else {
-        dx = -0.095 + (t - 0.5) * 2 * 0.19;
-        dy = (t - 0.5) * 2 * 0.085;
+        dx = -0.055 + (t - 0.5) * 2 * 0.11;
+        dy = (t - 0.5) * 2 * 0.06;
       }
-      return [dx + (rand() - 0.5) * 0.01, dy + (rand() - 0.5) * 0.01];
+      return [dx + (rand() - 0.5) * 0.012, dy + (rand() - 0.5) * 0.012];
     }
     const sub = Math.floor(rand() * 9);
     return [
-      ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
-      (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
+      ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+      (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
     ];
   };
-  const MRZ_X = (cell: number) => -3.15 + cell * 0.295;
+  const MRZ_X = (cell: number) => -3.0 + cell * 0.215;
   const MRZ_Y = (row: number) => -1.34 - row * 0.27;
 
   for (let i = 0; i < N; i += 1) {
@@ -115,20 +110,22 @@ function buildModel(): Model {
 
     /* ——— 0 DOCUMENT ——— */
     if (isVerdict) {
-      // The composite check digit: the lone character closing line two,
-      // exactly where the real card prints its trailing 8.
+      // The check digits: the last two character blocks of each row.
+      const row = Math.floor(u * 300) % 3;
+      const cell = 24 + Math.floor(rand() * 2);
       const sub = Math.floor(rand() * 9);
       set(
         forms[0],
         i,
-        MRZ_X(21) + ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
-        MRZ_Y(1) + (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
+        MRZ_X(cell) + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+        MRZ_Y(row) + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
         (rand() - 0.5) * 0.03,
       );
     } else if (isSignal) {
-      // The machine text at the reference card's own proportions.
+      // The machine text: 24 cells of letters and chevrons; the check
+      // digits close each row.
       const row = i % 3;
-      const cell = Math.floor(rand() * 21);
+      const cell = Math.floor(rand() * 24);
       const [dx, dy] = mrzGlyph(row, cell);
       set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     } else if (u < 0.2) {
@@ -181,29 +178,23 @@ function buildModel(): Model {
       // beside the photo — label then value, every row starting where
       // every other row starts — and clear air between them and the
       // machine zone below.
-      // Typed rows, like the reference: a short label block, a gap, then
-      // the value as word cells — longest line first, the name.
+      // The lines as they were — label then value, longest first — moved
+      // down so the block sits level with the photo.
       const row = Math.floor(rand() * 3);
-      const isLabel = rand() < 0.28;
-      const valueCells = [9, 6, 4][row];
-      let fx: number;
-      if (isLabel) {
-        fx = -1.1 + Math.floor(rand() * 2) * 0.24 + (rand() - 0.5) * 0.09;
-      } else {
-        fx = -0.3 + Math.floor(rand() * valueCells) * 0.27 + (rand() - 0.5) * 0.1;
-      }
+      const isLabel = rand() < 0.3;
+      const valueEnd = 2.6 - row * 0.65;
       set(
         forms[0],
         i,
-        fx,
-        1.32 - row * 0.5 + (rand() - 0.5) * 0.028,
+        isLabel ? -1.1 + rand() * 0.62 : -0.28 + rand() * valueEnd,
+        1.0 - row * 0.5 + (rand() - 0.5) * 0.03,
         (rand() - 0.5) * 0.04,
       );
     } else {
       // The freed fill budget joins the machine zone, writing the same
-      // text at the same size.
+      // text.
       const row = Math.floor(rand() * 3);
-      const cell = Math.floor(rand() * 21);
+      const cell = Math.floor(rand() * 24);
       const [dx, dy] = mrzGlyph(row, cell);
       set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     }
@@ -305,7 +296,7 @@ function buildModel(): Model {
             DC[0] +
               (isLabel ? -1.1 + rand() * 0.62 : -0.28 + rand() * valueEnd) *
                 DS,
-            DC[1] + (1.32 - row * 0.5) * DS + (rand() - 0.5) * 0.025,
+            DC[1] + (1.0 - row * 0.5) * DS + (rand() - 0.5) * 0.025,
             (rand() - 0.5) * 0.04,
           );
         } else {
