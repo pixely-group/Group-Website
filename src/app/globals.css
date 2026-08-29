@@ -592,6 +592,17 @@
     stroke-dashoffset: -100;
   }
 }
+/* The checks stage directing itself: the active tab's underline is a fuse
+   burning down to the next check. Applied inline only while the stage is
+   in charge, so reduced motion and a user's own choice both retire it. */
+@keyframes check-advance {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
 @keyframes glyph-node {
   0%, 100% {
     opacity: 0.22;

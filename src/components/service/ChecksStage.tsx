@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
+import { useReducedMotion } from "@/lib/hooks";
 
 import {
   FaceMatchGlyph,
@@ -12,15 +13,22 @@ import {
 } from "@/components/service/CheckGlyphs";
 
 /**
- * The five checks on one stage. This is the front page's tab grammar —
- * UseCases' numbered rail, accent underline, roving focus and rising
- * panel — holding drawings instead of stats: each tab is one verification
- * technology, drawn as a working diagram and described next to it.
+ * The five checks on one stage. The front page's tab grammar — UseCases'
+ * numbered rail, accent underline, roving focus, the GSAP rising panel —
+ * holding drawings instead of stats.
+ *
+ * Two things make it a set piece rather than a tab bar. The drawings play
+ * in a framed dark theatre: the frame carries its own data-theme, so the
+ * whole token system — grounds, hairlines, the --bg the drawings punch
+ * their holes with — resolves to ink inside it while the chapter around
+ * it stays bone, and the accent pulses read like signals at night. And it
+ * performs unattended: left alone, the stage steps through the checks on
+ * its own clock, the active tab's underline filling like a fuse; touch
+ * any tab once and it is yours — the stage stops directing and follows.
  *
  * The chips under each description are the forgeries that particular
  * check exists to kill. That is the honest way to talk about fraud
- * detection: not adjectives — a list of attacks, and which line in the
- * drawing stops them.
+ * detection: not adjectives — a list of attacks.
  */
 
 const CHECKS = [
@@ -66,11 +74,27 @@ const CHECKS = [
   },
 ] as const;
 
+/** Long enough to watch a drawing's full choreography once. */
+const AUTO_MS = 7200;
+
 export default function ChecksStage() {
   const [active, setActive] = useState(0);
+  /* The stage directs itself until someone takes over. */
+  const [auto, setAuto] = useState(true);
+  const [paused, setPaused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const previous = useRef(0);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (!auto || paused || reduced) return;
+    const id = window.setInterval(
+      () => setActive((a) => (a + 1) % CHECKS.length),
+      AUTO_MS,
+    );
+    return () => window.clearInterval(id);
+  }, [auto, paused, reduced]);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -98,6 +122,11 @@ export default function ChecksStage() {
     return () => ctx.revert();
   }, [active]);
 
+  const choose = useCallback((i: number) => {
+    setAuto(false);
+    setActive(i);
+  }, []);
+
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const last = CHECKS.length - 1;
@@ -121,17 +150,21 @@ export default function ChecksStage() {
           return;
       }
       e.preventDefault();
-      setActive(target);
+      choose(target);
       tabRefs.current[target]?.focus();
     },
-    [active],
+    [active, choose],
   );
 
   const check = CHECKS[active];
 
   return (
-    <div>
+    <div
+      onPointerEnter={(e) => e.pointerType !== "touch" && setPaused(true)}
+      onPointerLeave={() => setPaused(false)}
+    >
       <div
+        data-fade
         role="tablist"
         aria-label="Verification checks"
         onKeyDown={onKeyDown}
@@ -148,7 +181,7 @@ export default function ChecksStage() {
             aria-selected={active === i}
             aria-controls={`check-panel-${c.id}`}
             tabIndex={active === i ? 0 : -1}
-            onClick={() => setActive(i)}
+            onClick={() => choose(i)}
             data-cursor="link"
             className={`type-label relative pb-2 transition-colors duration-300 ${
               active === i ? "text-accent" : "text-(--muted) hover:text-(--fg)"
@@ -156,12 +189,26 @@ export default function ChecksStage() {
           >
             <span className="mr-2 text-[9px] opacity-60">0{i + 1}</span>
             {c.label}
-            <span
-              aria-hidden
-              className={`absolute bottom-0 left-0 h-px bg-accent transition-all duration-500 ease-(--ease-out-expo) ${
-                active === i ? "w-full" : "w-0"
-              }`}
-            />
+            {/* While the stage directs itself, the underline is a fuse
+                burning down to the next check; once someone chooses, it is
+                simply the mark of the chosen. */}
+            {auto && !reduced && active === i ? (
+              <span
+                key={active}
+                aria-hidden
+                className="absolute bottom-0 left-0 h-px w-full origin-left bg-accent"
+                style={{
+                  animation: `check-advance ${AUTO_MS}ms linear ${paused ? "paused" : "running"}`,
+                }}
+              />
+            ) : (
+              <span
+                aria-hidden
+                className={`absolute bottom-0 left-0 h-px bg-accent transition-all duration-500 ease-(--ease-out-expo) ${
+                  active === i ? "w-full" : "w-0"
+                }`}
+              />
+            )}
           </button>
         ))}
       </div>
@@ -174,10 +221,25 @@ export default function ChecksStage() {
         tabIndex={0}
         className="mt-12 grid items-center gap-10 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16"
       >
-        {/* Keyed so a fresh drawing mounts per check: its loops start from
-            zero rather than joining the previous drawing's clock mid-beat. */}
-        <div data-swap key={check.id}>
-          <check.Glyph />
+        {/* The theatre: its own data-theme, so the drawing plays on ink —
+            grounds, hairlines and punched holes all resolving inside the
+            frame — while the chapter around it stays bone. Keyed so a
+            fresh drawing mounts per check and its loops start from zero. */}
+        <div data-fade>
+          <div
+            data-swap
+            key={check.id}
+            data-theme="ink"
+            className="rounded-(--radius-panel) border border-(--line) bg-theme p-5 text-theme sm:p-7"
+          >
+            <div className="mb-4 flex items-baseline justify-between border-b border-(--line) pb-4">
+              <span className="type-label text-(--faint)">
+                Check {String(active + 1).padStart(2, "0")} / 0{CHECKS.length}
+              </span>
+              <span className="type-label text-(--muted)">{check.label}</span>
+            </div>
+            <check.Glyph />
+          </div>
         </div>
         <div>
           <h3

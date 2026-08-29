@@ -148,7 +148,7 @@ export default function IdentityPage() {
 
       <ServiceCTA
         index="05 — Get started"
-        title="Prove your first user."
+        titleLines={["Prove your", "first user"]}
         lede="Create an account and run a verification against the sandbox,
           or talk to an engineer about your documents and your rules."
       />
