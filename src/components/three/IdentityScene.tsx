@@ -94,17 +94,39 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.03,
       );
     } else if (isSignal) {
-      // Machine characters as dot-matrix glyphs: each of the 26 cells is
-      // a small grid of dots, not a smear — the zone reads as machine
-      // type at a glance, which is the whole act's subject.
+      // Machine characters, written like real MRZ: letter blocks first,
+      // then runs of chevrons in the filler positions — the < < < < that
+      // makes a machine zone recognisable at a glance.
       const row = i % 3;
       const cell = Math.floor(rand() * 26);
-      const sub = Math.floor(rand() * 9);
+      const chev =
+        (row === 0 && cell >= 14) ||
+        (row === 1 && cell >= 17) ||
+        (row === 2 && (cell === 6 || cell === 7 || cell >= 12));
+      let dx: number;
+      let dy: number;
+      if (chev) {
+        // Dots sampled along the two strokes of a "<".
+        const t2 = rand();
+        if (t2 < 0.5) {
+          dx = 0.055 - t2 * 2 * 0.11;
+          dy = -0.06 + t2 * 2 * 0.06;
+        } else {
+          dx = -0.055 + (t2 - 0.5) * 2 * 0.11;
+          dy = (t2 - 0.5) * 2 * 0.06;
+        }
+        dx += (rand() - 0.5) * 0.012;
+        dy += (rand() - 0.5) * 0.012;
+      } else {
+        const sub = Math.floor(rand() * 9);
+        dx = ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014;
+        dy = (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014;
+      }
       set(
         forms[0],
         i,
-        -3.0 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
-        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        -3.0 + cell * 0.215 + dx,
+        -1.34 - row * 0.27 + dy,
         (rand() - 0.5) * 0.03,
       );
     } else if (u < 0.2) {
@@ -159,7 +181,8 @@ function buildModel(): Model {
       // machine zone below.
       const row = Math.floor(rand() * 3);
       const isLabel = rand() < 0.3;
-      const valueEnd = 1.7 + row * 0.45;
+      // Longest line first — the name — then shorter details under it.
+      const valueEnd = 2.6 - row * 0.65;
       set(
         forms[0],
         i,
@@ -168,17 +191,37 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.04,
       );
     } else {
-      // The freed fill budget joins the machine zone: more dots per
-      // glyph, so the strip is the densest, richest region of the card —
-      // where the act's eye belongs.
+      // The freed fill budget joins the machine zone, writing the same
+      // text: blocks where the letters are, chevrons where the filler is.
       const row = Math.floor(rand() * 3);
       const cell = Math.floor(rand() * 26);
-      const sub = Math.floor(rand() * 9);
+      const chev =
+        (row === 0 && cell >= 14) ||
+        (row === 1 && cell >= 17) ||
+        (row === 2 && (cell === 6 || cell === 7 || cell >= 12));
+      let dx: number;
+      let dy: number;
+      if (chev) {
+        const t2 = rand();
+        if (t2 < 0.5) {
+          dx = 0.055 - t2 * 2 * 0.11;
+          dy = -0.06 + t2 * 2 * 0.06;
+        } else {
+          dx = -0.055 + (t2 - 0.5) * 2 * 0.11;
+          dy = (t2 - 0.5) * 2 * 0.06;
+        }
+        dx += (rand() - 0.5) * 0.012;
+        dy += (rand() - 0.5) * 0.012;
+      } else {
+        const sub = Math.floor(rand() * 9);
+        dx = ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014;
+        dy = (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014;
+      }
       set(
         forms[0],
         i,
-        -3.0 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
-        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        -3.0 + cell * 0.215 + dx,
+        -1.34 - row * 0.27 + dy,
         (rand() - 0.5) * 0.03,
       );
     }
@@ -273,7 +316,7 @@ function buildModel(): Model {
         } else if (sub < 0.8) {
           const row = Math.floor(rand() * 3);
           const isLabel = rand() < 0.3;
-          const valueEnd = 1.7 + row * 0.45;
+          const valueEnd = 2.6 - row * 0.65;
           set(
             forms[1],
             i,
@@ -748,35 +791,9 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       return g;
     };
 
-    /* The scan head, in the drawings' own reticle grammar: a laser core
-       between two corner-bracket clamps, three index ticks aligned to the
-       three machine lines it reads, and breathing outline squares capping
-       the ends — the junction square, doing the job it always does. */
-    const scanCore = segs([[0, -2.3, 0.05, 0, -1.12, 0.05]]);
-    const scanFrame = segs([
-      // Top clamp: bar and two stubs reaching down.
-      [-0.15, -1.06, 0.05, 0.15, -1.06, 0.05],
-      [-0.15, -1.06, 0.05, -0.15, -1.16, 0.05],
-      [0.15, -1.06, 0.05, 0.15, -1.16, 0.05],
-      // Bottom clamp, mirrored, riding outside the card's edge.
-      [-0.15, -2.36, 0.05, 0.15, -2.36, 0.05],
-      [-0.15, -2.36, 0.05, -0.15, -2.26, 0.05],
-      [0.15, -2.36, 0.05, 0.15, -2.26, 0.05],
-      // Index ticks: one pair per machine line.
-      [-0.1, -1.34, 0.05, -0.05, -1.34, 0.05],
-      [0.05, -1.34, 0.05, 0.1, -1.34, 0.05],
-      [-0.1, -1.61, 0.05, -0.05, -1.61, 0.05],
-      [0.05, -1.61, 0.05, 0.1, -1.61, 0.05],
-      [-0.1, -1.88, 0.05, -0.05, -1.88, 0.05],
-      [0.05, -1.88, 0.05, 0.1, -1.88, 0.05],
-    ]);
-    const capSq = (cy: number): number[][] => [
-      [-0.05, cy + 0.05, 0.06, 0.05, cy + 0.05, 0.06],
-      [0.05, cy + 0.05, 0.06, 0.05, cy - 0.05, 0.06],
-      [0.05, cy - 0.05, 0.06, -0.05, cy - 0.05, 0.06],
-      [-0.05, cy - 0.05, 0.06, -0.05, cy + 0.05, 0.06],
-    ];
-    const scanCaps = segs([...capSq(-0.98), ...capSq(-2.44)]);
+    /* The scanner, as simple as it can honestly be: one vertical line
+       spanning the machine zone with a little overshoot. Nothing else. */
+    const scanCore = segs([[0, -2.24, 0.05, 0, -1.08, 0.05]]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -850,15 +867,11 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { scanCore, scanFrame, scanCaps, fields, halo, match, green };
+    return { scanCore, fields, halo, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
   const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
-  const scanFrameMat = useRef<THREE.LineBasicMaterial>(null);
-  const scanCapsMat = useRef<THREE.LineBasicMaterial>(null);
-  const beamA = useRef<THREE.MeshBasicMaterial>(null);
-  const beamB = useRef<THREE.MeshBasicMaterial>(null);
-  const beamC = useRef<THREE.MeshBasicMaterial>(null);
+  const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
@@ -884,14 +897,8 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     // The scan line rides the same sine as the shader's bar.
     if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
-    if (scanCoreMat.current) scanCoreMat.current.opacity = 0.95 * win(0);
-    if (scanFrameMat.current) scanFrameMat.current.opacity = 0.8 * win(0);
-    // The caps breathe, the way the drawings' junction squares breathe.
-    if (scanCapsMat.current)
-      scanCapsMat.current.opacity = (0.5 + 0.32 * Math.sin(t * 2.2)) * win(0);
-    if (beamA.current) beamA.current.opacity = 0.5 * win(0);
-    if (beamB.current) beamB.current.opacity = 0.18 * win(0);
-    if (beamC.current) beamC.current.opacity = 0.06 * win(0);
+    if (scanCoreMat.current) scanCoreMat.current.opacity = 0.9 * win(0);
+    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.1 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -947,34 +954,10 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         />
       </points>
       <group ref={scanRef}>
-        {/* The beam: a laser with real falloff — a hot narrow core inside
-            two widening, fading sheets — not a flat band. */}
-        <mesh position={[0, -1.71, 0.015]}>
-          <planeGeometry args={[0.05, 1.18]} />
+        <mesh position={[0, -1.66, 0.01]}>
+          <planeGeometry args={[0.26, 1.16]} />
           <meshBasicMaterial
-            ref={beamA}
-            color="#9fb4ff"
-            transparent
-            opacity={0}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-        <mesh position={[0, -1.71, 0.012]}>
-          <planeGeometry args={[0.16, 1.18]} />
-          <meshBasicMaterial
-            ref={beamB}
-            color="#2d46ff"
-            transparent
-            opacity={0}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-        <mesh position={[0, -1.71, 0.01]}>
-          <planeGeometry args={[0.44, 1.18]} />
-          <meshBasicMaterial
-            ref={beamC}
+            ref={scanGlowMat}
             color="#2d46ff"
             transparent
             opacity={0}
@@ -985,22 +968,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         <lineSegments geometry={lineGeo.scanCore}>
           <lineBasicMaterial
             ref={scanCoreMat}
-            color="#ece9e1"
-            transparent
-            opacity={0}
-          />
-        </lineSegments>
-        <lineSegments geometry={lineGeo.scanFrame}>
-          <lineBasicMaterial
-            ref={scanFrameMat}
-            color="#7290ff"
-            transparent
-            opacity={0}
-          />
-        </lineSegments>
-        <lineSegments geometry={lineGeo.scanCaps}>
-          <lineBasicMaterial
-            ref={scanCapsMat}
             color="#7290ff"
             transparent
             opacity={0}
