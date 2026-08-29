@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import ChecksCinema from "@/components/service/ChecksCinema";
-import IdentityHeroArt from "@/components/service/IdentityHeroArt";
+import IdentityGlyph from "@/components/service/IdentityGlyph";
 import SignalStream from "@/components/service/SignalStream";
 import {
   FeatureGrid,
@@ -38,7 +38,7 @@ export default function IdentityPage() {
           detection, built for fintechs: the document read and authenticated
           down to its chip, the face proved live and matched, and every
           fraud signal scored while the user is still in the flow."
-        glyph={<IdentityHeroArt />}
+        glyph={<IdentityGlyph />}
       />
 
       {/* The set piece: five viewports of scroll, one particle scene

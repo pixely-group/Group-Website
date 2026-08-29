@@ -58,7 +58,6 @@ export default function HeroDevice({
   showcase = null,
   enterFrom = null,
   flatten,
-  screen,
 }: {
   /** How far the device may slide either side of rest, in px. Passed in
    *  because only the caller knows what room its column has. */
@@ -73,10 +72,6 @@ export default function HeroDevice({
    *  as a value, so the scroll can drive it without re-rendering the app
    *  inside the screen sixty times a second. */
   flatten?: { current: number };
-  /** What the device is running. The same hardware serves more than one
-   *  page: the front page hands it the wallet, the identity page hands it
-   *  the verification flow. Defaults to the wallet. */
-  screen?: React.ReactNode;
   className?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -278,7 +273,7 @@ export default function HeroDevice({
               className="relative size-full overflow-hidden bg-black"
               style={{ borderRadius: SCREEN_R }}
             >
-              {screen ?? <WalletScreen showcase={showcase} enterFrom={enterFrom} />}
+              <WalletScreen showcase={showcase} enterFrom={enterFrom} />
 
               <div
                 aria-hidden
