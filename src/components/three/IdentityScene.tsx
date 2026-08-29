@@ -153,11 +153,13 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.04,
       );
     } else if (u < 0.8) {
-      // The fields, the way an ID actually prints them: a short label,
-      // then its value, both starting where every other row starts.
-      const row = Math.floor(rand() * 5);
+      // The fields, minimal the way the user wants the card: three rows
+      // beside the photo — label then value, every row starting where
+      // every other row starts — and clear air between them and the
+      // machine zone below.
+      const row = Math.floor(rand() * 3);
       const isLabel = rand() < 0.3;
-      const valueEnd = 1.7 + (row % 3) * 0.45;
+      const valueEnd = 1.7 + row * 0.45;
       set(
         forms[0],
         i,
@@ -269,9 +271,9 @@ function buildModel(): Model {
             (rand() - 0.5) * 0.04,
           );
         } else if (sub < 0.8) {
-          const row = Math.floor(rand() * 5);
+          const row = Math.floor(rand() * 3);
           const isLabel = rand() < 0.3;
-          const valueEnd = 1.7 + (row % 3) * 0.45;
+          const valueEnd = 1.7 + row * 0.45;
           set(
             forms[1],
             i,
@@ -574,29 +576,25 @@ const VERTEX = /* glsl */ `
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
 
-    // The machine zone's own clock: the document is read the way a
-    // reader reads it. Line by line, left to right, each character
-    // popping as the head takes it; a line ends and its check digits
-    // answer in green; three lines done, the whole zone holds lit for a
-    // beat with the verdict, then the read begins again.
-    float T = 2.4;
-    float HOLD = 1.3;
-    float P = mod(uTime, 3.0 * T + HOLD);
-    float lineIdx = min(2.0, floor(P / T));
-    float lp = clamp((P - lineIdx * T) / T, 0.0, 1.0);
-    float waveX = mix(-3.2, 3.3, lp);
-    float allLit = step(3.0 * T, P);
+    // The machine zone's own clock — and the scan is a scanner's: a
+    // horizontal band of light passing VERTICALLY down the zone, the way
+    // an MRZ is actually swiped. Rows above the band hold their light —
+    // already read — rows below wait dim; characters swell as the band
+    // crosses them; the pass reaches the foot and the whole zone holds
+    // lit for a beat while the check digits burn green — the checksums
+    // agreeing — then the pass begins again.
+    float T = 3.2;
+    float HOLD = 1.4;
+    float P = mod(uTime, T + HOLD);
+    float lp = clamp(P / T, 0.0, 1.0);
+    float waveY = mix(-1.14, -2.08, lp);
+    float allLit = step(T, P);
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
-    float myRow = clamp(floor((-1.2 - pos.y) / 0.27), 0.0, 2.0);
-    // "active" is reserved in GLSL ES; the working row is "onLine".
-    float onLine = (1.0 - allLit) * (1.0 - min(1.0, abs(myRow - lineIdx)));
-    float done = step(myRow + 0.5, lineIdx);
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
-    vLit = max(allLit, max(done, onLine * step(pos.x, waveX))) * inZone * w0v;
-    vHot = onLine * exp(-pow((pos.x - waveX) * 2.4, 2.0)) * inZone * w0v;
-    float holdT = clamp((P - 3.0 * T) / HOLD, 0.0, 1.0);
-    float lineDone = onLine * smoothstep(0.93, 1.0, lp);
-    vPing = max(allLit * (1.0 - smoothstep(0.55, 1.0, holdT)), lineDone) * w0v;
+    vLit = max(allLit, step(waveY, pos.y)) * inZone * w0v;
+    vHot = (1.0 - allLit) * exp(-pow((pos.y - waveY) * 9.0, 2.0)) * inZone * w0v;
+    float holdT = clamp((P - T) / HOLD, 0.0, 1.0);
+    vPing = allLit * (1.0 - smoothstep(0.6, 1.0, holdT)) * w0v;
 
     float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
     float pulse = 0.88 + 0.12 * sin(uTime * 1.3 + aInfo.x * 40.0);
