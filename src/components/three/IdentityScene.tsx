@@ -587,11 +587,15 @@ const VERTEX = /* glsl */ `
     // ghost. Each time it lands on the right end, the check digits alone
     // flash green.
     float waveX = sin(uTime * 0.7) * 2.9;
-    float dirS = sign(cos(uTime * 0.7) + 0.0001);
+    float vel = cos(uTime * 0.7);
+    float dirS = sign(vel + 0.0001);
+    // The wake belongs to motion: as the line slows into an extreme it
+    // fades away, and regrows on the far side — no side-swap jump.
+    float moving = smoothstep(0.05, 0.32, abs(vel));
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
     float back = (waveX - pos.x) * dirS;
-    vLit = step(0.0, back) * exp(-max(back, 0.0) * 1.4) * inZone * w0v;
+    vLit = step(0.0, back) * exp(-max(back, 0.0) * 1.4) * moving * inZone * w0v;
     vHot = exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
     vPing = smoothstep(0.86, 0.985, sin(uTime * 0.7)) * w0v;
     // The bar is felt, not just seen: the characters under it ripple up.
@@ -660,6 +664,11 @@ const FRAGMENT = /* glsl */ `
     // The screen's arriving text holds its own light beside the streams.
     alpha += (1.0 - vRole)
       * (0.45 * commit + 0.2 * w1 * step(0.9, vPos.x));
+    // The card's own frame holds its line in this act — the outline
+    // particles get a lift so the edge beside the zone stays legible.
+    float edge = clamp(
+      step(3.3, abs(vPos.x)) + step(2.1, abs(vPos.y)), 0.0, 1.0);
+    alpha += 0.24 * w0 * edge;
     // The read: unread text is a ghost the bar reveals; taken characters
     // hold their light; the bar itself burns.
     float zoneMask = w0 * step(-2.02, vPos.y) * (1.0 - step(-1.2, vPos.y));
@@ -760,26 +769,26 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     ): number[][] =>
       pts.map(([ax, ay, bx, by]) => [x0 + ax, y0 + ay, 0, x0 + bx, y0 + by, 0]);
     const mrzLabel = segs([
-      // M
-      ...glyphSeg(-3.0, -1.13, [
-        [0, 0, 0, 0.14],
-        [0, 0.14, 0.07, 0.06],
-        [0.07, 0.06, 0.14, 0.14],
-        [0.14, 0.14, 0.14, 0],
+      // M — verticals true, the middle V reaching to mid-height.
+      ...glyphSeg(-3.0, -1.12, [
+        [0, 0, 0, 0.16],
+        [0, 0.16, 0.07, 0.07],
+        [0.07, 0.07, 0.14, 0.16],
+        [0.14, 0.16, 0.14, 0],
       ]),
-      // R
-      ...glyphSeg(-2.78, -1.13, [
-        [0, 0, 0, 0.14],
-        [0, 0.14, 0.13, 0.14],
-        [0.13, 0.14, 0.13, 0.075],
-        [0.13, 0.075, 0, 0.075],
-        [0.05, 0.075, 0.14, 0],
+      // R — square bowl on the upper half, leg from the bowl's foot.
+      ...glyphSeg(-2.8, -1.12, [
+        [0, 0, 0, 0.16],
+        [0, 0.16, 0.12, 0.16],
+        [0.12, 0.16, 0.12, 0.085],
+        [0.12, 0.085, 0, 0.085],
+        [0.055, 0.085, 0.125, 0],
       ]),
       // Z
-      ...glyphSeg(-2.56, -1.13, [
-        [0, 0.14, 0.14, 0.14],
-        [0.14, 0.14, 0, 0],
-        [0, 0, 0.14, 0],
+      ...glyphSeg(-2.61, -1.12, [
+        [0, 0.16, 0.125, 0.16],
+        [0.125, 0.16, 0, 0],
+        [0, 0, 0.125, 0],
       ]),
     ]);
     // A capture reticle's corner brackets.
