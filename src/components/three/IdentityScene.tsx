@@ -581,24 +581,20 @@ const VERTEX = /* glsl */ `
     // into the steady read-state. Characters swell AND lift as the bar
     // takes them; the right end closes with the zone holding lit while
     // the check digits burn green, then the swipe begins again.
-    // No wholesale highlight, ever: the zone is ghost text at rest, and
-    // only the bar and a short wake trailing it carry light. What the bar
-    // has passed falls back to ghost. At the end of a swipe the check
-    // digits alone flash green, then the next swipe begins.
-    float T = 3.2;
-    float GAP = 0.9;
-    float P = mod(uTime, T + GAP);
-    float lp = clamp(P / T, 0.0, 1.0);
-    float waveX = mix(-3.3, 3.35, lp);
-    float sweeping = 1.0 - step(T, P);
+    // No wholesale highlight, ever: the zone is ghost text at rest. The
+    // bar sweeps left and right, back and forth, and the only light in
+    // the zone is the bar itself and a short wake trailing BEHIND its
+    // direction of travel — what it has passed falls straight back to
+    // ghost. Each time it lands on the right end, the check digits alone
+    // flash green.
+    float waveX = sin(uTime * 0.7) * 2.9;
+    float dirS = sign(cos(uTime * 0.7) + 0.0001);
     float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
     float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
-    float behindBar = step(pos.x, waveX) * sweeping;
-    float trail = exp(-max(0.0, waveX - pos.x) * 1.4);
-    vLit = behindBar * trail * inZone * w0v;
-    vHot = sweeping * exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
-    float endT = clamp((P - T) / GAP, 0.0, 1.0);
-    vPing = step(T, P) * (1.0 - smoothstep(0.0, 0.75, endT)) * w0v;
+    float back = (waveX - pos.x) * dirS;
+    vLit = step(0.0, back) * exp(-max(back, 0.0) * 1.4) * inZone * w0v;
+    vHot = exp(-pow((pos.x - waveX) * 3.0, 2.0)) * inZone * w0v;
+    vPing = smoothstep(0.86, 0.985, sin(uTime * 0.7)) * w0v;
     // The bar is felt, not just seen: the characters under it ripple up.
     pos.y += vHot * 0.055;
 
@@ -684,7 +680,7 @@ const FRAGMENT = /* glsl */ `
     vec3 bone = vec3(0.925, 0.913, 0.882);
     vec3 signal = vec3(0.52, 0.63, 1.0);
     vec3 positive = vec3(0.30, 0.85, 0.58);
-    float signalness = vRole * clamp(0.3 + 0.6 * vLit + vHot + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
+    float signalness = vRole * clamp(0.3 * (1.0 - w0) + 0.6 * vLit + vHot + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
     vec3 col = mix(bone, signal, signalness);
     col = mix(col, signal, (1.0 - vRole) * clamp(vHot + 0.4 * vLit + ripple + scan, 0.0, 0.7) * 0.6);
     // The bar's core runs near-white — light, not paint.
@@ -752,6 +748,14 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       return g;
     };
 
+    /* The scan line itself — the vertical line the user asked back: a
+       bright rule spanning exactly the machine zone, with small feet, that
+       travels with the particle bar on the same clock. */
+    const scanhead = segs([
+      [0, -2.06, 0.05, 0, -1.16, 0.05],
+      [-0.08, -2.06, 0.05, 0.08, -2.06, 0.05],
+      [-0.08, -1.16, 0.05, 0.08, -1.16, 0.05],
+    ]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -825,8 +829,11 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { fields, halo, match, green };
+    return { scanhead, fields, halo, match, green };
   }, []);
+  const scanRef = useRef<THREE.Group>(null);
+  const scanMat = useRef<THREE.LineBasicMaterial>(null);
+  const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
@@ -850,6 +857,10 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const t = clock.current;
     // Furniture is stricter than light: hairlines belong to one act only.
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
+    // The scan line rides the same sine as the shader's bar.
+    if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
+    if (scanMat.current) scanMat.current.opacity = 0.9 * win(0);
+    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.13 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -904,6 +915,27 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           blending={THREE.AdditiveBlending}
         />
       </points>
+      <group ref={scanRef}>
+        <mesh position={[0, -1.61, 0.02]}>
+          <planeGeometry args={[0.44, 0.94]} />
+          <meshBasicMaterial
+            ref={scanGlowMat}
+            color="#2d46ff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+        <lineSegments geometry={lineGeo.scanhead}>
+          <lineBasicMaterial
+            ref={scanMat}
+            color="#7290ff"
+            transparent
+            opacity={0}
+          />
+        </lineSegments>
+      </group>
       <lineSegments geometry={lineGeo.fields}>
         <lineBasicMaterial
           ref={fieldsMat}
