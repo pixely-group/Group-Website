@@ -11,11 +11,13 @@ import { mulberry32 } from "@/lib/rng";
  * (per-particle staggered easing between formations, comet flows, a
  * camera that dollies per stage, the graph swinging opposite the copy):
  *
- *   0  DOCUMENT — the ID assembles out of scatter: outline, portrait,
- *      data lines, and three dense rows of machine characters. The
- *      reader's crest sweeps the machine zone.
- *   1  FIELDS — the print lifts off and re-sorts into five structured
- *      rows, stacked in depth: the document as data.
+ *   0  DOCUMENT — the ID, fully formed from the first frame: outline,
+ *      portrait, title, aligned label-and-value rows, three rows of
+ *      machine characters — with the reader's pass sweeping the
+ *      machine zone alone, between its two rules.
+ *   1  OCR — the phone scanning the document: the card whole under a
+ *      reticle, the phone beside it, and three streams of print
+ *      lifting off the page into the screen's fields as they commit.
  *   2  NEAR FIELD — the tap: everything becomes the concentric field
  *      around a bright chip cluster, rippling outward from the centre.
  *   3  FACE — the contour face: thirty-odd horizontal slices of a head,
@@ -55,14 +57,12 @@ function faceProfile(y: number) {
 }
 
 type Model = {
-  scatter: Float32Array;
   forms: Float32Array[]; // five formations, N*3 each
   info: Float32Array; // rand, role(0 base / 1 signal), verdict flag
 };
 
 function buildModel(): Model {
   const rand = mulberry32(20260829);
-  const scatter = new Float32Array(N * 3);
   const forms = Array.from({ length: 5 }, () => new Float32Array(N * 3));
   const info = new Float32Array(N * 3);
 
@@ -78,20 +78,6 @@ function buildModel(): Model {
     const u = isSignal ? i / SIGNAL : (i - SIGNAL) / (N - SIGNAL);
     const r = rand();
     info.set([rand(), isSignal ? 1 : 0, isVerdict ? 1 : 0], i * 3);
-
-    /* Scatter: a loose flattened cloud to assemble out of. */
-    {
-      const theta = rand() * Math.PI * 2;
-      const phi = Math.acos(2 * rand() - 1);
-      const rr = 6.5 + rand() * 4.5;
-      set(
-        scatter,
-        i,
-        rr * Math.sin(phi) * Math.cos(theta),
-        rr * Math.sin(phi) * Math.sin(theta) * 0.7,
-        rr * Math.cos(phi) * 0.55,
-      );
-    }
 
     /* ——— 0 DOCUMENT ——— */
     if (isVerdict) {
@@ -149,15 +135,26 @@ function buildModel(): Model {
         -0.62 + Math.cos(t * 1.25) * 0.42 + (rand() - 0.5) * 0.04,
         (rand() - 0.5) * 0.05,
       );
-    } else if (u < 0.72) {
-      // Printed fields: four rows of word-clumps right of the portrait.
-      const row = Math.floor(rand() * 4);
-      const word = Math.floor(rand() * 4);
+    } else if (u < 0.52) {
+      // The document's own title, across the top of the card.
       set(
         forms[0],
         i,
-        -1.1 + word * 1.05 + rand() * 0.6,
-        1.55 - row * 0.52 + (rand() - 0.5) * 0.035,
+        -3.0 + rand() * 3.3,
+        1.8 + (rand() - 0.5) * 0.035,
+        (rand() - 0.5) * 0.04,
+      );
+    } else if (u < 0.8) {
+      // The fields, the way an ID actually prints them: a short label,
+      // then its value, both starting where every other row starts.
+      const row = Math.floor(rand() * 5);
+      const isLabel = rand() < 0.3;
+      const valueEnd = 1.7 + (row % 3) * 0.45;
+      set(
+        forms[0],
+        i,
+        isLabel ? -1.1 + rand() * 0.62 : -0.28 + rand() * valueEnd,
+        1.32 - row * 0.5 + (rand() - 0.5) * 0.03,
         (rand() - 0.5) * 0.04,
       );
     } else {
@@ -171,38 +168,126 @@ function buildModel(): Model {
       );
     }
 
-    /* ——— 1 FIELDS ——— */
+    /* ——— 1 OCR: the phone scanning the document ——— */
     {
-      const row = isVerdict ? 2 : Math.floor(rand() * 5);
-      const y = 1.8 - row * 0.9;
-      const z = (2 - row) * 0.5;
+      // The scene from the SDK reference: the document under the camera
+      // at the left, the phone at the right, and the print streaming off
+      // the page into the screen's fields.
+      const DC = [-1.2, -0.35] as const; // document centre
+      const DS = 0.58; // document scale
       if (isVerdict) {
+        // Extraction confirmed, at the last field's end.
         set(
           forms[1],
           i,
-          2.55 + rand() * 0.3,
-          y + (rand() - 0.5) * 0.24,
-          z + (rand() - 0.5) * 0.06,
+          2.55 + rand() * 0.28,
+          -0.45 + (rand() - 0.5) * 0.2,
+          (rand() - 0.5) * 0.08,
         );
       } else if (isSignal) {
-        // The row's leading mark — the field's own square.
+        // The lift: three streams of print leaving the page, each bound
+        // for its own field on the screen.
+        const stream = i % 3;
+        const t = rand();
+        const x0 = DC[0] + 1.5;
+        const y0 = DC[1] + (0.75 - stream * 0.6) * DS * 1.6;
+        const cx = 0.35;
+        const cy = 1.35 - stream * 0.85;
+        const x1 = 1.28;
+        const y1 = 1.15 - stream * 0.8;
+        const q = (a: number, c: number, b: number) =>
+          (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b;
         set(
           forms[1],
           i,
-          -2.85 + rand() * 0.5,
-          y + (rand() - 0.5) * 0.3,
-          z + (rand() - 0.5) * 0.06,
+          q(x0, cx, x1) + (rand() - 0.5) * 0.05,
+          q(y0, cy, y1) + (rand() - 0.5) * 0.05,
+          (rand() - 0.5) * 0.06,
         );
+      } else if (r < 0.62) {
+        // The document itself, whole under the reticle: title, portrait,
+        // aligned rows, machine zone — the act-0 card at reading distance.
+        const sub = rand();
+        if (sub < 0.16) {
+          const t2 = rand() * 2;
+          const w = 3.4 * DS;
+          const h = 2.2 * DS;
+          const along = t2 % 1;
+          let x = 0;
+          let y = 0;
+          if (t2 < 0.5) {
+            x = -w + along * 4 * w;
+            y = h;
+          } else if (t2 < 1) {
+            x = w;
+            y = h - along * 4 * h;
+          } else if (t2 < 1.5) {
+            x = w - along * 4 * w;
+            y = -h;
+          } else {
+            x = -w;
+            y = -h + along * 4 * h;
+          }
+          set(forms[1], i, DC[0] + x, DC[1] + y, (rand() - 0.5) * 0.04);
+        } else if (sub < 0.3) {
+          const a = rand() * Math.PI * 2;
+          set(
+            forms[1],
+            i,
+            DC[0] - 2.2 * DS + Math.cos(a) * 0.5 * DS,
+            DC[1] + 0.72 * DS + Math.sin(a) * 0.56 * DS,
+            (rand() - 0.5) * 0.04,
+          );
+        } else if (sub < 0.4) {
+          const t3 = rand() * 2 - 1;
+          set(
+            forms[1],
+            i,
+            DC[0] - 2.2 * DS + Math.sin(t3 * 1.25) * 0.72 * DS,
+            DC[1] - 0.62 * DS + Math.cos(t3 * 1.25) * 0.42 * DS,
+            (rand() - 0.5) * 0.04,
+          );
+        } else if (sub < 0.52) {
+          set(
+            forms[1],
+            i,
+            DC[0] + (-3.0 + rand() * 3.3) * DS,
+            DC[1] + 1.8 * DS + (rand() - 0.5) * 0.03,
+            (rand() - 0.5) * 0.04,
+          );
+        } else if (sub < 0.8) {
+          const row = Math.floor(rand() * 5);
+          const isLabel = rand() < 0.3;
+          const valueEnd = 1.7 + (row % 3) * 0.45;
+          set(
+            forms[1],
+            i,
+            DC[0] +
+              (isLabel ? -1.1 + rand() * 0.62 : -0.28 + rand() * valueEnd) *
+                DS,
+            DC[1] + (1.32 - row * 0.5) * DS + (rand() - 0.5) * 0.025,
+            (rand() - 0.5) * 0.04,
+          );
+        } else {
+          const row = Math.floor(rand() * 3);
+          const cell = Math.floor(rand() * 26);
+          set(
+            forms[1],
+            i,
+            DC[0] + (-3.0 + cell * 0.215) * DS + (rand() - 0.5) * 0.03,
+            DC[1] + (-1.34 - row * 0.27) * DS + (rand() - 0.5) * 0.025,
+            (rand() - 0.5) * 0.03,
+          );
+        }
       } else {
-        // The value: tokens with gaps between them, the way extracted
-        // text actually sits in a field.
-        const token = Math.floor(rand() * 4);
+        // The screen: the same person arriving as text, field by field.
+        const row = Math.floor(rand() * 3);
         set(
           forms[1],
           i,
-          -2.1 + token * 1.2 + rand() * 0.62,
-          y + (rand() < 0.5 ? 0.12 : -0.12) + (rand() - 0.5) * 0.04,
-          z + (rand() - 0.5) * 0.06,
+          1.35 + rand() * (1.15 + (row === 1 ? 0.18 : 0)),
+          1.15 - row * 0.8 + (rand() - 0.5) * 0.07,
+          (rand() - 0.5) * 0.06,
         );
       }
     }
@@ -420,11 +505,10 @@ function buildModel(): Model {
     }
   }
 
-  return { scatter, forms, info };
+  return { forms, info };
 }
 
 const VERTEX = /* glsl */ `
-  attribute vec3 aScatter;
   attribute vec3 aP0;
   attribute vec3 aP1;
   attribute vec3 aP2;
@@ -435,7 +519,6 @@ const VERTEX = /* glsl */ `
   // and a mismatched default breaks program linking.
   uniform mediump float uProgress; // 0..4
   uniform mediump float uTime;
-  uniform mediump float uAssemble; // 0..1 on its own clock, not the scroll's
   uniform mediump float uPixelRatio;
   varying float vRand;
   varying float vRole;
@@ -461,26 +544,16 @@ const VERTEX = /* glsl */ `
   }
 
   void main() {
-    vec3 formed = pick(uProgress);
-    // Assembly runs on its own clock the moment the scene is looked at —
-    // never on the scroll. A visitor who arrives and stops still watches
-    // the document build itself; the scroll only turns the pages after.
-    float assemble = clamp(uAssemble * 1.35 - aInfo.x * 0.35, 0.0, 1.0);
-    assemble = assemble * assemble * (3.0 - 2.0 * assemble);
-    vec3 pos = mix(aScatter, formed, assemble);
-    float w3v = max(0.0, 1.0 - abs(uProgress - 3.0) * 1.4);
-    // Breath: nothing organic is perfectly still.
+    // Fully formed from the first frame — the user's own note: the
+    // document is simply there. The scroll turns the pages; it never
+    // builds the furniture.
+    vec3 pos = pick(uProgress);
+    // Breath: nothing organic is perfectly still. (Grain lives in the
+    // fragment's alpha flicker — positional static blurred the contours.)
     pos += 0.04 * vec3(
       sin(uTime * 0.7 + aInfo.x * 43.0),
       cos(uTime * 0.6 + aInfo.x * 29.0),
       sin(uTime * 0.8 + aInfo.x * 61.0)
-    );
-    // Sensor static in the face act: the capture is a live feed, and a
-    // live feed has grain.
-    pos += (0.085 * w3v) * vec3(
-      sin(uTime * 6.3 + aInfo.x * 211.0),
-      sin(uTime * 7.1 + aInfo.x * 127.0),
-      sin(uTime * 5.7 + aInfo.x * 173.0)
     );
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
@@ -520,21 +593,30 @@ const FRAGMENT = /* glsl */ `
 
     // The acts' own light — all of it on the clock, so every act is
     // visibly working even when the scroll is standing still.
-    // The reader: a luminous column crossing the card in step with the
-    // hairline read-head (same formula the JS drives the line with).
+    // The reader, scoped to the machine zone alone: a bright pass that
+    // sweeps the strip between the rule and the card's foot — the scan
+    // belongs to the MRZ, not to the whole ID.
+    float inMRZ = step(-2.3, vPos.y) * (1.0 - step(-1.05, vPos.y));
     float readX = sin(uTime * 0.7) * 2.9;
-    float beam = exp(-pow((vPos.x - readX) * 1.5, 2.0)) * w0;
-    // The commit: field rows lighting in sequence as they are written.
-    float rowIdx = floor(clamp((1.8 - vPos.y) / 0.9 + 0.5, 0.0, 4.99));
-    float sweepRow = fract(uTime / 3.4) * 6.5 - 0.75;
-    float commit = exp(-pow((rowIdx - sweepRow) * 1.1, 2.0)) * w1;
+    float beam = exp(-pow((vPos.x - readX) * 1.1, 2.0)) * w0 * inMRZ;
+    // The commit: the phone's fields lighting in sequence as they fill.
+    float rowIdx = floor(clamp((1.15 - vPos.y) / 0.8 + 0.5, 0.0, 2.99));
+    float sweepRow = fract(uTime / 3.2) * 4.5 - 0.75;
+    float commit = exp(-pow((rowIdx - sweepRow) * 1.1, 2.0)) * w1 * step(0.9, vPos.x);
     float ripple = pow(0.5 + 0.5 * sin(length(vPos.xy) * 2.8 - uTime * 2.1), 6.0) * w2;
     float scan = pow(0.5 + 0.5 * sin(vPos.y * 2.2 - uTime * 1.7), 10.0) * w3;
-    float packet = pow(smoothstep(0.42, 0.0, fract(vPos.x * 0.42 - uTime * 0.55 - vRand * 3.0)), 2.0) * w4;
+    // Packets serve two acts: the lift up to the screen, the bridge
+    // between the subjects — and they run both ways, because the
+    // comparison is a conversation.
+    float dir = mix(-1.0, 1.0, step(0.5, fract(vRand * 7.3)));
+    float packet = pow(smoothstep(0.42, 0.0, fract(vPos.x * 0.42 * dir - uTime * 0.55 - vRand * 3.0)), 2.0)
+      * (w4 + 0.85 * w1);
 
     float alpha = 0.32 + 0.10 * vRand;
-    alpha += vRole * (0.26 + 0.85 * beam + 0.5 * commit + 0.38 * w1);
-    alpha += (1.0 - vRole) * (0.3 * beam + 0.3 * commit);
+    alpha += vRole * (0.26 + 1.0 * beam + 0.5 * commit + 0.2 * w1);
+    // The screen's arriving text holds its own light beside the streams.
+    alpha += (1.0 - vRole)
+      * (0.45 * commit + 0.12 * w0 * inMRZ + 0.2 * w1 * step(0.9, vPos.x));
     alpha += ripple * (0.35 + vRole * 0.5);
     alpha += scan * 0.5;
     alpha += vRole * packet * 0.9;
@@ -559,7 +641,7 @@ const FRAGMENT = /* glsl */ `
 /** World-space x of the subject per act, opposite that act's copy column.
  *  The last act swings widest: it holds two subjects side by side, and the
  *  leftmost of them still has to clear the copy. */
-const STAGE_OFFSET = [3.1, -2.7, 3.1, -3.1, 3.3];
+const STAGE_OFFSET = [3.1, -2.2, 3.1, -3.1, 3.3];
 /** Camera distance per act: close on the card, out for the field, close
  *  on the face, out far enough at the end to hold both subjects whole. */
 const STAGE_Z = [10.4, 9.8, 11.8, 8.6, 12.6];
@@ -584,7 +666,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     () => ({
       uProgress: { value: 0 },
       uTime: { value: 0 },
-      uAssemble: { value: 0 },
       uPixelRatio: { value: 1 },
     }),
     [],
@@ -623,19 +704,41 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         [-3.4, -2.2],
       ].map(([x, y]) => new THREE.Vector3(x, y, 0)),
     );
-    // The document's printed furniture: portrait window, machine rule.
+    // The document's printed furniture: portrait window, and both rules
+    // that bracket the machine zone — the strip the scan belongs to.
     const doc = segs([
       ...rect(-2.2, 0.1, 0.78, 1.28),
       [-3.1, -1.12, 0, 3.1, -1.12, 0],
+      [-3.1, -2.2, 0, 3.1, -2.2, 0],
     ]);
-    // The read head, sweeping the machine zone.
-    const head = segs([[0, -2.06, 0, 0, -1.18, 0]]);
-    // The five field boxes, stacked in the rows' own depth.
-    const fields = segs(
-      Array.from({ length: 5 }, (_, row) =>
-        rect(-0.05, 1.8 - row * 0.9, 3.0, 0.31, (2 - row) * 0.5),
-      ).flat(),
-    );
+    // A capture reticle's corner brackets.
+    const brackets = (
+      cx: number,
+      cy: number,
+      hw: number,
+      hh: number,
+      arm: number,
+    ): number[][] => [
+      [cx - hw, cy + hh - arm, 0, cx - hw, cy + hh, 0],
+      [cx - hw, cy + hh, 0, cx - hw + arm, cy + hh, 0],
+      [cx + hw - arm, cy + hh, 0, cx + hw, cy + hh, 0],
+      [cx + hw, cy + hh, 0, cx + hw, cy + hh - arm, 0],
+      [cx + hw, cy - hh + arm, 0, cx + hw, cy - hh, 0],
+      [cx + hw, cy - hh, 0, cx + hw - arm, cy - hh, 0],
+      [cx - hw + arm, cy - hh, 0, cx - hw, cy - hh, 0],
+      [cx - hw, cy - hh, 0, cx - hw, cy - hh + arm, 0],
+    ];
+    // The OCR scene's hardware: the phone (body, punch-hole, home bar),
+    // its three field boxes, and the reticle looking at the document.
+    const fields = segs([
+      ...rect(2.1, 0.1, 1.15, 2.35),
+      [2.0, 2.12, 0, 2.2, 2.12, 0],
+      [1.9, -2.14, 0, 2.3, -2.14, 0],
+      ...rect(2.05, 1.15, 0.82, 0.3),
+      ...rect(2.05, 0.35, 0.82, 0.3),
+      ...rect(2.05, -0.45, 0.82, 0.3),
+      ...brackets(-1.2, -0.35, 2.25, 1.55, 0.34),
+    ]);
     const haloPts: THREE.Vector3[] = [];
     for (let i = 0; i <= 72; i += 1) {
       const a = (i / 72) * Math.PI * 2;
@@ -671,6 +774,8 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [-1.3, -0.34, 0, 1.6, -0.34, 0],
       ...arc([-2.85, 1.2], [0.1, 2.5], [2.15, 1.6]),
       ...arc([-2.85, -0.95], [0.1, -2.25], [2.25, -1.15]),
+      // The live subject under capture, the way the 2D drawing frames it.
+      ...brackets(2.55, 0.2, 1.3, 1.65, 0.3),
     ]);
     // Agreement: the square, and the tick the whole site draws verdicts
     // with.
@@ -679,12 +784,10 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { card, doc, head, fields, halo, match, green };
+    return { card, doc, fields, halo, match, green };
   }, []);
   const cardMat = useRef<THREE.LineBasicMaterial>(null);
   const docMat = useRef<THREE.LineBasicMaterial>(null);
-  const headMat = useRef<THREE.LineBasicMaterial>(null);
-  const headRef = useRef<THREE.LineSegments>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
@@ -701,12 +804,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     if (mat.current) {
       mat.current.uniforms.uProgress.value = p;
       mat.current.uniforms.uTime.value += dt;
-      // The build-in runs on frames, not scroll: it starts the moment the
-      // section is actually rendering and finishes on its own.
-      mat.current.uniforms.uAssemble.value = Math.min(
-        1,
-        mat.current.uniforms.uAssemble.value + dt / 1.7,
-      );
       mat.current.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
     }
 
@@ -716,9 +813,8 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     if (cardMat.current) cardMat.current.opacity = 0.34 * win(0);
     if (docMat.current) docMat.current.opacity = 0.3 * win(0);
-    if (headMat.current) headMat.current.opacity = 0.75 * win(0);
-    if (headRef.current) headRef.current.position.x = Math.sin(t * 0.7) * 2.9;
-    if (fieldsMat.current) fieldsMat.current.opacity = 0.28 * win(1);
+    // The OCR act's hardware has to hold its own beside the streams.
+    if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
     if (matchMat.current) matchMat.current.opacity = 0.3 * win(4);
     if (greenMat.current)
@@ -754,7 +850,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
             attach="attributes-position"
             args={[new Float32Array(N * 3), 3]}
           />
-          <bufferAttribute attach="attributes-aScatter" args={[model.scatter, 3]} />
           <bufferAttribute attach="attributes-aP0" args={[model.forms[0], 3]} />
           <bufferAttribute attach="attributes-aP1" args={[model.forms[1], 3]} />
           <bufferAttribute attach="attributes-aP2" args={[model.forms[2], 3]} />
@@ -784,14 +879,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         <lineBasicMaterial
           ref={docMat}
           color="#ece9e1"
-          transparent
-          opacity={0}
-        />
-      </lineSegments>
-      <lineSegments ref={headRef} geometry={lineGeo.head}>
-        <lineBasicMaterial
-          ref={headMat}
-          color="#7290ff"
           transparent
           opacity={0}
         />

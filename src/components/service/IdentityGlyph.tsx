@@ -105,8 +105,6 @@ export default function IdentityGlyph() {
   const inLow = "M0 270 C 90 270 100 180 190 180";
   /* The verified route, out by the centre port. */
   const outOk = "M290 180 L 480 180";
-  /* Where a refused request comes to rest. */
-  const outNo = "M240 230 L 240 320";
 
   return (
     <svg
@@ -132,20 +130,6 @@ export default function IdentityGlyph() {
       {/* The verified route out. Slightly behind the arrivals, so a pulse
           reads as passing through the gate rather than teleporting. */}
       <Pulse d={outOk} delay={1.1} dur={4.2} />
-
-      {/* The refusal, resting at the foot. Sparse on purpose: most of the
-          traffic passes, and the drawing says so. */}
-      <path d={outNo} stroke={LINE} strokeWidth="1" opacity="0.22" />
-      <path
-        className="glyph-flow"
-        d={outNo}
-        pathLength={100}
-        strokeDasharray="14 86"
-        stroke="var(--color-negative)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        style={{ "--delay": "3.3s", "--dur": "8.4s" } as React.CSSProperties}
-      />
 
       {/* The gate. The Resources seal grown to a chamber, its perimeter
           continuously walked — the check that never sleeps. */}
@@ -207,18 +191,6 @@ export default function IdentityGlyph() {
           stroke="var(--color-positive)"
           strokeWidth="1.2"
           opacity="0.85"
-        />
-      </g>
-      <g>
-        <Hole x={240} y={320} size={13} />
-        <rect
-          x="235"
-          y="315"
-          width="10"
-          height="10"
-          stroke="var(--color-negative)"
-          strokeWidth="1.2"
-          opacity="0.8"
         />
       </g>
     </svg>
