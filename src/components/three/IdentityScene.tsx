@@ -72,36 +72,17 @@ function buildModel(): Model {
     arr[i * 3 + 2] = z;
   };
 
-  /* The machine zone at the card's own proportions: 22 large cells per
-     line spanning the full width of the ID, the letter blocks up front
-     and long runs of chevrons filling every line to its end. */
-  const MRZ_CHEV = (row: number, cell: number) =>
-    row === 0
-      ? cell >= 11
-      : row === 1
-        ? cell >= 14 && cell <= 20
-        : cell === 3 || cell === 9 || cell === 10 || cell >= 16;
-  const mrzGlyph = (row: number, cell: number): [number, number] => {
-    if (MRZ_CHEV(row, cell)) {
-      const t = rand();
-      let dx: number;
-      let dy: number;
-      if (t < 0.5) {
-        dx = 0.095 - t * 2 * 0.19;
-        dy = -0.085 + t * 2 * 0.085;
-      } else {
-        dx = -0.095 + (t - 0.5) * 2 * 0.19;
-        dy = (t - 0.5) * 2 * 0.085;
-      }
-      return [dx + (rand() - 0.5) * 0.01, dy + (rand() - 0.5) * 0.01];
-    }
+  /* The machine text: every cell a small dense dot-matrix block —
+     uniform machine type stopping short of the card's edge, with the
+     check-digit stubs standing beyond it. */
+  const mrzGlyph = (): [number, number] => {
     const sub = Math.floor(rand() * 9);
     return [
-      ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
-      (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
+      ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+      (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
     ];
   };
-  const MRZ_X = (cell: number) => -3.15 + cell * 0.295;
+  const MRZ_X = (cell: number) => -3.0 + cell * 0.215;
   const MRZ_Y = (row: number) => -1.34 - row * 0.27;
 
   for (let i = 0; i < N; i += 1) {
@@ -113,20 +94,22 @@ function buildModel(): Model {
 
     /* ——— 0 DOCUMENT ——— */
     if (isVerdict) {
-      // The composite check digit: the lone character closing line two.
-      const sub = Math.floor(rand() * 9);
+      // The check digits: dense stubs standing past the text at each
+      // row's right end.
+      const row = Math.floor(u * 300) % 3;
+      const [dx, dy] = mrzGlyph();
       set(
         forms[0],
         i,
-        MRZ_X(21) + ((sub % 3) - 1) * 0.07 + (rand() - 0.5) * 0.016,
-        MRZ_Y(1) + (Math.floor(sub / 3) - 1) * 0.078 + (rand() - 0.5) * 0.016,
+        2.75 + Math.floor(rand() * 2) * 0.215 + dx,
+        MRZ_Y(row) + dy,
         (rand() - 0.5) * 0.03,
       );
     } else if (isSignal) {
-      // The machine text, running the full width of the card.
+      // The machine text: twenty-six cells of uniform type per row.
       const row = i % 3;
-      const cell = Math.floor(rand() * 21);
-      const [dx, dy] = mrzGlyph(row, cell);
+      const cell = Math.floor(rand() * 26);
+      const [dx, dy] = mrzGlyph();
       set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     } else if (u < 0.2) {
       // Outline: the card's own perimeter, drawn tight. Each edge re-zeroes
@@ -194,8 +177,8 @@ function buildModel(): Model {
       // The freed fill budget joins the machine zone, writing the same
       // text.
       const row = Math.floor(rand() * 3);
-      const cell = Math.floor(rand() * 21);
-      const [dx, dy] = mrzGlyph(row, cell);
+      const cell = Math.floor(rand() * 26);
+      const [dx, dy] = mrzGlyph();
       set(forms[0], i, MRZ_X(cell) + dx, MRZ_Y(row) + dy, (rand() - 0.5) * 0.03);
     }
 
