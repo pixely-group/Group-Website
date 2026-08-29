@@ -751,6 +751,37 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     /* The scan line: one clean vertical rule spanning the machine zone
        with a little overshoot, sweeping left and right. */
     const scanCore = segs([[0, -2.24, 0.05, 0, -1.08, 0.05]]);
+    /* The zone's name, written above it in hairline strokes — M R Z —
+       left-aligned with the text it labels. */
+    const glyphSeg = (
+      x0: number,
+      y0: number,
+      pts: number[][],
+    ): number[][] =>
+      pts.map(([ax, ay, bx, by]) => [x0 + ax, y0 + ay, 0, x0 + bx, y0 + by, 0]);
+    const mrzLabel = segs([
+      // M
+      ...glyphSeg(-3.0, -1.13, [
+        [0, 0, 0, 0.14],
+        [0, 0.14, 0.07, 0.06],
+        [0.07, 0.06, 0.14, 0.14],
+        [0.14, 0.14, 0.14, 0],
+      ]),
+      // R
+      ...glyphSeg(-2.78, -1.13, [
+        [0, 0, 0, 0.14],
+        [0, 0.14, 0.13, 0.14],
+        [0.13, 0.14, 0.13, 0.075],
+        [0.13, 0.075, 0, 0.075],
+        [0.05, 0.075, 0.14, 0],
+      ]),
+      // Z
+      ...glyphSeg(-2.56, -1.13, [
+        [0, 0.14, 0.14, 0.14],
+        [0.14, 0.14, 0, 0],
+        [0, 0, 0.14, 0],
+      ]),
+    ]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -824,10 +855,11 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { scanCore, fields, halo, match, green };
+    return { scanCore, mrzLabel, fields, halo, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
   const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
+  const mrzLabelMat = useRef<THREE.LineBasicMaterial>(null);
   const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
@@ -855,6 +887,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     // The scan line rides the same sine as the shader's bar.
     if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
     if (scanCoreMat.current) scanCoreMat.current.opacity = 0.9 * win(0);
+    if (mrzLabelMat.current) mrzLabelMat.current.opacity = 0.55 * win(0);
     if (scanGlowMat.current) scanGlowMat.current.opacity = 0.1 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
@@ -910,6 +943,14 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           blending={THREE.AdditiveBlending}
         />
       </points>
+      <lineSegments geometry={lineGeo.mrzLabel}>
+        <lineBasicMaterial
+          ref={mrzLabelMat}
+          color="#ece9e1"
+          transparent
+          opacity={0}
+        />
+      </lineSegments>
       {/* The scan line, moving left and right over the zone. */}
       <group ref={scanRef}>
         <mesh position={[0, -1.66, 0.01]}>
