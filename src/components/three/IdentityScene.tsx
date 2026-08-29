@@ -103,16 +103,20 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.04,
       );
     } else if (u < 0.2) {
-      // Outline: a walk of the card's rounded perimeter — the same path
-      // the printed frame draws, so particles and hairline sit as one
-      // dense edge with an ID-1 corner, not a diagram's right angle.
-      const w = 3.4;
-      const h = 2.2;
-      const cr = 0.28;
+      // The microprint border: evenly spaced dots walking the path
+      // BETWEEN the two printed rules — the security border real cards
+      // carry. Quantised, not scattered: dust on a hairline scribbles it,
+      // a measured row of print sharpens it. The hairlines themselves are
+      // left alone to be hairlines.
+      const w = 3.34;
+      const h = 2.14;
+      const cr = 0.24;
       const sH = 2 * (w - cr);
       const sV = 2 * (h - cr);
       const aL = (Math.PI * cr) / 2;
-      let d = rand() * (2 * sH + 2 * sV + 4 * aL);
+      const L = 2 * sH + 2 * sV + 4 * aL;
+      const DOTS = 320;
+      let d = ((Math.floor(rand() * DOTS) + 0.5) / DOTS) * L;
       let x = 0;
       let y = 0;
       const corner = (ccx: number, ccy: number, from: number, dd: number) => {
@@ -144,8 +148,8 @@ function buildModel(): Model {
       set(
         forms[0],
         i,
-        x + (rand() - 0.5) * 0.03,
-        y + (rand() - 0.5) * 0.03,
+        x + (rand() - 0.5) * 0.008,
+        y + (rand() - 0.5) * 0.008,
         0,
       );
     } else if (u < 0.34) {
@@ -584,7 +588,7 @@ const VERTEX = /* glsl */ `
     vec3 pos = pick(uProgress);
     // Breath: nothing organic is perfectly still. (Grain lives in the
     // fragment's alpha flicker — positional static blurred the contours.)
-    pos += 0.04 * vec3(
+    pos += 0.028 * vec3(
       sin(uTime * 0.7 + aInfo.x * 43.0),
       cos(uTime * 0.6 + aInfo.x * 29.0),
       sin(uTime * 0.8 + aInfo.x * 61.0)
@@ -632,10 +636,24 @@ const FRAGMENT = /* glsl */ `
     // belongs to the MRZ, not to the whole ID.
     float inMRZ = step(-2.3, vPos.y) * (1.0 - step(-1.05, vPos.y));
     float readX = sin(uTime * 0.7) * 2.9;
-    // A hot head and a wide wake: the head is what the eye tracks, the
-    // wake is what says "this strip has just been read".
-    float beam = exp(-pow((vPos.x - readX) * 1.6, 2.0)) * w0 * inMRZ;
-    float wake = exp(-pow((vPos.x - readX) * 0.42, 2.0)) * w0 * inMRZ;
+    // The reader works the way readers work: one line per pass. Each
+    // half-sweep advances to the next of the three rows, and only the row
+    // under the head blazes — the others simmer until their turn.
+    float pass = floor(uTime * 0.7 / 3.14159265);
+    float activeRow = mod(pass, 3.0);
+    float myRow = clamp(floor((-1.2 - vPos.y) / 0.27), 0.0, 2.0);
+    float onRow = 1.0 - min(1.0, abs(myRow - activeRow));
+    float rowGate = 0.3 + 0.7 * onRow;
+    // A hot head, and a wake that trails only BEHIND the direction of
+    // travel — read, not merely lit.
+    float vel = cos(uTime * 0.7);
+    float behind = clamp((readX - vPos.x) * sign(vel) * 1.2, 0.0, 1.0);
+    float beam = exp(-pow((vPos.x - readX) * 1.6, 2.0)) * w0 * inMRZ * rowGate;
+    float wake = exp(-pow((vPos.x - readX) * 0.42, 2.0))
+      * mix(0.35, 1.0, behind) * w0 * inMRZ * rowGate;
+    // The head landing on the right end: the check digits agree, and say
+    // so in the verdict's own green for a beat.
+    float ping = smoothstep(0.86, 0.985, sin(uTime * 0.7)) * w0;
     // The commit: the phone's fields lighting in sequence as they fill.
     float rowIdx = floor(clamp((1.15 - vPos.y) / 0.8 + 0.5, 0.0, 2.99));
     float sweepRow = fract(uTime / 3.2) * 4.5 - 0.75;
@@ -659,8 +677,9 @@ const FRAGMENT = /* glsl */ `
     alpha += vRole * packet * 0.9;
     // Sensor grain on the live capture.
     alpha *= 1.0 + 0.22 * w3 * sin(uTime * 9.0 + vRand * 80.0);
-    // The verdict holds its light for the last act.
-    alpha = mix(alpha, 0.15 + w4 * 1.1, vVerdict);
+    // The verdict holds its light for the last act — and in the first,
+    // the check digits wake for a beat each time the head lands on them.
+    alpha = mix(alpha, 0.15 + w4 * 1.1 + ping * 1.05, vVerdict);
     alpha *= disc;
     if (alpha < 0.004) discard;
 
@@ -670,7 +689,7 @@ const FRAGMENT = /* glsl */ `
     float signalness = vRole * clamp(0.3 + beam + 0.5 * wake + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
     vec3 col = mix(bone, signal, signalness);
     col = mix(col, signal, (1.0 - vRole) * clamp(beam + wake + ripple + scan, 0.0, 0.7) * 0.6);
-    col = mix(col, positive, vVerdict * smoothstep(3.2, 3.9, uProgress));
+    col = mix(col, positive, vVerdict * max(smoothstep(3.2, 3.9, uProgress), ping));
     gl_FragColor = vec4(col, alpha * 0.9);
   }
 `;
@@ -1061,7 +1080,9 @@ export default function IdentityScene({
       dpr={[1, 1.8]}
       camera={{ position: [0, -0.15, 10.4], fov: 46, near: 0.1, far: 80 }}
       gl={{
-        antialias: false,
+        // The furniture is long 1px rules: without AA they stair-step and
+        // read as scribble the moment the card tilts.
+        antialias: true,
         alpha: false,
         powerPreference: "high-performance",
       }}
