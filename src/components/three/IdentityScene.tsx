@@ -748,15 +748,35 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       return g;
     };
 
-    /* The scan head, styled as a slit scanner: two close vertical rails
-       with the glow running between them, standing taller than the zone —
-       the lower end reaches past the card's own edge — so the head is
-       visibly a carriage riding over the document. The brand's squares
-       cap both ends. */
-    const scanhead = segs([
-      [-0.024, -2.38, 0.05, -0.024, -1.06, 0.05],
-      [0.024, -2.38, 0.05, 0.024, -1.06, 0.05],
+    /* The scan head, in the drawings' own reticle grammar: a laser core
+       between two corner-bracket clamps, three index ticks aligned to the
+       three machine lines it reads, and breathing outline squares capping
+       the ends — the junction square, doing the job it always does. */
+    const scanCore = segs([[0, -2.3, 0.05, 0, -1.12, 0.05]]);
+    const scanFrame = segs([
+      // Top clamp: bar and two stubs reaching down.
+      [-0.15, -1.06, 0.05, 0.15, -1.06, 0.05],
+      [-0.15, -1.06, 0.05, -0.15, -1.16, 0.05],
+      [0.15, -1.06, 0.05, 0.15, -1.16, 0.05],
+      // Bottom clamp, mirrored, riding outside the card's edge.
+      [-0.15, -2.36, 0.05, 0.15, -2.36, 0.05],
+      [-0.15, -2.36, 0.05, -0.15, -2.26, 0.05],
+      [0.15, -2.36, 0.05, 0.15, -2.26, 0.05],
+      // Index ticks: one pair per machine line.
+      [-0.1, -1.34, 0.05, -0.05, -1.34, 0.05],
+      [0.05, -1.34, 0.05, 0.1, -1.34, 0.05],
+      [-0.1, -1.61, 0.05, -0.05, -1.61, 0.05],
+      [0.05, -1.61, 0.05, 0.1, -1.61, 0.05],
+      [-0.1, -1.88, 0.05, -0.05, -1.88, 0.05],
+      [0.05, -1.88, 0.05, 0.1, -1.88, 0.05],
     ]);
+    const capSq = (cy: number): number[][] => [
+      [-0.05, cy + 0.05, 0.06, 0.05, cy + 0.05, 0.06],
+      [0.05, cy + 0.05, 0.06, 0.05, cy - 0.05, 0.06],
+      [0.05, cy - 0.05, 0.06, -0.05, cy - 0.05, 0.06],
+      [-0.05, cy - 0.05, 0.06, -0.05, cy + 0.05, 0.06],
+    ];
+    const scanCaps = segs([...capSq(-0.98), ...capSq(-2.44)]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -830,13 +850,15 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { scanhead, fields, halo, match, green };
+    return { scanCore, scanFrame, scanCaps, fields, halo, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
-  const scanMat = useRef<THREE.LineBasicMaterial>(null);
-  const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
-  const scanCapTop = useRef<THREE.MeshBasicMaterial>(null);
-  const scanCapBot = useRef<THREE.MeshBasicMaterial>(null);
+  const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
+  const scanFrameMat = useRef<THREE.LineBasicMaterial>(null);
+  const scanCapsMat = useRef<THREE.LineBasicMaterial>(null);
+  const beamA = useRef<THREE.MeshBasicMaterial>(null);
+  const beamB = useRef<THREE.MeshBasicMaterial>(null);
+  const beamC = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
@@ -862,10 +884,14 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     // The scan line rides the same sine as the shader's bar.
     if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
-    if (scanMat.current) scanMat.current.opacity = 0.85 * win(0);
-    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.13 * win(0);
-    if (scanCapTop.current) scanCapTop.current.opacity = 0.95 * win(0);
-    if (scanCapBot.current) scanCapBot.current.opacity = 0.95 * win(0);
+    if (scanCoreMat.current) scanCoreMat.current.opacity = 0.95 * win(0);
+    if (scanFrameMat.current) scanFrameMat.current.opacity = 0.8 * win(0);
+    // The caps breathe, the way the drawings' junction squares breathe.
+    if (scanCapsMat.current)
+      scanCapsMat.current.opacity = (0.5 + 0.32 * Math.sin(t * 2.2)) * win(0);
+    if (beamA.current) beamA.current.opacity = 0.5 * win(0);
+    if (beamB.current) beamB.current.opacity = 0.18 * win(0);
+    if (beamC.current) beamC.current.opacity = 0.06 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -921,10 +947,23 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
         />
       </points>
       <group ref={scanRef}>
-        <mesh position={[0, -1.72, 0.02]}>
-          <planeGeometry args={[0.38, 1.4]} />
+        {/* The beam: a laser with real falloff — a hot narrow core inside
+            two widening, fading sheets — not a flat band. */}
+        <mesh position={[0, -1.71, 0.015]}>
+          <planeGeometry args={[0.05, 1.18]} />
           <meshBasicMaterial
-            ref={scanGlowMat}
+            ref={beamA}
+            color="#9fb4ff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+        <mesh position={[0, -1.71, 0.012]}>
+          <planeGeometry args={[0.16, 1.18]} />
+          <meshBasicMaterial
+            ref={beamB}
             color="#2d46ff"
             transparent
             opacity={0}
@@ -932,36 +971,41 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
             blending={THREE.AdditiveBlending}
           />
         </mesh>
-        <lineSegments geometry={lineGeo.scanhead}>
+        <mesh position={[0, -1.71, 0.01]}>
+          <planeGeometry args={[0.44, 1.18]} />
+          <meshBasicMaterial
+            ref={beamC}
+            color="#2d46ff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+        <lineSegments geometry={lineGeo.scanCore}>
           <lineBasicMaterial
-            ref={scanMat}
+            ref={scanCoreMat}
             color="#ece9e1"
             transparent
             opacity={0}
           />
         </lineSegments>
-        {/* The carriage's ends: the brand's own square, top and bottom —
-            the lower one riding outside the card's edge. */}
-        <mesh position={[0, -1.0, 0.06]}>
-          <planeGeometry args={[0.1, 0.1]} />
-          <meshBasicMaterial
-            ref={scanCapTop}
-            color="#2d46ff"
+        <lineSegments geometry={lineGeo.scanFrame}>
+          <lineBasicMaterial
+            ref={scanFrameMat}
+            color="#7290ff"
             transparent
             opacity={0}
-            depthWrite={false}
           />
-        </mesh>
-        <mesh position={[0, -2.44, 0.06]}>
-          <planeGeometry args={[0.1, 0.1]} />
-          <meshBasicMaterial
-            ref={scanCapBot}
-            color="#2d46ff"
+        </lineSegments>
+        <lineSegments geometry={lineGeo.scanCaps}>
+          <lineBasicMaterial
+            ref={scanCapsMat}
+            color="#7290ff"
             transparent
             opacity={0}
-            depthWrite={false}
           />
-        </mesh>
+        </lineSegments>
       </group>
       <lineSegments geometry={lineGeo.fields}>
         <lineBasicMaterial
