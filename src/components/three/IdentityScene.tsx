@@ -148,11 +148,11 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.05,
       );
     } else if (u < 0.52) {
-      // The document's own title, across the top of the card.
+      // The document's title, flush left with the field rows below it.
       set(
         forms[0],
         i,
-        -3.0 + rand() * 3.3,
+        -1.1 + rand() * 3.3,
         1.8 + (rand() - 0.5) * 0.035,
         (rand() - 0.5) * 0.04,
       );
@@ -265,7 +265,7 @@ function buildModel(): Model {
           set(
             forms[1],
             i,
-            DC[0] + (-3.0 + rand() * 3.3) * DS,
+            DC[0] + (-1.1 + rand() * 3.3) * DS,
             DC[1] + 1.8 * DS + (rand() - 0.5) * 0.03,
             (rand() - 0.5) * 0.04,
           );
