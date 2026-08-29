@@ -765,6 +765,9 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     };
 
 
+    /* The scan line: one clean vertical rule spanning the machine zone
+       with a little overshoot, sweeping left and right. */
+    const scanCore = segs([[0, -2.24, 0.05, 0, -1.08, 0.05]]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -838,9 +841,10 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { fields, halo, match, green };
+    return { scanCore, fields, halo, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
+  const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
   const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
@@ -867,7 +871,8 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
     // The scan line rides the same sine as the shader's bar.
     if (scanRef.current) scanRef.current.position.x = Math.sin(t * 0.7) * 2.9;
-    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.16 * win(0);
+    if (scanCoreMat.current) scanCoreMat.current.opacity = 0.9 * win(0);
+    if (scanGlowMat.current) scanGlowMat.current.opacity = 0.1 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -922,11 +927,10 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           blending={THREE.AdditiveBlending}
         />
       </points>
-      {/* The scan is light, not hardware: one soft column passing over
-          the code — the characters flaring under it do the rest. */}
+      {/* The scan line, moving left and right over the zone. */}
       <group ref={scanRef}>
-        <mesh position={[0, -1.64, 0.01]}>
-          <planeGeometry args={[0.5, 1.14]} />
+        <mesh position={[0, -1.66, 0.01]}>
+          <planeGeometry args={[0.26, 1.16]} />
           <meshBasicMaterial
             ref={scanGlowMat}
             color="#2d46ff"
@@ -936,6 +940,14 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
             blending={THREE.AdditiveBlending}
           />
         </mesh>
+        <lineSegments geometry={lineGeo.scanCore}>
+          <lineBasicMaterial
+            ref={scanCoreMat}
+            color="#7290ff"
+            transparent
+            opacity={0}
+          />
+        </lineSegments>
       </group>
       <lineSegments geometry={lineGeo.fields}>
         <lineBasicMaterial
