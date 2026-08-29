@@ -508,6 +508,17 @@
     transform-box: fill-box;
     transform-origin: center;
   }
+  /* The biometric template being taken: a line that draws itself on,
+     holds while it is read, then erases through — one continuous
+     direction, so the erase is the draw still travelling, not a reset.
+     Needs pathLength=100 and a 100 100 dash: at offset 100 the path sits
+     entirely in the gap, at 0 entirely in the dash, at -100 back in the
+     gap the other side. */
+  .glyph-stage .glyph-trace {
+    animation: glyph-trace calc(var(--beat) * 2) var(--ease-inout-soft)
+      infinite;
+    animation-delay: var(--delay, 0s);
+  }
 }
 
 @keyframes glyph-flow {
@@ -565,6 +576,20 @@
   99%,
   100% {
     transform: scaleY(1);
+  }
+}
+@keyframes glyph-trace {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  38% {
+    stroke-dashoffset: 0;
+  }
+  62% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -100;
   }
 }
 @keyframes glyph-node {

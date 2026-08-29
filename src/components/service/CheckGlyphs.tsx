@@ -659,11 +659,35 @@ export function NfcGlyph() {
 }
 
 /* ————————————————————————————————————————
-   Liveness — the selfie. The face sits in the phone's own oval guide,
-   the beam reads it top to bottom, the mesh breathes point by point —
-   and the eyes blink, the one thing a photograph never does. The pill
-   below carries the drawn tick the whole site uses for a verdict.
+   Liveness — the biometric scan itself. The face sits in the phone's
+   oval guide with the reader's arc orbiting it; the template is taken as
+   a mesh — seven landmarks joined by a perimeter and two struts through
+   the nose, the topology lifted from the reference — drawing itself on,
+   holding while it is read, erasing through and coming back. The nodes
+   breathe in reading order, the eyes still blink, and the pill below
+   carries the drawn tick the whole site uses for a verdict.
    ———————————————————————————————————————— */
+
+/* The template's graph, in reading order: forehead, left temple, left
+   cheek, chin, right jaw, right cheek, nose. */
+const FACE_NODES: [number, number][] = [
+  [210, 96],
+  [177, 111],
+  [185, 149],
+  [207, 177],
+  [231, 181],
+  [243, 158],
+  [209, 133],
+];
+const FACE_MESH = [
+  /* The perimeter walk. */
+  "M210 96 L177 111 L185 149 L207 177 L231 181 L243 158",
+  /* Temple to cheek, through the nose. */
+  "M177 111 L209 133 L243 158",
+  /* Forehead to chin, through the nose. */
+  "M210 96 L209 133 L207 177",
+];
+
 export function LivenessGlyph() {
   return (
     <svg viewBox={VIEW} className={stage} fill="none" aria-hidden>
@@ -678,6 +702,17 @@ export function LivenessGlyph() {
         strokeWidth="1"
         strokeDasharray="3 4"
         opacity="0.4"
+      />
+      {/* The reader, orbiting it. */}
+      <path
+        className="glyph-flow"
+        d="M210 82 A46 58 0 1 1 210 198 A46 58 0 1 1 210 82"
+        pathLength={100}
+        strokeDasharray="16 84"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        style={{ "--dur": "7.2s" } as React.CSSProperties}
       />
       {/* The face, and the shoulders that keep it a person. */}
       <ellipse
@@ -717,25 +752,29 @@ export function LivenessGlyph() {
         opacity="0.7"
       />
       <path
-        d="M210 135 V 150 H 206"
-        stroke="currentColor"
-        strokeWidth="1"
-        opacity="0.4"
-      />
-      <path
         d="M200 165 C 206 169, 214 169, 220 165"
         stroke="currentColor"
         strokeWidth="1"
         opacity="0.5"
       />
-      {/* The mesh, read point by point. */}
-      {[
-        [183, 112],
-        [237, 112],
-        [187, 162],
-        [233, 162],
-        [210, 180],
-      ].map(([x, y], i) => (
+      {/* The template, taken: the mesh draws on, holds, erases through. */}
+      {FACE_MESH.map((d, i) => (
+        <path
+          key={d}
+          className="glyph-trace"
+          d={d}
+          pathLength={100}
+          strokeDasharray="100 100"
+          stroke="var(--accent)"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.85"
+          style={{ "--delay": `${i * 1.2}s` } as React.CSSProperties}
+        />
+      ))}
+      {/* The landmarks, breathing in reading order. */}
+      {FACE_NODES.map(([x, y], i) => (
         <rect
           key={`${x}${y}`}
           className="glyph-node"
@@ -748,18 +787,6 @@ export function LivenessGlyph() {
           style={{ "--i": i } as React.CSSProperties}
         />
       ))}
-      {/* The beam, over the whole face and back. */}
-      <line
-        className="glyph-scan"
-        x1="160"
-        y1="74"
-        x2="260"
-        y2="74"
-        stroke="var(--accent)"
-        strokeWidth="1.5"
-        opacity="0.8"
-        style={{ "--sweep": "132px" } as React.CSSProperties}
-      />
       {/* Alive: the same drawn tick the site gives every verdict. */}
       <Hole x={210} y={243} size={26} />
       <rect
@@ -812,6 +839,21 @@ export function FaceMatchGlyph() {
         opacity="0.3"
       />
       <Portrait x={50} y={112} w={44} h={54} />
+      {/* The portrait under detection: the reader's corners on it, and
+          the fine stripes of it being sampled column by column. */}
+      <Corners x={46} y={108} w={52} h={62} arm={8} />
+      {[58, 65, 72, 79, 86].map((x) => (
+        <line
+          key={x}
+          x1={x}
+          y1="116"
+          x2={x}
+          y2="162"
+          stroke="currentColor"
+          strokeWidth="1"
+          opacity="0.14"
+        />
+      ))}
       {[
         [122, 174],
         [136, 158],
@@ -883,15 +925,31 @@ export function FaceMatchGlyph() {
         strokeWidth="1"
         opacity="0.5"
       />
+      {/* The same template liveness took, resting on the live face —
+          what the match is actually comparing. Still here: this drawing's
+          motion is the circulation, not the taking. */}
+      {[
+        "M333 106 L308 116 L315 145 L331 165 L348 168 L358 151",
+        "M308 116 L332 133 L358 151",
+      ].map((d) => (
+        <path
+          key={d}
+          d={d}
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinejoin="round"
+          opacity="0.3"
+        />
+      ))}
       {/* Landmarks on both, breathing in the same order — the same
           geometry read from two places. */}
       {(
         [
           [72, 124, 0],
           [94, 148, 1],
-          [313, 118, 0],
-          [353, 118, 1],
-          [333, 178, 2],
+          [308, 116, 0],
+          [358, 151, 1],
+          [331, 165, 2],
         ] as const
       ).map(([x, y, i]) => (
         <rect
