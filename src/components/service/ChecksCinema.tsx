@@ -181,13 +181,18 @@ export default function ChecksCinema() {
           bus.current.progress = self.progress;
         },
       });
-      // Only render while the section can be seen.
-      ScrollTrigger.create({
+      // Only render while the section can be seen. onToggle alone is not
+      // enough: it fires on crossings, and a visitor can arrive without
+      // one (a hash landing, a programmatic jump) — so sync the initial
+      // state and re-sync on every refresh too.
+      const vis = ScrollTrigger.create({
         trigger: section,
         start: "top bottom",
         end: "bottom top",
         onToggle: (self) => setActive(self.isActive),
+        onRefresh: (self) => setActive(self.isActive),
       });
+      setActive(vis.isActive);
 
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {

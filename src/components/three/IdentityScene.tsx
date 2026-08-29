@@ -231,9 +231,9 @@ function buildModel(): Model {
     /* ——— 3 FACE ——— */
     {
       if (isSignal && !isVerdict) {
-        if (u < 0.28) {
+        if (u < 0.3) {
           // Eyes: two watching clusters, small and dense.
-          const side = u < 0.14 ? -1 : 1;
+          const side = u < 0.15 ? -1 : 1;
           const a = rand() * Math.PI * 2;
           const rr = Math.sqrt(rand()) * 0.13;
           set(
@@ -243,26 +243,15 @@ function buildModel(): Model {
             0.5 + Math.sin(a) * rr * 0.7,
             1.18 + (rand() - 0.5) * 0.05,
           );
-        } else if (u < 0.42) {
-          // Brows: the arcs that make the eyes a face.
-          const side = u < 0.35 ? -1 : 1;
-          const t = rand() * 2 - 1;
-          set(
-            forms[3],
-            i,
-            side * 0.6 + t * 0.3,
-            0.88 + (1 - t * t) * 0.09 + (rand() - 0.5) * 0.03,
-            1.06 + (rand() - 0.5) * 0.05,
-          );
-        } else if (u < 0.58) {
-          // The mouth: a short front arc.
+        } else if (u < 0.52) {
+          // The mouth: corners up. A liveness check is not an interrogation.
           const a = -0.5 + rand();
           set(
             forms[3],
             i,
-            a * 1.0,
-            -1.0 - Math.abs(a) * 0.16 + (rand() - 0.5) * 0.05,
-            1.2 - Math.abs(a) * 0.32,
+            a * 1.05,
+            -1.14 + a * a * 0.72 + (rand() - 0.5) * 0.045,
+            1.2 - Math.abs(a) * 0.3,
           );
         } else {
           // The halo: the scan's own orbit, standing off the face.
@@ -312,17 +301,42 @@ function buildModel(): Model {
           (rand() - 0.5) * 0.14,
         );
       } else if (isSignal) {
-        // The bridge: three lanes of clumped packets between the
-        // subjects — traffic, not a dotted line.
-        const lane = (Math.floor(rand() * 3) - 1) * 0.18;
-        const clump = Math.floor(rand() * 6);
-        set(
-          forms[4],
-          i,
-          -1.25 + clump * 0.47 + rand() * 0.22,
-          lane + (rand() - 0.5) * 0.04,
-          (rand() - 0.5) * 0.08,
-        );
+        if (u < 0.56) {
+          // The bridge: three lanes of clumped packets between the
+          // subjects — traffic, not a dotted line.
+          const lane = (Math.floor(rand() * 3) - 1) * 0.18;
+          const clump = Math.floor(rand() * 6);
+          set(
+            forms[4],
+            i,
+            -1.25 + clump * 0.47 + rand() * 0.22,
+            lane + (rand() - 0.5) * 0.04,
+            (rand() - 0.5) * 0.08,
+          );
+        } else if (u < 0.82) {
+          // The live subject's eyes — without them the right mass was a
+          // hedgehog, not a person.
+          const side = u < 0.69 ? -1 : 1;
+          const a = rand() * Math.PI * 2;
+          const rr = Math.sqrt(rand()) * 0.1;
+          set(
+            forms[4],
+            i,
+            2.55 + side * 0.44 + Math.cos(a) * rr,
+            0.52 + Math.sin(a) * rr * 0.7,
+            0.95 + (rand() - 0.5) * 0.05,
+          );
+        } else {
+          // And the same smile the face wore for liveness.
+          const a = -0.5 + rand();
+          set(
+            forms[4],
+            i,
+            2.55 + a * 0.8,
+            -0.68 + a * a * 0.5 + (rand() - 0.5) * 0.04,
+            0.95 - Math.abs(a) * 0.24,
+          );
+        }
       } else if (r < 0.45) {
         // The document self: the act-0 card in miniature, so the left
         // subject is unmistakably the document.
@@ -421,6 +435,7 @@ const VERTEX = /* glsl */ `
   // and a mismatched default breaks program linking.
   uniform mediump float uProgress; // 0..4
   uniform mediump float uTime;
+  uniform mediump float uAssemble; // 0..1 on its own clock, not the scroll's
   uniform mediump float uPixelRatio;
   varying float vRand;
   varying float vRole;
@@ -447,19 +462,29 @@ const VERTEX = /* glsl */ `
 
   void main() {
     vec3 formed = pick(uProgress);
-    // Assembly out of scatter, quick: the card must be standing well
-    // before its own crossing begins, or the first act is never seen.
-    float assemble = smoothstep(0.0, 0.22, uProgress + 0.02 - aInfo.x * 0.08);
+    // Assembly runs on its own clock the moment the scene is looked at —
+    // never on the scroll. A visitor who arrives and stops still watches
+    // the document build itself; the scroll only turns the pages after.
+    float assemble = clamp(uAssemble * 1.35 - aInfo.x * 0.35, 0.0, 1.0);
+    assemble = assemble * assemble * (3.0 - 2.0 * assemble);
     vec3 pos = mix(aScatter, formed, assemble);
+    float w3v = max(0.0, 1.0 - abs(uProgress - 3.0) * 1.4);
     // Breath: nothing organic is perfectly still.
-    pos += 0.035 * vec3(
+    pos += 0.04 * vec3(
       sin(uTime * 0.7 + aInfo.x * 43.0),
       cos(uTime * 0.6 + aInfo.x * 29.0),
       sin(uTime * 0.8 + aInfo.x * 61.0)
     );
+    // Sensor static in the face act: the capture is a live feed, and a
+    // live feed has grain.
+    pos += (0.085 * w3v) * vec3(
+      sin(uTime * 6.3 + aInfo.x * 211.0),
+      sin(uTime * 7.1 + aInfo.x * 127.0),
+      sin(uTime * 5.7 + aInfo.x * 173.0)
+    );
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
-    float size = 2.3 + aInfo.y * 1.1 + aInfo.z * 1.2;
+    float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
     float pulse = 0.88 + 0.12 * sin(uTime * 1.3 + aInfo.x * 40.0);
     gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse;
     vRand = aInfo.x;
@@ -493,17 +518,28 @@ const FRAGMENT = /* glsl */ `
     float w3 = win(3.0);
     float w4 = win(4.0);
 
-    // The acts' own light.
-    float beam = pow(0.5 + 0.5 * sin(vPos.x * 1.9 - uTime * 2.6), 8.0) * w0;
+    // The acts' own light — all of it on the clock, so every act is
+    // visibly working even when the scroll is standing still.
+    // The reader: a luminous column crossing the card in step with the
+    // hairline read-head (same formula the JS drives the line with).
+    float readX = sin(uTime * 0.7) * 2.9;
+    float beam = exp(-pow((vPos.x - readX) * 1.5, 2.0)) * w0;
+    // The commit: field rows lighting in sequence as they are written.
+    float rowIdx = floor(clamp((1.8 - vPos.y) / 0.9 + 0.5, 0.0, 4.99));
+    float sweepRow = fract(uTime / 3.4) * 6.5 - 0.75;
+    float commit = exp(-pow((rowIdx - sweepRow) * 1.1, 2.0)) * w1;
     float ripple = pow(0.5 + 0.5 * sin(length(vPos.xy) * 2.8 - uTime * 2.1), 6.0) * w2;
     float scan = pow(0.5 + 0.5 * sin(vPos.y * 2.2 - uTime * 1.7), 10.0) * w3;
     float packet = pow(smoothstep(0.42, 0.0, fract(vPos.x * 0.42 - uTime * 0.55 - vRand * 3.0)), 2.0) * w4;
 
-    float alpha = 0.30 + 0.10 * vRand;
-    alpha += vRole * (0.20 + 0.5 * (beam + w1 * 0.6) );
+    float alpha = 0.32 + 0.10 * vRand;
+    alpha += vRole * (0.26 + 0.85 * beam + 0.5 * commit + 0.38 * w1);
+    alpha += (1.0 - vRole) * (0.3 * beam + 0.3 * commit);
     alpha += ripple * (0.35 + vRole * 0.5);
     alpha += scan * 0.5;
     alpha += vRole * packet * 0.9;
+    // Sensor grain on the live capture.
+    alpha *= 1.0 + 0.22 * w3 * sin(uTime * 9.0 + vRand * 80.0);
     // The verdict holds its light for the last act.
     alpha = mix(alpha, 0.15 + w4 * 1.1, vVerdict);
     alpha *= disc;
@@ -512,9 +548,9 @@ const FRAGMENT = /* glsl */ `
     vec3 bone = vec3(0.925, 0.913, 0.882);
     vec3 signal = vec3(0.52, 0.63, 1.0);
     vec3 positive = vec3(0.30, 0.85, 0.58);
-    float signalness = vRole * clamp(0.35 + beam + w1 * 0.5 + ripple + packet, 0.0, 1.0);
+    float signalness = vRole * clamp(0.3 + beam + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
     vec3 col = mix(bone, signal, signalness);
-    col = mix(col, signal, (1.0 - vRole) * clamp(ripple + scan, 0.0, 0.7) * 0.6);
+    col = mix(col, signal, (1.0 - vRole) * clamp(beam + ripple + scan, 0.0, 0.7) * 0.6);
     col = mix(col, positive, vVerdict * smoothstep(3.2, 3.9, uProgress));
     gl_FragColor = vec4(col, alpha * 0.9);
   }
@@ -523,10 +559,10 @@ const FRAGMENT = /* glsl */ `
 /** World-space x of the subject per act, opposite that act's copy column.
  *  The last act swings widest: it holds two subjects side by side, and the
  *  leftmost of them still has to clear the copy. */
-const STAGE_OFFSET = [3.1, -2.7, 3.1, -3.1, 3.6];
+const STAGE_OFFSET = [3.1, -2.7, 3.1, -3.1, 3.3];
 /** Camera distance per act: close on the card, out for the field, close
- *  on the face, out again to hold both subjects. */
-const STAGE_Z = [10.4, 9.8, 11.8, 8.6, 11.6];
+ *  on the face, out far enough at the end to hold both subjects whole. */
+const STAGE_Z = [10.4, 9.8, 11.8, 8.6, 12.6];
 
 /** Camera and swing keep the morph's own rhythm: hold through the act,
  *  travel with the crossing. */
@@ -548,6 +584,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     () => ({
       uProgress: { value: 0 },
       uTime: { value: 0 },
+      uAssemble: { value: 0 },
       uPixelRatio: { value: 1 },
     }),
     [],
@@ -607,11 +644,33 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       );
     }
     const halo = new THREE.BufferGeometry().setFromPoints(haloPts);
-    // The match act's structure: the miniature card, the bridge rails.
+    // A sampled curve, packed as segment pairs so it can live in the same
+    // LineSegments as the straight furniture.
+    const arc = (
+      a: [number, number],
+      c: [number, number],
+      b: [number, number],
+    ): number[][] => {
+      const pts: [number, number][] = [];
+      for (let i = 0; i <= 20; i += 1) {
+        const t = i / 20;
+        const q = (p0: number, p1: number, p2: number) =>
+          (1 - t) * (1 - t) * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
+        pts.push([q(a[0], c[0], b[0]), q(a[1], c[1], b[1])]);
+      }
+      return pts
+        .slice(1)
+        .map((p2, i) => [pts[i][0], pts[i][1], 0, p2[0], p2[1], 0]);
+    };
+    // The match act's structure: the miniature card, the bridge rails, and
+    // the 2D face-match drawing's own circulating curves grown to stage
+    // size — the comparison travelling over and back.
     const match = segs([
       ...rect(-2.75, 0.1, 1.15, 1.55),
       [-1.3, 0.34, 0, 1.6, 0.34, 0],
       [-1.3, -0.34, 0, 1.6, -0.34, 0],
+      ...arc([-2.85, 1.2], [0.1, 2.5], [2.15, 1.6]),
+      ...arc([-2.85, -0.95], [0.1, -2.25], [2.25, -1.15]),
     ]);
     // Agreement: the square, and the tick the whole site draws verdicts
     // with.
@@ -636,9 +695,18 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
   useFrame((state, delta) => {
     const p = bus.current.progress * 4;
     const dt = Math.min(delta, 1 / 30);
+    if (process.env.NODE_ENV === "development") {
+      (window as unknown as Record<string, unknown>).__idmat = mat.current;
+    }
     if (mat.current) {
       mat.current.uniforms.uProgress.value = p;
       mat.current.uniforms.uTime.value += dt;
+      // The build-in runs on frames, not scroll: it starts the moment the
+      // section is actually rendering and finishes on its own.
+      mat.current.uniforms.uAssemble.value = Math.min(
+        1,
+        mat.current.uniforms.uAssemble.value + dt / 1.7,
+      );
       mat.current.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
     }
 
@@ -661,12 +729,16 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       const swing = interpStage(STAGE_OFFSET, p) * bus.current.spread;
       groupRef.current.position.x +=
         (swing - groupRef.current.position.x) * (1 - Math.pow(0.0025, dt));
+      // A slow float, always: the subject is never a still image.
+      groupRef.current.position.y = Math.sin(t * 0.4) * 0.06;
       const targetX = -0.06 + bus.current.pointer[1] * 0.07;
-      // The face turns slightly of its own accord in its act — the small
-      // yaw a liveness check asks for, and the cheapest proof on the page
+      // A standing sway everywhere, and in the face's act the deliberate
+      // yaw a liveness check asks for — the cheapest proof on the page
       // that the head is a solid.
       const targetY =
-        bus.current.pointer[0] * 0.16 + Math.sin(t * 0.5) * 0.16 * win(3);
+        bus.current.pointer[0] * 0.16 +
+        Math.sin(t * 0.23) * 0.05 +
+        Math.sin(t * 0.5) * 0.16 * win(3);
       groupRef.current.rotation.x +=
         (targetX - groupRef.current.rotation.x) * (1 - Math.pow(0.002, dt));
       groupRef.current.rotation.y +=
