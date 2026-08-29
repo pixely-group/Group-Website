@@ -103,15 +103,18 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.04,
       );
     } else if (u < 0.2) {
-      // Outline: the card's own perimeter, drawn tight.
+      // Outline: the card's own perimeter, drawn tight. Each edge re-zeroes
+      // the parameter — carried raw, the odd branches kept drawing past
+      // their corner and the left edge ran a bar straight up out of the
+      // card.
       const t = rand() * 2;
       const w = 3.4;
       const h = 2.2;
-      const along = t % 1;
-      if (t < 0.5) set(forms[0], i, -w + along * 2 * w * 2, h, 0);
-      else if (t < 1) set(forms[0], i, w, h - along * 2 * h * 2, 0);
-      else if (t < 1.5) set(forms[0], i, w - along * 2 * w * 2, -h, 0);
-      else set(forms[0], i, -w, -h + along * 2 * h * 2, 0);
+      const along = (t % 0.5) * 2;
+      if (t < 0.5) set(forms[0], i, -w + along * 2 * w, h, 0);
+      else if (t < 1) set(forms[0], i, w, h - along * 2 * h, 0);
+      else if (t < 1.5) set(forms[0], i, w - along * 2 * w, -h, 0);
+      else set(forms[0], i, -w, -h + along * 2 * h, 0);
       forms[0][i * 3] += (rand() - 0.5) * 0.03;
       forms[0][i * 3 + 1] += (rand() - 0.5) * 0.03;
     } else if (u < 0.34) {
@@ -212,21 +215,21 @@ function buildModel(): Model {
           const t2 = rand() * 2;
           const w = 3.4 * DS;
           const h = 2.2 * DS;
-          const along = t2 % 1;
+          const along = (t2 % 0.5) * 2;
           let x = 0;
           let y = 0;
           if (t2 < 0.5) {
-            x = -w + along * 4 * w;
+            x = -w + along * 2 * w;
             y = h;
           } else if (t2 < 1) {
             x = w;
-            y = h - along * 4 * h;
+            y = h - along * 2 * h;
           } else if (t2 < 1.5) {
-            x = w - along * 4 * w;
+            x = w - along * 2 * w;
             y = -h;
           } else {
             x = -w;
-            y = -h + along * 4 * h;
+            y = -h + along * 2 * h;
           }
           set(forms[1], i, DC[0] + x, DC[1] + y, (rand() - 0.5) * 0.04);
         } else if (sub < 0.3) {
@@ -471,21 +474,21 @@ function buildModel(): Model {
           const t = rand() * 2;
           const w = 1.15;
           const h = 1.55;
-          const along = t % 1;
+          const along = (t % 0.5) * 2;
           let x = 0;
           let y = 0;
           if (t < 0.5) {
-            x = -w + along * 2 * w * 2;
+            x = -w + along * 2 * w;
             y = h;
           } else if (t < 1) {
             x = w;
-            y = h - along * 2 * h * 2;
+            y = h - along * 2 * h;
           } else if (t < 1.5) {
-            x = w - along * 2 * w * 2;
+            x = w - along * 2 * w;
             y = -h;
           } else {
             x = -w;
-            y = -h + along * 2 * h * 2;
+            y = -h + along * 2 * h;
           }
           set(forms[4], i, -2.75 + x, 0.1 + y, (rand() - 0.5) * 0.04);
         }
