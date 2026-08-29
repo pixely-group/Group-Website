@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import ChecksStage from "@/components/service/ChecksStage";
+import ChecksCinema from "@/components/service/ChecksCinema";
 import IdentityGlyph from "@/components/service/IdentityGlyph";
 import {
   FeatureGrid,
@@ -40,17 +40,9 @@ export default function IdentityPage() {
         glyph={<IdentityGlyph />}
       />
 
-      <ServiceBand
-        index="01 — Know Your Customer"
-        title="Five checks a forgery has to beat."
-        lede="KYC done properly is layered. Each check reads a different
-          truth about the same person — the print, the machine lines, the
-          chip, the face, the match between them — and a fraudster has to
-          beat all of them at once, in the few seconds the flow gives them."
-        ground="bone"
-      >
-        <ChecksStage />
-      </ServiceBand>
+      {/* The set piece: five viewports of scroll, one particle scene
+          performing the whole verification. */}
+      <ChecksCinema />
 
       <ServiceBand
         index="02 — Real-time fraud detection"
