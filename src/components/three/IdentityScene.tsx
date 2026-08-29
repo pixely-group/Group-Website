@@ -81,26 +81,31 @@ function buildModel(): Model {
 
     /* ——— 0 DOCUMENT ——— */
     if (isVerdict) {
-      // The check digits: dense stubs at the machine rows' right ends.
+      // The check digits: the last two character blocks of each row,
+      // set in the same dot-matrix as the text they check.
       const row = Math.floor(u * 300) % 3;
+      const cell = Math.floor(rand() * 2);
+      const sub = Math.floor(rand() * 9);
       set(
         forms[0],
         i,
-        2.72 + rand() * 0.34,
-        -1.34 - row * 0.27 + (rand() - 0.5) * 0.06,
-        (rand() - 0.5) * 0.04,
+        2.75 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        (rand() - 0.5) * 0.03,
       );
     } else if (isSignal) {
-      // Machine characters: three rows of quantised cells — the text
-      // reads as text because it clumps the way typeset characters do.
+      // Machine characters as dot-matrix glyphs: each of the 26 cells is
+      // a small grid of dots, not a smear — the zone reads as machine
+      // type at a glance, which is the whole act's subject.
       const row = i % 3;
       const cell = Math.floor(rand() * 26);
+      const sub = Math.floor(rand() * 9);
       set(
         forms[0],
         i,
-        -3.0 + cell * 0.215 + (rand() - 0.5) * 0.055,
-        -1.34 - row * 0.27 + (rand() - 0.5) * 0.045,
-        (rand() - 0.5) * 0.04,
+        -3.0 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        (rand() - 0.5) * 0.03,
       );
     } else if (u < 0.2) {
       // Outline: the card's own perimeter, drawn tight. Each edge re-zeroes
@@ -161,13 +166,18 @@ function buildModel(): Model {
         (rand() - 0.5) * 0.04,
       );
     } else {
-      // The card's body: a faint fill sitting slightly behind.
+      // The freed fill budget joins the machine zone: more dots per
+      // glyph, so the strip is the densest, richest region of the card —
+      // where the act's eye belongs.
+      const row = Math.floor(rand() * 3);
+      const cell = Math.floor(rand() * 26);
+      const sub = Math.floor(rand() * 9);
       set(
         forms[0],
         i,
-        (rand() - 0.5) * 6.6,
-        (rand() - 0.5) * 4.2,
-        -0.2 - rand() * 0.1,
+        -3.0 + cell * 0.215 + ((sub % 3) - 1) * 0.048 + (rand() - 0.5) * 0.014,
+        -1.34 - row * 0.27 + (Math.floor(sub / 3) - 1) * 0.054 + (rand() - 0.5) * 0.014,
+        (rand() - 0.5) * 0.03,
       );
     }
 
@@ -527,6 +537,9 @@ const VERTEX = /* glsl */ `
   varying float vRole;
   varying float vVerdict;
   varying vec3 vPos;
+  varying float vLit;
+  varying float vHot;
+  varying float vPing;
 
   vec3 pick(float s) {
     float f = clamp(s, 0.0, 4.0);
@@ -560,9 +573,36 @@ const VERTEX = /* glsl */ `
     );
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
+
+    // The machine zone's own clock: the document is read the way a
+    // reader reads it. Line by line, left to right, each character
+    // popping as the head takes it; a line ends and its check digits
+    // answer in green; three lines done, the whole zone holds lit for a
+    // beat with the verdict, then the read begins again.
+    float T = 2.4;
+    float HOLD = 1.3;
+    float P = mod(uTime, 3.0 * T + HOLD);
+    float lineIdx = min(2.0, floor(P / T));
+    float lp = clamp((P - lineIdx * T) / T, 0.0, 1.0);
+    float waveX = mix(-3.2, 3.3, lp);
+    float allLit = step(3.0 * T, P);
+    float inZone = step(-2.02, pos.y) * (1.0 - step(-1.2, pos.y));
+    float myRow = clamp(floor((-1.2 - pos.y) / 0.27), 0.0, 2.0);
+    // "active" is reserved in GLSL ES; the working row is "onLine".
+    float onLine = (1.0 - allLit) * (1.0 - min(1.0, abs(myRow - lineIdx)));
+    float done = step(myRow + 0.5, lineIdx);
+    float w0v = max(0.0, 1.0 - abs(uProgress) * 1.4);
+    vLit = max(allLit, max(done, onLine * step(pos.x, waveX))) * inZone * w0v;
+    vHot = onLine * exp(-pow((pos.x - waveX) * 2.4, 2.0)) * inZone * w0v;
+    float holdT = clamp((P - 3.0 * T) / HOLD, 0.0, 1.0);
+    float lineDone = onLine * smoothstep(0.93, 1.0, lp);
+    vPing = max(allLit * (1.0 - smoothstep(0.55, 1.0, holdT)), lineDone) * w0v;
+
     float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
     float pulse = 0.88 + 0.12 * sin(uTime * 1.3 + aInfo.x * 40.0);
-    gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse;
+    // The pop: a character swells under the head as it is taken.
+    gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse
+      * (1.0 + vHot * 0.9);
     vRand = aInfo.x;
     vRole = aInfo.y;
     vVerdict = aInfo.z;
@@ -578,6 +618,9 @@ const FRAGMENT = /* glsl */ `
   varying float vRole;
   varying float vVerdict;
   varying vec3 vPos;
+  varying float vLit;
+  varying float vHot;
+  varying float vPing;
 
   // Sharper than the morph: an act's light belongs to its act. At each
   // act's centre this is exactly 1, so tightening the tails never changes
@@ -595,13 +638,8 @@ const FRAGMENT = /* glsl */ `
     float w4 = win(4.0);
 
     // The acts' own light — all of it on the clock, so every act is
-    // visibly working even when the scroll is standing still.
-    // The reader, scoped to the machine zone alone: a bright pass that
-    // sweeps the strip between the rule and the card's foot — the scan
-    // belongs to the MRZ, not to the whole ID.
-    float inMRZ = step(-2.3, vPos.y) * (1.0 - step(-1.05, vPos.y));
-    float readX = sin(uTime * 0.7) * 2.9;
-    float beam = exp(-pow((vPos.x - readX) * 1.1, 2.0)) * w0 * inMRZ;
+    // visibly working even when the scroll is standing still. The machine
+    // zone's read arrives from the vertex stage as vLit / vHot / vPing.
     // The commit: the phone's fields lighting in sequence as they fill.
     float rowIdx = floor(clamp((1.15 - vPos.y) / 0.8 + 0.5, 0.0, 2.99));
     float sweepRow = fract(uTime / 3.2) * 4.5 - 0.75;
@@ -616,27 +654,29 @@ const FRAGMENT = /* glsl */ `
       * (w4 + 0.85 * w1);
 
     float alpha = 0.32 + 0.10 * vRand;
-    alpha += vRole * (0.26 + 1.0 * beam + 0.5 * commit + 0.2 * w1);
+    alpha += vRole * (0.26 + 0.5 * commit + 0.2 * w1);
     // The screen's arriving text holds its own light beside the streams.
     alpha += (1.0 - vRole)
-      * (0.45 * commit + 0.12 * w0 * inMRZ + 0.2 * w1 * step(0.9, vPos.x));
+      * (0.45 * commit + 0.2 * w1 * step(0.9, vPos.x));
+    // The read: taken characters hold their light, the head burns.
+    alpha += 0.55 * vLit + 1.35 * vHot;
     alpha += ripple * (0.35 + vRole * 0.5);
     alpha += scan * 0.5;
     alpha += vRole * packet * 0.9;
     // Sensor grain on the live capture.
     alpha *= 1.0 + 0.22 * w3 * sin(uTime * 9.0 + vRand * 80.0);
     // The verdict holds its light for the last act.
-    alpha = mix(alpha, 0.15 + w4 * 1.1, vVerdict);
+    alpha = mix(alpha, 0.15 + w4 * 1.1 + vPing * 1.05 + 0.3 * vLit, vVerdict);
     alpha *= disc;
     if (alpha < 0.004) discard;
 
     vec3 bone = vec3(0.925, 0.913, 0.882);
     vec3 signal = vec3(0.52, 0.63, 1.0);
     vec3 positive = vec3(0.30, 0.85, 0.58);
-    float signalness = vRole * clamp(0.3 + beam + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
+    float signalness = vRole * clamp(0.3 + 0.6 * vLit + vHot + commit + w1 * 0.4 + ripple + packet, 0.0, 1.0);
     vec3 col = mix(bone, signal, signalness);
-    col = mix(col, signal, (1.0 - vRole) * clamp(beam + ripple + scan, 0.0, 0.7) * 0.6);
-    col = mix(col, positive, vVerdict * smoothstep(3.2, 3.9, uProgress));
+    col = mix(col, signal, (1.0 - vRole) * clamp(vHot + 0.4 * vLit + ripple + scan, 0.0, 0.7) * 0.6);
+    col = mix(col, positive, vVerdict * max(smoothstep(3.2, 3.9, uProgress), vPing));
     gl_FragColor = vec4(col, alpha * 0.9);
   }
 `;
@@ -699,21 +739,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       return g;
     };
 
-    const card = new THREE.BufferGeometry().setFromPoints(
-      [
-        [-3.4, 2.2],
-        [3.4, 2.2],
-        [3.4, -2.2],
-        [-3.4, -2.2],
-      ].map(([x, y]) => new THREE.Vector3(x, y, 0)),
-    );
-    // The document's printed furniture: portrait window, and both rules
-    // that bracket the machine zone — the strip the scan belongs to.
-    const doc = segs([
-      ...rect(-2.2, 0.1, 0.78, 1.28),
-      [-3.1, -1.12, 0, 3.1, -1.12, 0],
-      [-3.1, -2.2, 0, 3.1, -2.2, 0],
-    ]);
     // A capture reticle's corner brackets.
     const brackets = (
       cx: number,
@@ -787,10 +812,8 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { card, doc, fields, halo, match, green };
+    return { fields, halo, match, green };
   }, []);
-  const cardMat = useRef<THREE.LineBasicMaterial>(null);
-  const docMat = useRef<THREE.LineBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
   const haloMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
@@ -814,8 +837,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     const t = clock.current;
     // Furniture is stricter than light: hairlines belong to one act only.
     const win = (k: number) => Math.max(0, 1 - Math.abs(p - k) * 1.8);
-    if (cardMat.current) cardMat.current.opacity = 0.34 * win(0);
-    if (docMat.current) docMat.current.opacity = 0.3 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
     if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
@@ -870,22 +891,6 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           blending={THREE.AdditiveBlending}
         />
       </points>
-      <lineLoop geometry={lineGeo.card}>
-        <lineBasicMaterial
-          ref={cardMat}
-          color="#ece9e1"
-          transparent
-          opacity={0}
-        />
-      </lineLoop>
-      <lineSegments geometry={lineGeo.doc}>
-        <lineBasicMaterial
-          ref={docMat}
-          color="#ece9e1"
-          transparent
-          opacity={0}
-        />
-      </lineSegments>
       <lineSegments geometry={lineGeo.fields}>
         <lineBasicMaterial
           ref={fieldsMat}
@@ -950,7 +955,7 @@ export default function IdentityScene({
       dpr={[1, 1.8]}
       camera={{ position: [0, -0.15, 10.4], fov: 46, near: 0.1, far: 80 }}
       gl={{
-        antialias: false,
+        antialias: true,
         alpha: false,
         powerPreference: "high-performance",
       }}
