@@ -1,0 +1,74 @@
+[
+  {
+    "title": "Opening",
+    "secs": 25,
+    "script": "Good morning. I’m Amine Laissoub, a British and Algerian founder. I founded Pixely in Algeria in December 2025. We are building an AI-powered fintech platform that brings payments, digital identity and fraud intelligence together. I’m here to explore how a UK presence could help us build this business internationally, while retaining our foundation in Algeria.",
+    "sources": "Founder statement in this conversation; September deck, pages 1, 5 and 14. UK expansion is a proposal for discussion, not a confirmed commitment."
+  },
+  {
+    "title": "Problem",
+    "secs": 30,
+    "script": "Our starting point is the payment journey. A customer needs to prove who they are, make a payment and know whether it succeeded. Delays, connectivity interruptions and identity fraud can undermine that experience. Pixely’s opportunity is to connect these steps so that a financial services provider can manage the journey with clearer information and fewer disconnected processes. These are the problems we are targeting in Algeria.",
+    "sources": "September deck, page 8. These are company-identified problems, not quantified market-wide findings."
+  },
+  {
+    "title": "Product",
+    "secs": 35,
+    "script": "The platform combines three capabilities. Identity services support verification of people and businesses. Payment services cover transfers and merchant collections. AI services support fraud detection and intelligent automation. APIs are intended to let customers integrate these capabilities into their own products. The value we want to demonstrate is a connected workflow: identity information and payment events can inform the same risk review, instead of sitting in separate systems.",
+    "sources": "September deck, pages 12–13. Development and production status require founder confirmation. Modular cube illustration extracted from September deck, page 12."
+  },
+  {
+    "title": "AI",
+    "secs": 35,
+    "script": "We want AI to earn its place through a measurable result. The proposed first pilot is fraud review: use permitted identity and payment signals to flag unusual patterns for a human reviewer. We would compare the model with an agreed baseline, measure false alerts and missed fraud, and record how decisions are reviewed. That gives a prospective partner a concrete way to evaluate the technology. We are not presenting an unverified accuracy percentage.",
+    "sources": "September deck, page 13 supports the fraud-detection direction. Pilot design is a recommendation for discussion, not a description of a deployed model."
+  },
+  {
+    "title": "Business model",
+    "secs": 35,
+    "script": "Our proposed first buyers are banks and payment providers with a defined onboarding or payment-risk problem. We would start with one paid integration pilot, agree success measures with that customer, and test a platform subscription with usage-based fees. Additional modules create an expansion opportunity after the initial workflow delivers value. This is a commercial hypothesis to validate. The immediate goal is a repeatable customer proposition, with evidence of willingness to pay and a delivery cost we understand.",
+    "sources": "Initial target segment and revenue model are proposed strategy. Source platform/API scope: September deck, page 13. No customers, prices, contracts or revenue are asserted."
+  },
+  {
+    "title": "Founder and company",
+    "secs": 35,
+    "script": "My connection to these two markets is personal and professional. I’m British and Algerian, and my background includes designing and building digital financial products for UK companies. I founded Pixely in Algeria on 1 December 2025. Our company materials introduce an engineering and product team across backend, frontend, mobile, DevOps, design and delivery. I want to apply that experience to a focused product business with a credible route into the UK.",
+    "sources": "Founder nationality and founding date supplied in this conversation. June deck, pages 7–8: founder experience and team. Portrait extracted unchanged from June deck, page 7. No current full-time employee count asserted."
+  },
+  {
+    "title": "UK case",
+    "secs": 35,
+    "script": "The proposed model gives each location a concrete role. Algeria remains our engineering and product base and our starting point for local customer discovery. A UK subsidiary or R&D presence could support commercial partnerships, applied AI research and international sales. The potential UK contribution is a local commercial or research function that grows with demand. I would like the delegation’s guidance on which structure and support route fit our stage and objectives.",
+    "sources": "Proposed operating model, subject to founder decision. GEP permits an international HQ, subsidiary or R&D centre under its location criteria: https://www.business.gov.uk/campaign/gep/how-we-work/?lang=en-gb (updated 27 August 2026, accessed 14 September 2026)."
+  },
+  {
+    "title": "Milestones",
+    "secs": 35,
+    "script": "Over the first thirty days after a suitable partner engagement, the proposal is to select one buyer and workflow and agree the evaluation. In the next thirty days, run a controlled test and measure both product results and integration effort. By day ninety, review customer economics and the evidence, then decide the next commercial milestone and UK structure. These are proposed milestones, dependent on partner access and readiness, rather than promises of a production launch.",
+    "sources": "Proposed plan created for this meeting. No partner engagement, scheduled pilot or deployment is claimed."
+  },
+  {
+    "title": "Close",
+    "secs": 30,
+    "script": "My ask is a focused scoping session on UK expansion. First, help us assess whether Pixely fits GEP today and which milestones we should reach next. Second, help us identify relevant fintech or pilot partners. Third, let’s agree one follow-up meeting, with an owner and a date. I bring experience across both markets and a company founded in Algeria. I want to turn that connection into a measurable product and a viable international business. Thank you.",
+    "sources": "Contact details: September deck, page 14. GEP criteria: https://www.business.gov.uk/campaign/gep/how-we-work/?lang=en-gb. Other UK investment support: https://www.gov.uk/world/organisations/department-for-business-and-trade-algeria. Invitation does not establish GEP admission."
+  },
+  {
+    "title": "Backup: pilot evidence",
+    "secs": 0,
+    "script": "These are proposed measures, not achieved results. Define each metric, evaluation dataset, baseline and acceptance threshold before testing. For fraud evaluation, discuss false positives and false negatives together and distinguish model inference time from end-to-end processing time. For payments, distinguish a user confirmation from final settlement.",
+    "sources": "Proposed evaluation framework. No performance figures are provided in either source deck."
+  },
+  {
+    "title": "Backup: deployment",
+    "secs": 0,
+    "script": "Explain the actual funds flow and current product status if asked. Do not equate software capability with regulatory permission. The September source deck makes claims about instant payments, offline payments and compliance, but does not provide a test report, permission or legal assessment. Present those capabilities at their evidenced stage. A UK expansion plan needs its own review. The conditions on this slide are questions for specialists, not a legal conclusion.",
+    "sources": "September deck, pages 10 and 12 contain the underlying claims. This slide deliberately states proposed review conditions and does not assert authorisation or compliance in either jurisdiction."
+  },
+  {
+    "title": "Backup: platform scope",
+    "secs": 0,
+    "script": "Use this slide only if the audience asks about the wider platform. Prioritise one initial buyer and workflow in the main pitch. Identify which modules are live, demonstrable, in development or planned based on current evidence. Do not imply that every listed module is in production.",
+    "sources": "September deck, page 13 and June deck, page 14. Release status is not specified in the sources."
+  }
+]

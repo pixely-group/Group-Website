@@ -1,0 +1,2 @@
+# Symlink to a machine-local Codex runtime; not portable
+.build/node_modules
