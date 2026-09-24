@@ -20,11 +20,12 @@ import { mulberry32 } from "@/lib/rng";
  *      lifting off the page into the screen's fields as they commit.
  *   2  NEAR FIELD — the tap: everything becomes the concentric field
  *      around a bright chip cluster, rippling outward from the centre.
- *   3  FACE — the contour face: thirty-odd horizontal slices of a head,
- *      nose bulging the front arcs, eyes and mouth carried by the
- *      signal particles, a halo ring orbiting while the scan crest
- *      climbs it.
- *   4  MATCH — the face steps aside and its document self forms
+ *   3  FACE — the biometric scan: a fine dotted mesh laid over the
+ *      skin, its rows bending with brow, nose and lips and swirling
+ *      open round each eye; irises of turning dotted rings with a
+ *      catchlight; a beam of scan light running into the eyes along
+ *      the gaze, and motes glinting in the air around the capture.
+ *   4  MATCH — the scanned face steps aside and its document self forms
  *      opposite; packets run the bridge between them, and where they
  *      agree, the verdict square burns green.
  *
@@ -49,22 +50,140 @@ const N = 9000;
 const SIGNAL = Math.floor(N * 0.24);
 const VERDICT = 300;
 
-/** Head profile: half-width of the face at height y (y in [-2.3, 2.3]). */
-function faceProfile(y: number) {
-  const crown = 1 - THREE.MathUtils.smoothstep(y, 1.1, 2.35);
-  const jaw = 1 - THREE.MathUtils.smoothstep(-y, 0.9, 2.45);
-  return 0.5 + 1.28 * Math.min(crown, jaw);
+/* ——— The scanned face ———
+   A frontal mask, not a head: the biometric capture only ever sees the
+   front of one. Its surface is drawn the way the capture draws it — a
+   fine dotted lattice laid over the skin, every row bending with the
+   brow, the nose and the lips, and swirling open around each eye. */
+
+const EYE_X = 0.6;
+const EYE_Y = 0.48;
+/** The eye opening the lattice parts around: wide, not tall. */
+const EYE_R = 0.3;
+const EYE_SQUASH = 0.58;
+
+/** Half-width of the mask at height y (forehead 2.2, chin -2.35). */
+function maskHalfWidth(y: number) {
+  if (y >= 0) return 1.5 * Math.sqrt(Math.max(0, 1 - Math.pow(y / 2.2, 2.4)));
+  const t = -y / 2.35;
+  return 1.5 * Math.sqrt(Math.max(0, 1 - Math.pow(t, 2.6))) * (1 - 0.34 * t);
 }
+
+/** Depth of the skin at (x, y) — the features as relief on a shell. */
+function maskDepth(x: number, y: number) {
+  const g = (dx: number, dy: number, sx: number, sy: number) =>
+    Math.exp(-(dx * dx) / sx - (dy * dy) / sy);
+  const w = Math.max(maskHalfWidth(y), 0.05);
+  const s = Math.min(1, Math.abs(x) / w);
+  let z = 1.05 * Math.sqrt(1 - s * s);
+  z *= 1 - 0.25 * THREE.MathUtils.smoothstep(y, 1.2, 2.2);
+  z -= 0.14 * THREE.MathUtils.smoothstep(-y, 1.6, 2.35);
+  const ax = Math.abs(x);
+  // The nose: a ridge that grows as it falls, ending at the tip.
+  const fall = THREE.MathUtils.smoothstep(0.62 - y, 0, 1.1);
+  const tip = THREE.MathUtils.smoothstep(y, -0.72, -0.48);
+  z += 0.58 * fall * tip * Math.exp(-(x * x) / (0.02 + 0.03 * fall));
+  z += 0.12 * g(ax - 0.2, y + 0.52, 0.012, 0.01); // the nostril wings
+  // Sockets, the eyes inside them, the brow above.
+  z -= 0.24 * g(ax - EYE_X, y - EYE_Y, 0.11, 0.05);
+  z += 0.13 * g(ax - EYE_X, y - EYE_Y, 0.035, 0.018);
+  z += 0.12 * g(ax - 0.55, y - 0.84, 0.2, 0.012);
+  z += 0.1 * g(ax - 0.88, y + 0.12, 0.08, 0.12); // cheekbones
+  // The lips: two soft pillows either side of the line between them.
+  z += 0.2 * g(x, y + 1.04, 0.16, 0.01);
+  z += 0.2 * g(x, y + 1.28, 0.13, 0.014);
+  z -= 0.1 * g(x, y + 1.16, 0.2, 0.0015);
+  z += 0.09 * g(x, y + 1.95, 0.18, 0.06); // the chin
+  return z;
+}
+
+/** The lattice parts around each eye the way the capture's mesh does in
+ *  the reference: rows flow round the opening like water round a post,
+ *  with a slight swirl — so the eye sits in a vortex of its own lines. */
+function eyeWarp(x: number, y: number): [number, number] {
+  for (const ex of [-EYE_X, EYE_X]) {
+    const dx = x - ex;
+    const dy = (y - EYE_Y) / EYE_SQUASH;
+    const r2 = dx * dx + dy * dy;
+    const f = Math.exp(-r2 / 0.32);
+    if (f < 1e-4) continue;
+    const r = Math.sqrt(r2) + 1e-6;
+    const scale = Math.sqrt(r2 + EYE_R * EYE_R * f) / r;
+    const a = 0.55 * f * Math.sign(ex);
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    const nx = (dx * c - dy * s) * scale;
+    const ny = (dx * s + dy * c) * scale;
+    x = ex + nx;
+    y = EYE_Y + ny * EYE_SQUASH;
+  }
+  return [x, y];
+}
+
+/** The key light the mesh is shaded by — high, to the left, in front —
+ *  so the relief reads the way it does under the capture's light: brow,
+ *  nose bridge and cheekbones catch it, sockets and the lip line fall
+ *  away. */
+const KEY = new THREE.Vector3(-0.32, 0.42, 0.85).normalize();
+
+function maskShade(x: number, y: number) {
+  const e = 0.012;
+  const n = new THREE.Vector3(
+    -(maskDepth(x + e, y) - maskDepth(x - e, y)) / (2 * e),
+    -(maskDepth(x, y + e) - maskDepth(x, y - e)) / (2 * e),
+    1,
+  ).normalize();
+  return Math.max(0, n.dot(KEY));
+}
+
+/** Every node of the mesh: rows of dots, dense along the row so each
+ *  reads as a line, sparser between rows so the lines stay distinct.
+ *  Each node carries its shade as a fourth value. */
+function maskLattice(rowStep: number, dotStep: number) {
+  const nodes: [number, number, number, number][] = [];
+  for (let y = -2.3; y <= 2.14; y += rowStep) {
+    const w = maskHalfWidth(y);
+    const n = Math.floor((2 * w) / dotStep);
+    const x0 = -(n * dotStep) / 2;
+    for (let k = 0; k <= n; k += 1) {
+      const [wx, wy] = eyeWarp(x0 + k * dotStep, y);
+      nodes.push([wx, wy, maskDepth(wx, wy), maskShade(wx, wy)]);
+    }
+  }
+  return nodes;
+}
+
+/** Where the scan light travels: out of the eyes, down and to the left,
+ *  toward the camera — the path of the gaze the capture is reading. */
+const BEAM_DIR = new THREE.Vector3(-1, -0.4, 0.62).normalize();
+const BEAM_LEN = 7.5;
+
+/** The match act's live subject: the scanned face, scaled and set right. */
+const LIVE_X = 2.55;
+const LIVE_Y = 0.2;
+const LIVE_S = 0.78;
 
 type Model = {
   forms: Float32Array[]; // five formations, N*3 each
   info: Float32Array; // rand, role(0 base / 1 signal), verdict flag
+  /** The face act's cast: kind (0 mesh, 1 iris, 2 beam, 3 dust, 4 glint,
+   *  9 none) and a parameter (the mesh's shade, the ring, or the distance
+   *  down the beam). */
+  bio: Float32Array;
 };
 
 function buildModel(): Model {
   const rand = mulberry32(20260829);
   const forms = Array.from({ length: 5 }, () => new Float32Array(N * 3));
   const info = new Float32Array(N * 3);
+  const bio = new Float32Array(N * 2);
+  // Tuned so the mesh takes most of the base budget and leaves a little
+  // over for dust.
+  const lattice = maskLattice(0.062, 0.027).slice(0, N - SIGNAL);
+  // The match act's live self has about half the budget: a coarser mesh,
+  // walked in order so its rows survive.
+  const liveLattice = maskLattice(0.082, 0.034);
+  let liveK = 0;
 
   const set = (arr: Float32Array, i: number, x: number, y: number, z: number) => {
     arr[i * 3] = x;
@@ -327,41 +446,63 @@ function buildModel(): Model {
       }
     }
 
-    /* ——— 3 FACE ——— */
+    /* ——— 3 FACE: the biometric scan ——— */
     {
+      const dust = (): [number, number, number] => [
+        (rand() - 0.5) * 6.4,
+        (rand() - 0.5) * 5.6,
+        -1.2 + rand() * 3.4,
+      ];
       if (isSignal && !isVerdict) {
-        if (u < 0.3) {
-          // Eyes: two watching clusters, small and dense.
-          const side = u < 0.15 ? -1 : 1;
-          const a = rand() * Math.PI * 2;
-          const rr = Math.sqrt(rand()) * 0.13;
+        const ex = u < 0.13 || (u >= 0.26 && rand() < 0.5) ? -EYE_X : EYE_X;
+        const ez = maskDepth(ex, EYE_Y) + 0.05;
+        if (u < 0.26) {
+          // The iris: concentric dotted rings round a dark pupil, cut flat
+          // by the lids — the outer rings pile onto the lid lines and draw
+          // them. A few are the catchlight instead.
+          if (rand() < 0.07) {
+            const a = rand() * Math.PI * 2;
+            const rr = Math.sqrt(rand()) * 0.03;
+            set(
+              forms[3],
+              i,
+              ex - 0.045 + Math.cos(a) * rr,
+              EYE_Y + 0.05 + Math.sin(a) * rr,
+              ez + 0.04,
+            );
+            bio.set([4, 0], i * 2);
+          } else {
+            const ring = Math.floor(rand() * 6);
+            const rr = 0.05 + ring * 0.031;
+            const a = rand() * Math.PI * 2;
+            set(
+              forms[3],
+              i,
+              ex + Math.cos(a) * rr,
+              EYE_Y + THREE.MathUtils.clamp(Math.sin(a) * rr, -0.14, 0.16),
+              ez + 0.02 * (1 - ring / 5),
+            );
+            bio.set([1, ring / 5], i * 2);
+          }
+        } else if (u < 0.76) {
+          // The beam: the scan light running out along the gaze, tight at
+          // the eye and fraying as it travels — three streaks per eye.
+          // Starting just clear of the iris, so the rings stay legible.
+          const t = 0.04 + 0.96 * Math.pow(rand(), 1.3);
+          const lane = (Math.floor(rand() * 3) - 1) * (0.035 + 0.12 * t);
+          const spread = 0.012 + 0.07 * t;
           set(
             forms[3],
             i,
-            side * 0.6 + Math.cos(a) * rr,
-            0.5 + Math.sin(a) * rr * 0.7,
-            1.18 + (rand() - 0.5) * 0.05,
+            ex + BEAM_DIR.x * t * BEAM_LEN + (rand() - 0.5) * spread,
+            EYE_Y + BEAM_DIR.y * t * BEAM_LEN + lane + (rand() - 0.5) * spread,
+            ez + BEAM_DIR.z * t * BEAM_LEN + (rand() - 0.5) * spread,
           );
-        } else if (u < 0.52) {
-          // The mouth: corners up. A liveness check is not an interrogation.
-          const a = -0.5 + rand();
-          set(
-            forms[3],
-            i,
-            a * 1.05,
-            -1.14 + a * a * 0.72 + (rand() - 0.5) * 0.045,
-            1.2 - Math.abs(a) * 0.3,
-          );
+          bio.set([2, t], i * 2);
         } else {
-          // The halo: the scan's own orbit, standing off the face.
-          const a = rand() * Math.PI * 2;
-          set(
-            forms[3],
-            i,
-            Math.cos(a) * 2.45,
-            0.1 + Math.sin(a) * 2.45,
-            (rand() - 0.5) * 0.1,
-          );
+          // Bright motes in the air around the capture.
+          set(forms[3], i, ...dust());
+          bio.set([3, 0], i * 2);
         }
       } else if (isVerdict) {
         // Waiting below the chin, dim until its act.
@@ -372,19 +513,18 @@ function buildModel(): Model {
           -2.95 + (rand() - 0.5) * 0.4,
           (rand() - 0.5) * 0.1,
         );
+        bio.set([9, 0], i * 2);
       } else {
-        // Contour slices: the head as horizontal section lines.
-        const slice = Math.floor(rand() * 34);
-        const y = -2.3 + (slice / 33) * 4.6;
-        const prof = faceProfile(y);
-        const a = rand() * Math.PI * 2;
-        let z = Math.sin(a) * prof * 0.8;
-        const x = Math.cos(a) * prof;
-        // The nose: the front of the middle slices pushed out.
-        if (z > 0 && Math.abs(x) < 0.42 && y > -0.7 && y < 0.35) {
-          z += 0.48 * (1 - Math.abs(x) / 0.42) * (1 - Math.abs(y + 0.18) / 1.05);
+        // The mesh: one particle per lattice node, the remainder as dust.
+        const k = i - SIGNAL;
+        if (k < lattice.length) {
+          const [x, y, z, shade] = lattice[k];
+          set(forms[3], i, x, y, z);
+          bio.set([0, shade], i * 2);
+        } else {
+          set(forms[3], i, ...dust());
+          bio.set([3, 0], i * 2);
         }
-        set(forms[3], i, x, y, z);
       }
     }
 
@@ -400,7 +540,7 @@ function buildModel(): Model {
           (rand() - 0.5) * 0.14,
         );
       } else if (isSignal) {
-        if (u < 0.56) {
+        if (u < 0.56 || u >= 0.66) {
           // The bridge: three lanes of clumped packets between the
           // subjects — traffic, not a dotted line.
           const lane = (Math.floor(rand() * 3) - 1) * 0.18;
@@ -412,28 +552,20 @@ function buildModel(): Model {
             lane + (rand() - 0.5) * 0.04,
             (rand() - 0.5) * 0.08,
           );
-        } else if (u < 0.82) {
-          // The live subject's eyes — without them the right mass was a
-          // hedgehog, not a person.
-          const side = u < 0.69 ? -1 : 1;
-          const a = rand() * Math.PI * 2;
-          const rr = Math.sqrt(rand()) * 0.1;
-          set(
-            forms[4],
-            i,
-            2.55 + side * 0.44 + Math.cos(a) * rr,
-            0.52 + Math.sin(a) * rr * 0.7,
-            0.95 + (rand() - 0.5) * 0.05,
-          );
         } else {
-          // And the same smile the face wore for liveness.
-          const a = -0.5 + rand();
+          // The live subject's eyes: the same ringed irises the scan read.
+          const ex = u < 0.61 ? -EYE_X : EYE_X;
+          const ring = Math.floor(rand() * 5);
+          const rr = 0.05 + ring * 0.031;
+          const a = rand() * Math.PI * 2;
           set(
             forms[4],
             i,
-            2.55 + a * 0.8,
-            -0.68 + a * a * 0.5 + (rand() - 0.5) * 0.04,
-            0.95 - Math.abs(a) * 0.24,
+            LIVE_X + (ex + Math.cos(a) * rr) * LIVE_S,
+            LIVE_Y +
+              (EYE_Y + THREE.MathUtils.clamp(Math.sin(a) * rr, -0.14, 0.16)) *
+                LIVE_S,
+            (maskDepth(ex, EYE_Y) + 0.05) * LIVE_S,
           );
         }
       } else if (r < 0.45) {
@@ -504,22 +636,15 @@ function buildModel(): Model {
           set(forms[4], i, -2.75 + x, 0.1 + y, (rand() - 0.5) * 0.04);
         }
       } else {
-        // The live self: the same contour face, smaller, standing right.
-        const slice = Math.floor(rand() * 30);
-        const y = -1.85 + (slice / 29) * 3.7;
-        const prof = faceProfile(y * 1.24) * 0.8;
-        const a = rand() * Math.PI * 2;
-        let z = Math.sin(a) * prof * 0.8;
-        const x = Math.cos(a) * prof;
-        if (z > 0 && Math.abs(x) < 0.34 && y > -0.56 && y < 0.28) {
-          z += 0.34 * (1 - Math.abs(x) / 0.34);
-        }
-        set(forms[4], i, 2.55 + x, 0.2 + y, z);
+        // The live self: the same scanned mesh, smaller, standing right.
+        const [x, y, z] = liveLattice[liveK % liveLattice.length];
+        liveK += 1;
+        set(forms[4], i, LIVE_X + x * LIVE_S, LIVE_Y + y * LIVE_S, z * LIVE_S);
       }
     }
   }
 
-  return { forms, info };
+  return { forms, info, bio };
 }
 
 const VERTEX = /* glsl */ `
@@ -529,6 +654,7 @@ const VERTEX = /* glsl */ `
   attribute vec3 aP3;
   attribute vec3 aP4;
   attribute vec3 aInfo; // rand, role, verdict
+  attribute vec2 aBio; // the face act's kind, and its parameter
   // Explicit precision: these uniforms also appear in the fragment stage,
   // and a mismatched default breaks program linking.
   uniform mediump float uProgress; // 0..4
@@ -541,6 +667,8 @@ const VERTEX = /* glsl */ `
   varying float vLit;
   varying float vHot;
   varying float vPing;
+  varying float vKind;
+  varying float vT;
 
   vec3 pick(float s) {
     float f = clamp(s, 0.0, 4.0);
@@ -567,7 +695,15 @@ const VERTEX = /* glsl */ `
     vec3 pos = pick(uProgress);
     // Breath: nothing organic is perfectly still. (Grain lives in the
     // fragment's alpha flicker — positional static blurred the contours.)
-    pos += 0.04 * vec3(
+    // The scan's mesh and irises hold almost still: their rows sit closer
+    // together than the breath travels, and breathing dissolved them.
+    float w3b = max(0.0, 1.0 - abs(uProgress - 3.0) * 1.4);
+    float w4b = max(0.0, 1.0 - abs(uProgress - 4.0) * 1.4);
+    float still = 1.0 - 0.9 * max(
+      w3b * (1.0 - step(1.5, aBio.x)),
+      w4b * (1.0 - aInfo.y)
+    );
+    pos += 0.04 * still * vec3(
       sin(uTime * 0.7 + aInfo.x * 43.0),
       cos(uTime * 0.6 + aInfo.x * 29.0),
       sin(uTime * 0.8 + aInfo.x * 61.0)
@@ -605,6 +741,13 @@ const VERTEX = /* glsl */ `
     gl_Position = projectionMatrix * mv;
 
     float size = 2.5 + aInfo.y * 1.25 + aInfo.z * 1.2;
+    // The scan's mesh is fine print — small dots, so the rows stay lines
+    // at this density — and the irises and their catchlight run larger.
+    float w3v = max(0.0, 1.0 - abs(uProgress - 3.0) * 1.4);
+    float kMesh = 1.0 - step(0.5, aBio.x);
+    float kIris = step(0.5, aBio.x) * (1.0 - step(1.5, aBio.x));
+    float kGlint = step(3.5, aBio.x) * (1.0 - step(4.5, aBio.x));
+    size *= 1.0 + w3v * (-0.12 * kMesh + 0.5 * kGlint);
     float pulse = 0.95 + 0.05 * sin(uTime * 1.3 + aInfo.x * 40.0);
     // The pop: a character swells under the bar as it is taken.
     gl_PointSize = size * uPixelRatio * (10.0 / -mv.z) * pulse
@@ -613,6 +756,8 @@ const VERTEX = /* glsl */ `
     vRole = aInfo.y;
     vVerdict = aInfo.z;
     vPos = pos;
+    vKind = aBio.x;
+    vT = aBio.y;
   }
 `;
 
@@ -627,6 +772,8 @@ const FRAGMENT = /* glsl */ `
   varying float vLit;
   varying float vHot;
   varying float vPing;
+  varying float vKind;
+  varying float vT;
 
   // Sharper than the morph: an act's light belongs to its act. At each
   // act's centre this is exactly 1, so tightening the tails never changes
@@ -678,8 +825,34 @@ const FRAGMENT = /* glsl */ `
     alpha *= 1.0 - 0.72 * ghost;
     alpha += 0.9 * vLit + 1.9 * vHot;
     alpha += ripple * (0.35 + vRole * 0.5);
-    alpha += scan * 0.5;
+    alpha += scan * 0.35;
     alpha += vRole * packet * 0.9;
+    // The biometric scan. The mesh warms to signal around the eyes and
+    // carries rings of light outward from them; the irises turn; light
+    // runs down the beam INTO the eye — the capture reading the gaze —
+    // and the motes in the air catch it now and then.
+    float kMesh = (1.0 - step(0.5, vKind)) * w3;
+    float kIris = step(0.5, vKind) * (1.0 - step(1.5, vKind)) * w3;
+    float kBeam = step(1.5, vKind) * (1.0 - step(2.5, vKind)) * w3;
+    float kDust = step(2.5, vKind) * (1.0 - step(3.5, vKind)) * w3;
+    float kGlint = step(3.5, vKind) * (1.0 - step(4.5, vKind)) * w3;
+    vec2 eyeL = (vPos.xy - vec2(-${EYE_X.toFixed(2)}, ${EYE_Y.toFixed(2)})) * vec2(1.0, 1.6);
+    vec2 eyeR = (vPos.xy - vec2(${EYE_X.toFixed(2)}, ${EYE_Y.toFixed(2)})) * vec2(1.0, 1.6);
+    vec2 eyeV = length(eyeL) < length(eyeR) ? eyeL : eyeR;
+    float eyeD = length(eyeV);
+    float nearEye = exp(-eyeD * 1.9) * kMesh;
+    float eyeWave = pow(0.5 + 0.5 * sin(eyeD * 10.0 - uTime * 2.4), 12.0)
+      * exp(-eyeD * 0.8) * kMesh;
+    float irisSpin = 0.5 + 0.5 * sin(atan(eyeV.y, eyeV.x) * 5.0 - uTime * 2.2 + vT * 9.0);
+    float beamPulse = pow(fract(vT * 2.4 + uTime * 0.75 + vRand * 0.12), 6.0);
+    float twinkle = pow(0.5 + 0.5 * sin(uTime * (1.2 + vRand * 2.6) + vRand * 60.0), 14.0);
+    alpha *= 1.0 - 0.85 * kDust - 0.62 * kIris - 0.5 * kGlint
+      - kMesh * (0.8 - 1.7 * vT);
+    alpha += 0.4 * nearEye + 0.75 * eyeWave;
+    alpha += kIris * 0.45 * irisSpin + 0.9 * kGlint;
+    alpha += kBeam * (0.3 * (1.0 - vT) + 1.4 * beamPulse);
+    alpha *= 1.0 - kBeam * smoothstep(0.55, 1.0, vT) * 0.85;
+    alpha += kDust * twinkle;
     // Sensor grain on the live capture.
     alpha *= 1.0 + 0.22 * w3 * sin(uTime * 9.0 + vRand * 80.0);
     // The verdict holds its light for the last act.
@@ -695,6 +868,8 @@ const FRAGMENT = /* glsl */ `
     col = mix(col, signal, (1.0 - vRole) * clamp(vHot + 0.4 * vLit + ripple + scan, 0.0, 0.7) * 0.6);
     // The bar's core runs near-white — light, not paint.
     col = mix(col, vec3(0.84, 0.88, 1.0), clamp(vHot * 1.2, 0.0, 1.0) * 0.85);
+    col = mix(col, signal, clamp(kIris + kBeam + kDust * 0.7 + nearEye * 1.3 + eyeWave, 0.0, 1.0));
+    col = mix(col, vec3(0.88, 0.92, 1.0), clamp(kGlint + kBeam * beamPulse * 0.7, 0.0, 1.0));
     col = mix(col, positive, vVerdict * max(smoothstep(3.2, 3.9, uProgress), vPing));
     gl_FragColor = vec4(col, alpha * 0.9);
   }
@@ -735,7 +910,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
 
   /* The line accents: each act's hairline furniture, shown only for its
      act — the card edge and printed rules for the document, the field
-     boxes, the halo, the miniature card, the bridge rails, the verdict's
+     boxes, the scan beam's streaks, the miniature card, the bridge rails, the verdict's
      square with the site's own drawn tick inside it. */
   const lineGeo = useMemo(() => {
     const rect = (
@@ -821,14 +996,21 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       ...rect(2.05, -0.45, 0.82, 0.3),
       ...brackets(-1.2, -0.35, 2.25, 1.55, 0.34),
     ]);
-    const haloPts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 72; i += 1) {
-      const a = (i / 72) * Math.PI * 2;
-      haloPts.push(
-        new THREE.Vector3(Math.cos(a) * 2.45, 0.1 + Math.sin(a) * 2.45, 0),
-      );
-    }
-    const halo = new THREE.BufferGeometry().setFromPoints(haloPts);
+    // The scan beam's streaks: fine parallel lines out of each eye along
+    // the gaze, fanning a little as they travel.
+    const beam = segs(
+      [-EYE_X, EYE_X].flatMap((ex) => {
+        const ez = maskDepth(ex, EYE_Y) + 0.05;
+        return [-1, 0, 1].map((lane) => [
+          ex,
+          EYE_Y + lane * 0.03,
+          ez,
+          ex + BEAM_DIR.x * BEAM_LEN,
+          EYE_Y + BEAM_DIR.y * BEAM_LEN + lane * 0.9,
+          ez + BEAM_DIR.z * BEAM_LEN,
+        ]);
+      }),
+    );
     // A sampled curve, packed as segment pairs so it can live in the same
     // LineSegments as the straight furniture.
     const arc = (
@@ -866,17 +1048,16 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       [0.02, 0.0, 0.01, 0.12, -0.12, 0.01],
       [0.12, -0.12, 0.01, 0.33, 0.13, 0.01],
     ]);
-    return { scanCore, mrzLabel, fields, halo, match, green };
+    return { scanCore, mrzLabel, fields, beam, match, green };
   }, []);
   const scanRef = useRef<THREE.Group>(null);
   const scanCoreMat = useRef<THREE.LineBasicMaterial>(null);
   const mrzLabelMat = useRef<THREE.LineBasicMaterial>(null);
   const scanGlowMat = useRef<THREE.MeshBasicMaterial>(null);
   const fieldsMat = useRef<THREE.LineBasicMaterial>(null);
-  const haloMat = useRef<THREE.LineBasicMaterial>(null);
+  const beamMat = useRef<THREE.LineBasicMaterial>(null);
   const matchMat = useRef<THREE.LineBasicMaterial>(null);
   const greenMat = useRef<THREE.LineBasicMaterial>(null);
-  const haloRef = useRef<THREE.LineLoop>(null);
   const clock = useRef(0);
 
   useFrame((state, delta) => {
@@ -902,11 +1083,12 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
     if (scanGlowMat.current) scanGlowMat.current.opacity = 0.1 * win(0);
     // The OCR act's hardware has to hold its own beside the streams.
     if (fieldsMat.current) fieldsMat.current.opacity = 0.5 * win(1);
-    if (haloMat.current) haloMat.current.opacity = 0.4 * win(3);
+    // The beam's streaks breathe with the light running down them.
+    if (beamMat.current)
+      beamMat.current.opacity = (0.16 + 0.06 * Math.sin(t * 1.9)) * win(3);
     if (matchMat.current) matchMat.current.opacity = 0.3 * win(4);
     if (greenMat.current)
       greenMat.current.opacity = 0.85 * Math.max(0, win(4) - 0.15);
-    if (haloRef.current) haloRef.current.rotation.z += dt * 0.25;
 
     if (groupRef.current) {
       const swing = interpStage(STAGE_OFFSET, p) * bus.current.spread;
@@ -917,11 +1099,12 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
       const targetX = -0.06 + bus.current.pointer[1] * 0.07;
       // A standing sway everywhere, and in the face's act the deliberate
       // yaw a liveness check asks for — the cheapest proof on the page
-      // that the head is a solid.
+      // that the face is a solid — turned a little into the beam, the
+      // three-quarter view the capture reads it from.
       const targetY =
         bus.current.pointer[0] * 0.16 +
         Math.sin(t * 0.23) * 0.05 +
-        Math.sin(t * 0.5) * 0.16 * win(3);
+        (Math.sin(t * 0.5) * 0.14 - 0.3) * win(3);
       groupRef.current.rotation.x +=
         (targetX - groupRef.current.rotation.x) * (1 - Math.pow(0.002, dt));
       groupRef.current.rotation.y +=
@@ -943,6 +1126,7 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           <bufferAttribute attach="attributes-aP3" args={[model.forms[3], 3]} />
           <bufferAttribute attach="attributes-aP4" args={[model.forms[4], 3]} />
           <bufferAttribute attach="attributes-aInfo" args={[model.info, 3]} />
+          <bufferAttribute attach="attributes-aBio" args={[model.bio, 2]} />
         </bufferGeometry>
         <shaderMaterial
           ref={mat}
@@ -992,14 +1176,16 @@ function IdentityMesh({ bus }: { bus: IdentityBusRef }) {
           opacity={0}
         />
       </lineSegments>
-      <lineLoop ref={haloRef} geometry={lineGeo.halo}>
+      <lineSegments geometry={lineGeo.beam}>
         <lineBasicMaterial
-          ref={haloMat}
-          color="#ece9e1"
+          ref={beamMat}
+          color="#7290ff"
           transparent
           opacity={0}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
-      </lineLoop>
+      </lineSegments>
       <lineSegments geometry={lineGeo.match}>
         <lineBasicMaterial
           ref={matchMat}
