@@ -4,6 +4,28 @@ _Snapshot taken 2026-10-10 on branch `feat/pixely-rebrand`. Analysis only; no co
 
 ---
 
+## Update 2026-10-11: back to the platform site
+
+The identity-and-fraud waitlist pivot has been dropped. Commit `4906f0f` was reverted. Where this update conflicts with the sections below, this update wins.
+
+**What's live now:**
+- `/` is the full platform homepage again: "We make money move" plus all ten chapters, Navigation, TravellingDevice and Footer.
+- Payments, identity and AI for Algeria is the positioning.
+
+**What's gone:** the waitlist API, `WaitlistForm`, `HeroPortrait`, the ID-card image, the waitlist tests, the `wordpress/` packager, the Brevo variables and the waitlist privacy text. All of it is still in git history.
+
+**Still valid from below:** the stack, the structure, the design system, and the parked-chapter notes, which now describe the live homepage.
+
+**Revised priorities:**
+1. Remove or verify the invented figures in `UseCases` and the `FinalCTA` perks.
+2. Settle the domain and legal entity, and refresh the legal pages.
+3. Run a QA pass across viewports, Lighthouse, a11y and reduced motion.
+4. Add the SEO basics (robots, sitemap, OG image) and `noindex` on `/lab`.
+5. Give the other five services their own pages, following `/platform/identity`.
+6. Add tests and CI, and replace the boilerplate README.
+
+---
+
 ## 1. TL;DR
 
 - **What it is:** a Next.js 16 / React 19 marketing site for Pixely, with WebGL scenes, GSAP scroll choreography, Lenis smooth scroll and a custom cursor. There is also a waitlist backend (Brevo), Google/Apple OAuth, a stub account area, one service page (`/platform/identity`), internal `/lab` pages, and a WordPress export of the hero.

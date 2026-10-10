@@ -1,33 +1,40 @@
-import type { Metadata } from "next";
 import SmoothScroll from "@/components/chrome/SmoothScroll";
 import CustomCursor from "@/components/chrome/CustomCursor";
-import { Wordmark } from "@/components/chrome/Navigation";
+import Navigation from "@/components/chrome/Navigation";
+import TravellingDevice from "@/components/chrome/TravellingDevice";
 import Hero from "@/components/sections/Hero";
-
-const description = "AI-powered KYC and fraud detection for banks and financial institutions in Algeria & MENA — hosted locally, privacy-first.";
-
-export const metadata: Metadata = {
-  title: "Pixely — AI-powered identity & fraud solution",
-  description,
-  openGraph: {
-    title: "Pixely — AI-powered identity & fraud solution",
-    description,
-    type: "website",
-  },
-};
+import Manifesto from "@/components/sections/Manifesto";
+import ProductExperience from "@/components/sections/ProductExperience";
+import NetworkNarrative from "@/components/sections/NetworkNarrative";
+import SecurityArchitecture from "@/components/sections/SecurityArchitecture";
+import GlobalCorridors from "@/components/sections/GlobalCorridors";
+import Metrics from "@/components/sections/Metrics";
+import UseCases from "@/components/sections/UseCases";
+import Thesis from "@/components/sections/Thesis";
+import FinalCTA from "@/components/sections/FinalCTA";
+import Footer from "@/components/chrome/Footer";
 
 export default function Home() {
   return (
     <SmoothScroll>
       <CustomCursor />
-      <header data-theme="ink" className="absolute inset-x-0 top-0 z-50 px-6 py-7 text-bone sm:px-10 lg:px-14">
-        <a href="#top" aria-label="Pixely — home" data-cursor="link" className="inline-flex">
-          <Wordmark />
-        </a>
-      </header>
+      <Navigation />
+      {/* Fixed to the viewport so it can ride out of the hero and into the
+          manifesto — a device parked inside a section cannot leave it. */}
+      <TravellingDevice />
       <main>
         <Hero />
+        <Manifesto />
+        <ProductExperience />
+        <NetworkNarrative />
+        <SecurityArchitecture />
+        <GlobalCorridors />
+        <Metrics />
+        <UseCases />
+        <Thesis />
+        <FinalCTA />
       </main>
+      <Footer />
     </SmoothScroll>
   );
 }
