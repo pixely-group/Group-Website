@@ -7,19 +7,18 @@ export default function Privacy() {
   return (
     <LegalPage index="Legal — Privacy" title="Privacy notice">
       <p>
-        The privacy notice is not published here yet. It is being prepared
-        with counsel, and it has to say what is collected, on what basis, how
-        long it is kept and who it is shared with — none of which is worth
-        stating approximately.
+        When you join the Pixely waitlist, we collect your email address to
+        record your interest, send a confirmation, and contact you when your
+        spot is ready.
       </p>
       <p>
-        What this site does today: it holds no accounts and sets no analytics
-        or advertising cookies. The sign-up form keeps what you type in your
-        own browser and sends none of it. The one thing that does leave your
-        browser is the domain of an address you type while creating an
-        account, which is looked up to check that it receives mail; the
-        address itself is not stored.
+        Waitlist email addresses are stored and emails are delivered through
+        Brevo. The website uses temporary request counters to limit automated
+        submissions. The waitlist does not require an account or ask for
+        identity documents.
       </p>
+      <p>To ask about your information or request removal from the waitlist,
+        contact <a href="mailto:admin@pixely.com">admin@pixely.com</a>.</p>
     </LegalPage>
   );
 }

@@ -19,6 +19,7 @@
 
 # production
 /build
+/wordpress/dist/
 
 # misc
 .DS_Store
