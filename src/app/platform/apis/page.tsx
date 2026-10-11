@@ -39,7 +39,7 @@ export default function APIsPage() {
           platform, so a team builds its product rather than a stack of
           providers."
         figure={<HairlineFigure file="apis.js" name="modules" />}
-        topic="developers"
+        topic="platform"
         talk="Ask for the sandbox"
       />
 
@@ -125,7 +125,7 @@ export default function APIsPage() {
         titleLines={["Ask for the", "sandbox"]}
         lede="Tell us what you are building, and ask for sandbox access and
           the API reference."
-        topic="developers"
+        topic="platform"
         talk="Ask for the sandbox"
       />
     </ServiceShell>

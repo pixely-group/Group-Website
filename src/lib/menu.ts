@@ -89,7 +89,7 @@ export const MENU: MenuColumn[] = [
     note: "Write to the team, or find an office.",
     links: [
       { label: "Platform enquiry", href: topicHref("platform") },
-      { label: "Developer access", href: topicHref("developers") },
+      { label: "Developer access", href: "/developers" },
       { label: "Partnerships", href: topicHref("partnerships") },
       { label: "Press", href: topicHref("press") },
       { label: "Careers", href: topicHref("careers") },

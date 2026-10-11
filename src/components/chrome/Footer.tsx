@@ -244,7 +244,7 @@ export default function Footer() {
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © {new Date().getFullYear()} {OFFICES[0].entity} · {OFFICES[1].entity}
+          © {new Date().getFullYear()} PIXELY.
         </p>
       </div>
     </footer>

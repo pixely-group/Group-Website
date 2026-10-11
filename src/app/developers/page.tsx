@@ -38,7 +38,7 @@ export default function DevelopersPage() {
             <HairlineFigure file="apis.js" name="modules" />
           </div>
         }
-        primary={{ label: "Request access", href: "/#contact-developers" }}
+        primary={{ label: "Request access", href: "/#contact-platform" }}
         secondary={{ label: "The network", href: "/platform/network" }}
       />
 
@@ -161,7 +161,7 @@ export default function DevelopersPage() {
         titleLines={["Request", "access"]}
         lede="Tell us what you are building, and we will be in touch about the
           sandbox, the reference and the SDKs."
-        primary={{ label: "Request access", href: "/#contact-developers" }}
+        primary={{ label: "Request access", href: "/#contact-platform" }}
         secondary={{ label: "Security", href: "/platform/security" }}
       />
     </ServiceShell>

@@ -206,15 +206,6 @@ export default function Contact() {
                 )}
               </div>
             ))}
-            <div>
-              <dt className="type-label text-(--faint)">Offices</dt>
-              <dd className="mt-2 text-(--muted)">
-                {OFFICES.map((o) => `${o.city} · ${o.entity}`).join("  ·  ")}{" "}
-                <a href="#offices" data-cursor="link" className="text-(--fg) underline decoration-1 underline-offset-4 transition-colors hover:text-accent">
-                  Addresses
-                </a>
-              </dd>
-            </div>
           </dl>
         </div>
 
