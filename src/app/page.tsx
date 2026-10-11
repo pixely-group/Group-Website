@@ -12,6 +12,7 @@ import Metrics from "@/components/sections/Metrics";
 import UseCases from "@/components/sections/UseCases";
 import Thesis from "@/components/sections/Thesis";
 import FinalCTA from "@/components/sections/FinalCTA";
+import Contact from "@/components/sections/Contact";
 import Footer from "@/components/chrome/Footer";
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
       {/* Fixed to the viewport so it can ride out of the hero and into the
           manifesto — a device parked inside a section cannot leave it. */}
       <TravellingDevice />
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <Hero />
         <Manifesto />
         <ProductExperience />
@@ -33,6 +34,7 @@ export default function Home() {
         <UseCases />
         <Thesis />
         <FinalCTA />
+        <Contact />
       </main>
       <Footer />
     </SmoothScroll>

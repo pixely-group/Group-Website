@@ -34,7 +34,11 @@ export function ServiceShell({ children }: { children: React.ReactNode }) {
     <SmoothScroll>
       <CustomCursor />
       <Navigation />
-      <main>{children}</main>
+      {/* The skip link's target on every page that wears the chrome, not
+          only the home page's first section. */}
+      <main id="main" tabIndex={-1} className="outline-none">
+        {children}
+      </main>
       <Footer />
     </SmoothScroll>
   );
@@ -316,12 +320,15 @@ export function FeatureGrid({
 }) {
   return (
     <div
-      className={`grid gap-x-10 gap-y-12 sm:grid-cols-2 ${
+      /* An explicit column below sm: the implicit one sized itself to the
+         longest unbreakable run of text and pushed the page 24px past a
+         390 screen. minmax(0, 1fr) holds it to the screen; the cells wrap. */
+      className={`grid grid-cols-[minmax(0,1fr)] gap-x-10 gap-y-12 sm:grid-cols-2 ${
         cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"
       }`}
     >
       {items.map((item, i) => (
-        <div key={item.label}>
+        <div key={item.label} className="min-w-0 [overflow-wrap:anywhere]">
           <span
             aria-hidden
             data-draw

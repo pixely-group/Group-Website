@@ -10,6 +10,7 @@ import AuthDialog from "@/components/chrome/AuthDialog";
 import { onOpenAuth } from "@/lib/auth-trigger";
 import AccountMenu from "@/components/chrome/AccountMenu";
 import SignOutDialog from "@/components/chrome/SignOutDialog";
+import { announceTopic } from "@/lib/contact";
 import { columnFor, linkHref } from "@/lib/menu";
 import NavGlyph from "@/components/chrome/NavGlyph";
 
@@ -45,7 +46,7 @@ export const NAV_LINKS = [
   { label: "Identity", href: "#network" },
   { label: "Services", href: "#solutions" },
   { label: "Company", href: "#thesis" },
-  { label: "Contact", href: "#resources" },
+  { label: "Contact", href: "#contact" },
 ] as const;
 
 /** Scroll distance over which the bar gathers itself, in px. */
@@ -736,8 +737,11 @@ export default function Navigation() {
       const el = document.querySelector(href);
       if (!el) return false;
       setMenu(false);
-      setActiveHref(href);
+      // A topic inside Contact ("#contact-press") lights Contact, and tells
+      // the form which topic it was opened on.
+      setActiveHref(href.startsWith("#contact-") ? "#contact" : href);
       glide(href, el);
+      announceTopic(el);
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -924,7 +928,7 @@ export default function Navigation() {
 
   return (
     <>
-      <a href="#product" className="skip-link" onClick={scrollTo("#product")}>
+      <a href="#main" className="skip-link" onClick={scrollTo("#main")}>
         Skip to content
       </a>
       <header

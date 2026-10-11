@@ -1,8 +1,8 @@
 /**
  * The site's own index, in one place.
  *
- * The footer has always listed these five columns; the navigation now opens
- * the same five as sub-menus, so they live here rather than in either of
+ * The footer lists these columns; the navigation opens the same ones as
+ * sub-menus (Contact included), so they live here rather than in either of
  * them. Two lists that have to agree and are written twice will not stay in
  * agreement, and this one is read from both ends of the page.
  *
@@ -12,6 +12,8 @@
  * a link has a section of its very own and it would be perverse to send it
  * somewhere else.
  */
+
+import { topicHref } from "@/lib/contact";
 
 export type MenuLink = {
   label: string;
@@ -35,14 +37,14 @@ export const MENU: MenuColumn[] = [
     href: "#product",
     note: "The six services the platform is built from.",
     links: [
-      { label: "Payments" },
-      { label: "eWallets" },
+      { label: "Payments", href: "/platform/payments" },
+      { label: "eWallets", href: "/platform/ewallets" },
       /* The first service with a page of its own — the template the other
          five will follow. */
       { label: "Identity", href: "/platform/identity" },
-      { label: "AI services" },
-      { label: "Compliance", href: "#security" },
-      { label: "APIs and SDKs" },
+      { label: "AI services", href: "/platform/ai" },
+      { label: "Compliance", href: "/platform/compliance" },
+      { label: "APIs and SDKs", href: "/platform/apis" },
     ],
   },
   {
@@ -50,11 +52,11 @@ export const MENU: MenuColumn[] = [
     href: "#solutions",
     note: "Who it is for, from first transaction to national scale.",
     links: [
-      { label: "Startups" },
-      { label: "Enterprises" },
-      { label: "Platforms" },
-      { label: "Financial teams" },
-      { label: "Global", href: "#global" },
+      { label: "Startups", href: "/solutions/startups" },
+      { label: "Enterprises", href: "/solutions/enterprises" },
+      { label: "Platforms", href: "/solutions/platforms" },
+      { label: "Financial teams", href: "/solutions/financial-teams" },
+      { label: "Global", href: "/solutions/global" },
     ],
   },
   {
@@ -62,12 +64,11 @@ export const MENU: MenuColumn[] = [
     href: "#network",
     note: "The rails underneath, and how to build on them.",
     links: [
-      { label: "Network" },
-      { label: "Rails" },
-      { label: "Ledger", href: "#product" },
-      { label: "API reference" },
-      { label: "Status" },
-      { label: "Changelog" },
+      { label: "Network", href: "/platform/network" },
+      { label: "Rails", href: "/platform/rails" },
+      { label: "Ledger", href: "/platform/ledger" },
+      { label: "Security", href: "/platform/security" },
+      { label: "Developer access", href: "/developers" },
     ],
   },
   {
@@ -75,23 +76,34 @@ export const MENU: MenuColumn[] = [
     href: "#thesis",
     note: "The position, and the people holding it.",
     links: [
-      { label: "About" },
-      { label: "Careers" },
-      { label: "Press" },
-      { label: "Customers", href: "#metrics" },
-      { label: "Contact", href: "#resources" },
+      { label: "About", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Press", href: "/press" },
+      { label: "Legal framework", href: "/legal-framework" },
+      { label: "Contact", href: "#contact" },
     ],
   },
   {
-    heading: "Resources",
-    href: "#security",
-    note: "How it is secured, documented and governed.",
+    heading: "Contact",
+    href: "#contact",
+    note: "Write to the team, or find an office.",
     links: [
-      { label: "Documentation" },
-      { label: "Guides" },
-      { label: "Security" },
-      { label: "Compliance" },
-      { label: "Legal", href: "#resources" },
+      { label: "Platform enquiry", href: topicHref("platform") },
+      { label: "Developer access", href: topicHref("developers") },
+      { label: "Partnerships", href: topicHref("partnerships") },
+      { label: "Press", href: topicHref("press") },
+      { label: "Careers", href: topicHref("careers") },
+      { label: "Offices", href: "#offices" },
+    ],
+  },
+  {
+    heading: "Legal",
+    href: "/privacy",
+    note: "How Pixely treats your data, and the terms of the site.",
+    links: [
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Cookies", href: "/cookies" },
     ],
   },
 ];
@@ -101,7 +113,7 @@ export const linkHref = (column: MenuColumn, link: MenuLink) =>
   link.href ?? column.href;
 
 /** The column a navigation item opens, matched on the section they share.
- *  Contact has none: it points at the foot of the page, which is where the
- *  whole index already is. */
+ *  Every item has one now, Contact included: its column lists the topics the
+ *  contact form can be opened on, and the offices. */
 export const columnFor = (href: string) =>
   MENU.find((column) => column.href === href);

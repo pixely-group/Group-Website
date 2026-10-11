@@ -3,11 +3,21 @@
 import { useEffect, useState } from "react";
 import { Wordmark, useAnchor } from "@/components/chrome/Navigation";
 import { useLenis } from "@/components/chrome/SmoothScroll";
+import Link from "next/link";
+
+import DocLink from "@/components/ui/DocLink";
 import WordmarkTrace from "@/components/ui/WordmarkTrace";
+import { OFFICES } from "@/lib/company";
+import { announceTopic } from "@/lib/contact";
 /* The same five columns the navigation opens as sub-menus. Written once, in
    lib/menu, because two lists that have to agree and are kept apart do not
    stay in agreement. */
 import { MENU, linkHref } from "@/lib/menu";
+
+/* The index columns; Legal is set apart, in the base line, where a reader
+   looks for it. */
+const COLUMNS = MENU.filter((c) => c.heading !== "Legal");
+const LEGAL = MENU.find((c) => c.heading === "Legal")!.links;
 
 
 /** Hubs whose local time the footer keeps, west to east. Algiers is the home
@@ -76,6 +86,7 @@ export default function Footer() {
     e.preventDefault();
     if (lenis) lenis.scrollTo(el as HTMLElement, { duration: 1.6 });
     else el.scrollIntoView();
+    announceTopic(el);
   };
 
   return (
@@ -99,17 +110,10 @@ export default function Footer() {
               Payments, digital identity and AI in one platform, built for
               Algeria.
             </p>
-            <p className="type-label mt-8 flex items-center gap-2 text-(--faint)">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-positive opacity-70" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-positive" />
-              </span>
-              All systems operational
-            </p>
           </div>
 
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
-            {MENU.map((column) => (
+            {COLUMNS.map((column) => (
               <div key={column.heading}>
                 <h2 className="type-label mb-5 text-(--faint)">
                   {column.heading}
@@ -136,6 +140,64 @@ export default function Footer() {
           </nav>
         </div>
 
+        {/* The two companies and where they are. Written once, in
+            lib/company, and read here, on the About page and in the legal
+            documents, so an address is never right in one and stale in
+            another. */}
+        <section id="offices" aria-labelledby="offices-heading" className="mt-16 border-t border-(--line) pt-10">
+          <h2 id="offices-heading" className="type-label mb-8 text-(--muted)">
+            Offices
+          </h2>
+          <div className="grid gap-10 md:grid-cols-2 md:gap-16">
+            {OFFICES.map((office) => (
+              <address key={office.city} className="not-italic">
+                <p className="type-headline text-[1.5rem] leading-none">{office.city}</p>
+                <p className="type-label mt-3 text-(--fg)">{office.entity}</p>
+                <p className="mt-5 text-[0.9rem] leading-relaxed text-(--muted)">
+                  {office.address.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </p>
+                <dl className="mt-5 space-y-2 border-t border-(--line) pt-4 text-[0.85rem]">
+                  <div className="flex gap-3">
+                    <dt className="type-label w-24 shrink-0 pt-px text-(--faint)">{office.registration.label}</dt>
+                    <dd className="type-mono text-(--muted)">
+                      {office.registration.href ? (
+                        <DocLink href={office.registration.href}>{office.registration.value}</DocLink>
+                      ) : (
+                        office.registration.value
+                      )}
+                    </dd>
+                  </div>
+                  {office.phone && (
+                    <div className="flex gap-3">
+                      <dt className="type-label w-24 shrink-0 pt-px text-(--faint)">Phone</dt>
+                      <dd>
+                        <a href={`tel:${office.phone.tel}`} data-cursor="link" className="type-mono text-(--muted) transition-colors duration-300 hover:text-accent">
+                          {office.phone.display}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {office.email && (
+                    <div className="flex gap-3">
+                      <dt className="type-label w-24 shrink-0 pt-px text-(--faint)">Email</dt>
+                      <dd>
+                        <a href={`mailto:${office.email}`} data-cursor="link" className="text-(--muted) transition-colors duration-300 hover:text-accent">
+                          {office.email}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {office.note && <p className="type-label pt-1 text-(--faint)">{office.note}</p>}
+                </dl>
+              </address>
+            ))}
+          </div>
+        </section>
+
         {/* Wordmark as a rule across the base of the page, ending on the
             brand's square full stop. The letters trace under the pointer;
             the dot does not, because it is the lit pixel and it is already
@@ -146,31 +208,43 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-(--line) pt-7 md:flex-row md:items-start md:justify-between">
+          {/* Who is behind the site, as the registers have it. Nothing here
+              claims a licence: none is held, and none is implied. */}
           <p className="type-label max-w-2xl leading-relaxed text-(--faint)">
-            Pixely Financial Technologies Ltd. is an authorised electronic
-            money institution. Payment and account services are provided by
-            Pixely and its partner institutions. Balances are safeguarded,
-            not deposits, and are not covered by deposit guarantee schemes.
+            {OFFICES[0].entity} is a private limited company registered in England and Wales,
+            no. {OFFICES[0].registration.value}, registered office {OFFICES[0].address.slice(0, 3).join(", ")}.
+            It operates this website. {OFFICES[1].entity} is registered in Algeria, RC {OFFICES[1].registration.value}.
+            No payment, banking or financial services are provided through this website.
           </p>
           <div className="flex shrink-0 flex-wrap gap-x-7 gap-y-3">
-            {["Privacy", "Terms", "Cookies", "LinkedIn", "X", "GitHub"].map(
-              (link) => (
-                <a
-                  key={link}
-                  href={anchor("#top")}
-                  onClick={scrollTo("#top")}
-                  data-cursor="link"
-                  className="type-label text-(--muted) transition-colors duration-300 hover:text-accent"
-                >
-                  {link}
-                </a>
-              ),
-            )}
+            {LEGAL.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href!}
+                data-cursor="link"
+                className="type-label text-(--muted) transition-colors duration-300 hover:text-accent"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {/* The social links, as they were. Their profile addresses are
+                still to come; until then they keep their original target. */}
+            {["LinkedIn", "X", "GitHub"].map((link) => (
+              <a
+                key={link}
+                href={anchor("#top")}
+                onClick={scrollTo("#top")}
+                data-cursor="link"
+                className="type-label text-(--muted) transition-colors duration-300 hover:text-accent"
+              >
+                {link}
+              </a>
+            ))}
           </div>
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © 2026 Pixely — AI-powered fintech platform
+          © {new Date().getFullYear()} {OFFICES[0].entity} · {OFFICES[1].entity}
         </p>
       </div>
     </footer>

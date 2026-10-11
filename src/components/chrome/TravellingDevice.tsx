@@ -199,7 +199,16 @@ export default function TravellingDevice() {
        the phone was rejected and so was hiding the hero's mission pillars.
        On shorter windows those lines pass beneath the phone, which floats
        over the hero on its own layer — layering, not collision. */
-    <div className="pointer-events-none fixed inset-y-0 right-[12.4%] z-30 hidden items-center beside:flex">
+    /* Under reduced motion there is no journey, so there is no reason to be
+       fixed: pinned to the viewport it simply hung over every chapter down to
+       the footer. Anchored to the top of the page instead, it stays where the
+       journey would have started, beside the hero's copy, and leaves with
+       the hero like any still picture. */
+    <div
+      className={`pointer-events-none right-[12.4%] z-30 hidden items-center beside:flex ${
+        reduced ? "absolute top-0 h-[100svh]" : "fixed inset-y-0"
+      }`}
+    >
       <div
         ref={holderRef}
         className="pointer-events-auto relative h-full max-h-[560px] xl:max-h-[648px]"

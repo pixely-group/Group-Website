@@ -54,7 +54,7 @@ export default function IdentityPage() {
           fraudster is still holding the camera."
         ground="ink"
       >
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
           <FeatureGrid
             cols={2}
             items={[

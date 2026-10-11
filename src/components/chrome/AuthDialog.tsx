@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { useLenis } from "@/components/chrome/SmoothScroll";
+import DocLink from "@/components/ui/DocLink";
+import { Field, Verdict } from "@/components/ui/Field";
 import MagneticButton from "@/components/ui/MagneticButton";
 import { inspect, looksFinished, type Check } from "@/lib/email";
 
@@ -102,52 +104,6 @@ function AppleMark() {
 /** The verdict, drawn. A tick that draws itself on and a cross that draws
  *  itself in are the same gesture at two outcomes — and the stroke is dashed
  *  to its own length, so each one arrives rather than appearing. */
-function Verdict({ state }: { state: "checking" | "good" | "bad" }) {
-  return (
-    <span
-      key={state}
-      aria-hidden
-      className="verdict pointer-events-none absolute top-1/2 right-4 -translate-y-1/2"
-      data-state={state}
-    >
-      {state === "checking" ? (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
-          <path
-            className="verdict-spin"
-            d="M8 2a6 6 0 0 1 6 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      ) : state === "good" ? (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            className="verdict-draw"
-            d="M3 8.4 6.4 11.8 13 5.2"
-            pathLength={100}
-            stroke="var(--color-positive)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            className="verdict-draw"
-            d="M4 4l8 8M12 4l-8 8"
-            pathLength={100}
-            stroke="var(--color-negative)"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      )}
-    </span>
-  );
-}
 
 /* A password being built, not a form being failed.
 
@@ -243,41 +199,6 @@ function Strength({
   );
 }
 
-/** A legal document, linked from inside the form it governs. It opens in a
- *  new tab on purpose: the reader is mid-sign-up with a half-typed form, and
- *  a same-tab navigation throws that away to show them boilerplate. The
- *  arrow says so before they click. */
-function DocLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener"
-      data-cursor="link"
-      className="inline-flex items-baseline gap-[0.35em] text-(--muted) underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-accent"
-    >
-      {children}
-      <svg
-        width="7"
-        height="7"
-        viewBox="0 0 8 8"
-        fill="none"
-        aria-hidden
-        className="shrink-0"
-      >
-        <path
-          d="M1.5 6.5 6.5 1.5M2.5 1.5h4v4"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
-  );
-}
-
 function Provider({
   label,
   onPress,
@@ -300,86 +221,6 @@ function Provider({
   );
 }
 
-function Field({
-  id,
-  label,
-  type,
-  autoComplete,
-  value,
-  onChange,
-  onBlur,
-  tone,
-  note,
-  mark,
-  shaking,
-}: {
-  id: string;
-  label: string;
-  type: string;
-  autoComplete: string;
-  value: string;
-  onChange: (v: string) => void;
-  onBlur?: () => void;
-  /** Colours the rule under the field. Absent means nothing is known yet,
-   *  which is not the same as nothing being wrong. */
-  tone?: "good" | "warn" | "bad";
-  note?: React.ReactNode;
-  /** Drawn inside the field's right edge, where the answer belongs — beside
-   *  what was typed rather than underneath it. */
-  mark?: React.ReactNode;
-  /** One beat of sideways shake — the field saying "here" when a submit
-   *  arrives with nothing in it. */
-  shaking?: boolean;
-}) {
-  const edge =
-    tone === "bad"
-      ? "border-(--color-negative)"
-      : tone === "warn"
-        ? "border-(--color-signal-lift)"
-        : tone === "good"
-          ? "border-(--color-positive)"
-          : "border-(--line)";
-  return (
-    <div>
-      <label htmlFor={id} className="block">
-        <span className="type-label block text-(--faint)">{label}</span>
-        <span className={`relative mt-2 block ${shaking ? "field-shake" : ""}`}>
-        <input
-          id={id}
-          type={type}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={onBlur}
-          aria-describedby={note ? `${id}-note` : undefined}
-          aria-invalid={tone === "bad" || undefined}
-          /* Focus is the blue it always was — carried by the field's own
-             edge, one border, no ring. But the verdict outranks it: a poked
-             empty field is focused by the poke itself, and blue-beats-red
-             meant the red never showed. Blue is for a field nothing is known
-             about; the moment there is a verdict, the edge wears it, focused
-             or not. */
-          className={`block w-full rounded-(--radius-control) border bg-(--surface) py-3 pr-11 pl-4 text-[0.95rem] text-(--fg) outline-none transition-colors duration-200 placeholder:text-(--faint) focus:bg-transparent ${edge} ${
-            tone ? "" : "focus:border-(--color-signal)"
-          }`}
-        />
-        {mark}
-        </span>
-      </label>
-      {note && (
-        <p
-          id={`${id}-note`}
-          /* Polite: it speaks when the typing stops, rather than interrupting
-             every keystroke with a half-finished address. */
-          aria-live="polite"
-          className="mt-2 text-[0.8rem] leading-relaxed text-(--muted)"
-        >
-          {note}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export default function AuthDialog({
   open,
