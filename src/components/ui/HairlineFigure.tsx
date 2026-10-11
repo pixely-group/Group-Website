@@ -49,6 +49,13 @@ const BASE = "/hairline/";
 let kernel: Promise<Kernel> | null = null;
 const figures = new Map<string, Promise<Figure>>();
 const waiting = new Map<string, (figure: Figure) => void>();
+/** When the first figure on the page came into view: every delay counts from
+ *  it, so a row that scrolls in later still takes its turn in the order
+ *  rather than starting a count of its own. */
+let firstSeen = 0;
+/** Figures on the page now. When the last one goes, the count starts afresh
+ *  for whatever page mounts the next. */
+let live = 0;
 
 function script(attrs: Record<string, string>) {
   return new Promise<void>((resolve, reject) => {
@@ -91,12 +98,20 @@ function loadFigure(file: string, name: string) {
 export default function HairlineFigure({
   file,
   name,
+  delay = 0,
   className = "",
 }: {
   /** The figure's file in public/hairline, e.g. "payments.js". */
   file: string;
   /** The name the figure registers itself under. */
   name: string;
+  /**
+   * How long after the stage first comes into view the figure is mounted,
+   * in ms. A figure starts its own loop the moment it mounts, so mounting a
+   * row of them one after another is what keeps them out of step: their
+   * first answers arrive as a sequence, not all on the same beat.
+   */
+  delay?: number;
   className?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -106,24 +121,51 @@ export default function HairlineFigure({
     if (!stage) return;
     let handle: ReturnType<Figure["mount"]> | null = null;
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    live++;
 
-    loadFigure(file, name)
-      .then((figure) => {
+    // Fetched straight away, so the mount itself is instant when its turn comes.
+    const loading = loadFigure(file, name);
+    loading.catch((error) => console.error(error));
+
+    const mount = () =>
+      loading.then((figure) => {
         if (cancelled || !window.HL) return;
         stage.setAttribute("data-hairline", figure.name);
         const svg = window.HL.mk("svg", { viewBox: "0 0 400 320", "aria-hidden": "true" }, stage);
         // The read-out is the bench's corner label. The card's own words say
         // what the figure shows, so it is kept and never displayed.
         handle = figure.mount({ stage, svg, read: { textContent: null } }, figure.range[1]);
-      })
-      .catch((error) => console.error(error));
+        // Next frame, so the fade starts from the svg's first paint.
+        requestAnimationFrame(() => stage.setAttribute("data-in", ""));
+      }, () => {});
+
+    // Under reduced motion every figure rests anyway: nothing to stagger.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const seen = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        seen.disconnect();
+        const now = performance.now();
+        firstSeen ||= now;
+        const wait = still ? 0 : firstSeen + delay - now;
+        if (wait <= 0) mount();
+        else timer = setTimeout(mount, wait);
+      },
+      { threshold: 0.35 },
+    );
+    seen.observe(stage);
 
     return () => {
       cancelled = true;
+      seen.disconnect();
+      clearTimeout(timer);
       handle?.destroy();
       stage.replaceChildren();
+      stage.removeAttribute("data-in");
+      if (--live === 0) firstSeen = 0;
     };
-  }, [file, name]);
+  }, [file, name, delay]);
 
   // Decorative: the service's name and note beside it carry the meaning.
   return <div ref={stageRef} aria-hidden className={`hairline-figure ${className}`} />;

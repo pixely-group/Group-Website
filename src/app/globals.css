@@ -1636,3 +1636,16 @@ html[data-cursor="on"] * {
   --hairline-mid: color-mix(in oklab, var(--fg) 34%, var(--bg));
   --hairline-lo: color-mix(in oklab, var(--fg) 20%, var(--bg));
 }
+/* Each figure fades in as it is mounted, in its card's turn. */
+.hairline-figure > svg {
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out-expo);
+}
+.hairline-figure[data-in] > svg {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hairline-figure > svg {
+    transition: none;
+  }
+}

@@ -101,6 +101,7 @@ export default function Metrics() {
               <HairlineFigure
                 file={m.figure.file}
                 name={m.figure.name}
+                delay={(m.index - 1) * 350}
                 className="-mx-2 mb-6"
               />
               <dt className="type-display text-[clamp(2.8rem,6vw,5.4rem)] leading-[0.92] tracking-[-0.03em] whitespace-nowrap">
