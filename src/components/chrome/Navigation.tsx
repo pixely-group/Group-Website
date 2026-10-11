@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import MobileMenu from "@/components/chrome/MobileMenu";
 import AuthDialog from "@/components/chrome/AuthDialog";
-import { onOpenAuth } from "@/lib/auth-trigger";
+import { SIGN_IN_OPEN, onOpenAuth, openAuth } from "@/lib/auth-trigger";
 import AccountMenu from "@/components/chrome/AccountMenu";
 import SignOutDialog from "@/components/chrome/SignOutDialog";
 import { announceTopic } from "@/lib/contact";
@@ -240,6 +240,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
  * follows the chapter (`data-theme`) currently beneath the bar.
  */
 export default function Navigation() {
+  const router = useRouter();
   const lenis = useLenis();
   const anchor = useAnchor();
   const [scheme, setScheme] = useState<"ink" | "bone">("ink");
@@ -766,6 +767,12 @@ export default function Navigation() {
   useEffect(
     () =>
       onOpenAuth((mode) => {
+        /* Sign-in closed: Get started means talk to us. Off the home page
+           the form is not on this page, so it is a navigation. */
+        if (!SIGN_IN_OPEN) {
+          if (!goTo("#contact-platform")) router.push("/#contact-platform");
+          return;
+        }
         if (account) {
           goTo("#start");
           return;
@@ -773,7 +780,7 @@ export default function Navigation() {
         setAuthMode(mode);
         setAuthOpen(true);
       }),
-    [account, goTo],
+    [account, goTo, router],
   );
 
   /* One dot with two states: at rest it IS the wordmark's full stop, and
@@ -1204,6 +1211,7 @@ export default function Navigation() {
                 </span>
               ) : (
                 <>
+                  {SIGN_IN_OPEN && (
                   <span
                     data-nav-link
                     inert={gathered}
@@ -1222,6 +1230,7 @@ export default function Navigation() {
                       Login
                     </MagneticButton>
                   </span>
+                  )}
                   {/* Wrapped rather than given `hidden` directly: the
                       button's own `inline-flex` is the same specificity and
                       wins by CSS order. */}
@@ -1230,13 +1239,7 @@ export default function Navigation() {
                         it: one way in for people with accounts, one for
                         people without. The in-page CTAs still scroll to
                         #start, which is the talk-to-an-engineer chapter. */}
-                    <MagneticButton
-                      onClick={() => {
-                        setAuthMode("up");
-                        setAuthOpen(true);
-                      }}
-                      size="sm"
-                    >
+                    <MagneticButton onClick={() => openAuth("up")} size="sm">
                       Get started
                     </MagneticButton>
                   </span>
@@ -1283,10 +1286,7 @@ export default function Navigation() {
           setAuthMode("in");
           setAuthOpen(true);
         }}
-        onSignup={() => {
-          setAuthMode("up");
-          setAuthOpen(true);
-        }}
+        onSignup={() => openAuth("up")}
         account={account}
         onSignOut={() => setConfirmSignOut(true)}
       />

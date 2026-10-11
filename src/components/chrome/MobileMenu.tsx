@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
+import { SIGN_IN_OPEN } from "@/lib/auth-trigger";
 import {
   NAV_GEOMETRY,
   NAV_INSETS,
@@ -409,16 +410,18 @@ export default function MobileMenu({
                   anywhere, so it is a button and announces itself as one.
                   The menu shuts first — two layers of dialog over each
                   other is one too many. */}
-              <MagneticButton
-                onClick={() => {
-                  onClose();
-                  onLogin();
-                }}
-                variant="outline"
-                className="w-full justify-center"
-              >
-                Login
-              </MagneticButton>
+              {SIGN_IN_OPEN && (
+                <MagneticButton
+                  onClick={() => {
+                    onClose();
+                    onLogin();
+                  }}
+                  variant="outline"
+                  className="w-full justify-center"
+                >
+                  Login
+                </MagneticButton>
+              )}
             </>
           )}
         </div>

@@ -44,6 +44,8 @@ export const OFFICES: Office[] = [
     address: ["Oakwood House", "422 Hackney Road", "London E2 7SY", "United Kingdom"],
     registration: { label: "Company no.", value: "11595193", href: COMPANIES_HOUSE_URL },
     note: "Registered office · England and Wales",
+    phone: { display: "+213 (0) 794 0414093", tel: "+2137940414093" },
+    email: "contact@pixely.com",
     tz: "Europe/London",
   },
   {

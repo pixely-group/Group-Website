@@ -148,7 +148,6 @@ export default function Contact() {
   };
 
   const remaining = MAX - fields.message.length;
-  const algiers = OFFICES.find((o) => o.email)!;
   const tone = (k: FieldKey): Tone | undefined => (show(k) ? "bad" : undefined);
 
   return (
@@ -186,24 +185,27 @@ export default function Contact() {
           </p>
 
           <dl data-contact-fade className="mt-12 grid gap-y-6 border-t border-(--line) pt-8 text-[0.95rem]">
-            <div>
-              <dt className="type-label text-(--faint)">Write</dt>
-              <dd className="mt-2">
-                <a href={`mailto:${algiers.email}`} data-cursor="link" className="transition-colors duration-300 hover:text-accent">
-                  {algiers.email}
-                </a>
-              </dd>
-            </div>
-            {algiers.phone && (
-              <div>
-                <dt className="type-label text-(--faint)">Call · Algiers</dt>
-                <dd className="mt-2">
-                  <a href={`tel:${algiers.phone.tel}`} data-cursor="link" className="type-mono transition-colors duration-300 hover:text-accent">
-                    {algiers.phone.display}
-                  </a>
-                </dd>
+            {/* One row per office that can be reached directly, under its
+                city, so a number is never read as the other office's. */}
+            {OFFICES.filter((o) => o.email || o.phone).map((o) => (
+              <div key={o.city}>
+                <dt className="type-label text-(--faint)">Write or call · {o.city}</dt>
+                {o.email && (
+                  <dd className="mt-2">
+                    <a href={`mailto:${o.email}`} data-cursor="link" className="transition-colors duration-300 hover:text-accent">
+                      {o.email}
+                    </a>
+                  </dd>
+                )}
+                {o.phone && (
+                  <dd className="mt-1">
+                    <a href={`tel:${o.phone.tel}`} data-cursor="link" className="type-mono transition-colors duration-300 hover:text-accent">
+                      {o.phone.display}
+                    </a>
+                  </dd>
+                )}
               </div>
-            )}
+            ))}
             <div>
               <dt className="type-label text-(--faint)">Offices</dt>
               <dd className="mt-2 text-(--muted)">

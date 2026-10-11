@@ -10,6 +10,14 @@
  * importing this same module instance; nothing here runs on the server.
  */
 
+/**
+ * Whether signing in is offered at all. Off until the Google and Apple keys
+ * are in production: the Login buttons are hidden and every Get started
+ * goes to the contact form instead of the account panel. The panel, the
+ * routes and the session code all stay, so turning it back on is this line.
+ */
+export const SIGN_IN_OPEN = false;
+
 export type AuthMode = "in" | "up";
 
 type Listener = (mode: AuthMode) => void;
