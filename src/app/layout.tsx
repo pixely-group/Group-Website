@@ -7,6 +7,7 @@ import {
   Nunito,
 } from "next/font/google";
 import "./globals.css";
+import { SITE_URL } from "@/lib/company";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -71,7 +72,7 @@ export const metadata: Metadata = {
   title: "Pixely — AI-powered fintech platform",
   description:
     "Pixely combines payments, digital identity and artificial intelligence into one platform — secure transactions, trusted verification and intelligent financial services, built for Algeria.",
-  metadataBase: new URL("https://www.pixely.dz"),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "Pixely — AI-powered fintech platform",
     description:
