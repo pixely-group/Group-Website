@@ -2,8 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
+import DocLink from "@/components/ui/DocLink";
+import { PILLARS } from "@/lib/laws";
 import Globe from "@/components/ui/Globe";
 import { gsap } from "@/lib/gsap";
+
+/* The four pillars under the globe, each with the Algerian laws it answers
+   to: one list, in lib/laws, shared with the Legal framework page and every
+   page that cites a law, so each is cited the same way everywhere. */
 
 /**
  * The corridors, on a globe.
@@ -114,24 +120,72 @@ export default function GlobalCorridors() {
           each. Drag to rotate it.
         </p>
 
-        <dl className="mt-14 grid gap-px border-t border-(--line) sm:grid-cols-2 lg:grid-cols-4">
+        {/* Each pillar is a subgrid of the strip's five rows (mark, name,
+            label, sentence, ledger), so across a row of pillars every part
+            starts on one line however long the part above it runs. The
+            strip itself has no row gap: a subgrid lives on its parent's rows,
+            so a gap there would open between every part of every pillar.
+            Pillars stacked in two rows are spaced by their own foot instead. */}
+        <dl className="mt-14 grid gap-x-10 border-t border-(--line) sm:grid-cols-2 lg:grid-cols-4">
           {/* The deck publishes no figures and this is a real company, so
               these say what the platform does rather than counting things
               that have not been counted. */}
-          {[
-            ["Payments", "Real time, not overnight"],
-            ["Identity", "Proved once, trusted after"],
-            ["Compliance", "Regulatory-ready by construction"],
-            ["Algeria", "Where it is being built"],
-          ].map(([value, label]) => (
-            <div key={label} data-corridor-stat className="pt-6">
+          {PILLARS.map((pillar) => (
+            <div
+              key={pillar.value}
+              data-corridor-stat
+              className="row-span-4 grid grid-rows-subgrid pt-7 pb-14 lg:pb-0"
+            >
               <dt className="type-headline text-[1.5rem] leading-none font-medium tracking-[-0.02em]">
-                {value}
+                {pillar.value}
               </dt>
-              <dd className="type-label mt-3 text-(--muted)">{label}</dd>
+              <dd className="type-label mt-3 text-(--fg)">{pillar.label}</dd>
+              <dd className="mt-4 max-w-[34ch] text-[0.9rem] leading-relaxed text-(--muted)">
+                {pillar.body}
+              </dd>
+              <dd className="pt-7">
+                <p className="type-label mb-2 text-[0.625rem] text-(--faint)">Built around</p>
+                <ul className="border-t border-(--line)">
+                  {pillar.laws.map((law) => (
+                    <li key={law.no} className="border-b border-(--line) py-3 text-[0.9rem]">
+                      {/* The sign-up dialog's own link, so a law reads as
+                          the same kind of thing as its terms: a document
+                          you can open, in a new tab. */}
+                      <div className="flex items-baseline justify-between gap-4">
+                        <DocLink href={law.href}>{law.kind ?? "Law"} no. {law.no}</DocLink>
+                        <span className="type-mono text-[0.75rem] text-(--muted)">{law.year}</span>
+                      </div>
+                      <p className="mt-1 text-[0.8rem] leading-snug text-(--faint)">{law.subject}</p>
+                      {/* An amendment is a row of its own, built like the
+                          law above it (number, year in the same column,
+                          what it does underneath) and hung from it by the
+                          rule at its left, so it reads as that law's. */}
+                      {law.amended && (
+                        <div className="mt-3 ml-1 border-l border-(--line) pl-4">
+                          <div className="flex items-baseline justify-between gap-4">
+                            <DocLink href={law.amended.href}>Law no. {law.amended.no}</DocLink>
+                            <span className="type-mono text-[0.75rem] text-(--muted)">{law.amended.year}</span>
+                          </div>
+                          <p className="mt-1 text-[0.8rem] leading-snug text-(--faint)">
+                            Amends law no. {law.no}
+                          </p>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </dd>
             </div>
           ))}
         </dl>
+        {/* A law named on a fintech's page reads as a claim. This says what
+            kind of claim it is. */}
+        <p className="type-label mt-10 max-w-3xl text-[0.625rem] leading-relaxed text-(--faint)">
+          Each text opens in the Journal Officiel of the République
+          Algérienne, in its French edition, at the page it starts on. They name the
+          framework Pixely is built for; they are not a licence or a
+          certification.
+        </p>
       </div>
     </section>
   );

@@ -3,40 +3,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
 
+/* Who it is for, written as what the platform is built to do for each of
+   them. There are no figures here: the platform is not live, and a time to
+   first payment, a match rate or a count of markets would be a number nobody
+   has measured. The three markers under each say what kind of thing it is,
+   not how much of it there is. */
 const DIMENSIONS = [
   {
     id: "startups",
     label: "Startups",
-    headline: "Ship a financial product before you own a bank charter.",
-    body: "Issue accounts, move money and hold balances on Pixely's licences. One integration replaces a two-year banking programme.",
+    headline: "Launch a financial product on one integration.",
+    body: "Accounts, payments, identity checks and fraud screening behind a single API, so a team builds its product rather than a stack of providers.",
     stats: [
-      ["6 days", "Median time to first live payment"],
-      ["0", "Bank partnerships to negotiate"],
-      ["Usage", "Pricing until you reach scale"],
+      ["One API", "Payments, wallets, identity and AI"],
+      ["Sandbox", "Simulated rails to build against"],
+      ["Built in", "KYC and AML from the first user"],
     ],
     rail: ["Accounts API", "Sandbox", "Test rails", "Go-live review"],
   },
   {
     id: "enterprises",
     label: "Enterprises",
-    headline: "Replace fourteen bank portals with one control plane.",
-    body: "Consolidate entities, currencies and rails into a single ledger with role-based control, then keep your existing banks connected underneath.",
+    headline: "One control plane over every entity and account.",
+    body: "Entities, currencies and rails brought into a single ledger with role-based control, while the banks you already work with stay connected underneath.",
     stats: [
-      ["14 → 1", "Portals your treasury team signs into"],
-      ["T+0", "Group-wide cash visibility"],
-      ["SSO · SCIM", "Provisioning that matches your directory"],
+      ["One ledger", "Across entities and currencies"],
+      ["Real time", "Cash visibility, not end of day"],
+      ["Roles", "Approvals that match your organisation"],
     ],
     rail: ["Entity graph", "Approval matrix", "ERP sync", "Audit export"],
   },
   {
     id: "platforms",
     label: "Platforms",
-    headline: "Pay out to a hundred thousand sellers before breakfast.",
-    body: "Split, hold and disburse funds programmatically, with obligations tracked per seller and payouts routed to whichever rail lands fastest.",
+    headline: "Collect, split and pay out programmatically.",
+    body: "Funds split, held and disbursed by rule, with obligations tracked for each seller and every payout on a record you can audit.",
     stats: [
-      ["120k", "Payouts in a single batch window"],
-      ["1.4s", "P99 for a split-and-disburse"],
-      ["Per-seller", "Ledgers, holds and reserves"],
+      ["Per seller", "Ledgers, holds and reserves"],
+      ["By rule", "Splits and payouts in code"],
+      ["Traceable", "Every movement on the record"],
     ],
     rail: ["Split rules", "Holds", "Payout router", "Seller ledgers"],
   },
@@ -44,25 +49,25 @@ const DIMENSIONS = [
     id: "treasury",
     label: "Financial teams",
     headline: "Close the month while the month is still running.",
-    body: "Every movement is already categorised, matched and exportable. Reconciliation stops being a monthly event and becomes a live property of the ledger.",
+    body: "Every movement categorised, matched and exportable as it happens, so reconciliation becomes a property of the ledger rather than a monthly event.",
     stats: [
       ["Continuous", "Reconciliation, not month-end"],
-      ["98.6%", "Auto-matched on first pass"],
-      ["Immutable", "Evidence trail for auditors"],
+      ["Matched", "As transactions settle"],
+      ["Immutable", "An evidence trail for auditors"],
     ],
     rail: ["Auto-match", "Categories", "Close pack", "Auditor access"],
   },
   {
     id: "global",
     label: "Global businesses",
-    headline: "Operate in forty markets on one balance sheet.",
-    body: "Hold local currency where you trade, convert at mid-market when you choose, and pay domestically in each market instead of wiring across borders.",
+    headline: "Algeria, connected to the markets it trades with.",
+    body: "Built for Algeria and connected outward, so value can move between Algerian businesses and their partners abroad on one platform.",
     stats: [
-      ["40", "Markets with local accounts"],
-      ["Mid-market", "FX, with the spread itemised"],
-      ["Domestic", "Rails in each market you enter"],
+      ["Algeria", "Built here, for here"],
+      ["Outward", "Corridors to trading partners"],
+      ["One view", "Domestic and cross-border together"],
     ],
-    rail: ["Local accounts", "FX desk", "In-country rails", "Tax records"],
+    rail: ["Local accounts", "FX", "Corridors", "Records"],
   },
 ] as const;
 

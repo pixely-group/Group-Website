@@ -94,9 +94,9 @@ export default function FinalCTA() {
             data-cta-fade
             className="max-w-md text-[0.98rem] leading-relaxed text-(--muted)"
           >
-            Talk to an engineer, not a sales development representative. We
-            will map your flows, quote your corridors, and give you sandbox
-            credentials in the same conversation.
+            Talk to the people building it, not a sales script. Tell us what
+            you need to move, verify or screen, and we will show you where the
+            platform is and how it fits.
           </p>
           <div data-cta-fade className="flex flex-wrap items-center gap-3">
             {/* It used to point at #start — this very section, a scroll to
@@ -105,17 +105,19 @@ export default function FinalCTA() {
             <MagneticButton onClick={() => openAuth("up")} size="lg">
               Get started
             </MagneticButton>
-            <MagneticButton href="#product" variant="outline" size="lg">
-              Explore the platform
+            <MagneticButton href="#contact" variant="outline" size="lg">
+              Talk to us
             </MagneticButton>
           </div>
         </div>
 
         <dl className="mt-16 grid gap-x-10 gap-y-8 sm:grid-cols-3">
           {[
-            ["Sandbox in minutes", "Full API surface, simulated rails"],
-            ["Named integration engineer", "From first call to production"],
-            ["No minimum volume", "Usage pricing until you scale"],
+            /* What can be said without promising anything not yet built:
+               the scope, the place, and the way in. */
+            ["One platform", "Payments, identity, AI and compliance"],
+            ["Built in Algeria", "London and Algiers"],
+            ["Developer access", "Ask for the sandbox and API reference"],
           ].map(([term, desc]) => (
             <div key={term} data-cta-fade>
               <dt className="text-[0.95rem] font-medium">{term}</dt>

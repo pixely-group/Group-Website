@@ -46,9 +46,11 @@ type Layer = {
 };
 
 /**
- * A card authorisation, layer by layer. The timings are the story: four
- * layers of our own take 4.5 ms between them, and then the scheme takes the
- * other 179.5 — which is why refusing costs nothing and settling does.
+ * A card authorisation, layer by layer. The timings are the story, and they
+ * are a design budget, not a measurement: the platform is not live, so the
+ * chart says "illustrative" wherever it shows a number. Four layers of our
+ * own are budgeted at 4.5 ms between them, and the scheme takes the other
+ * 179.5 — which is why refusing costs nothing and settling does.
  */
 const LAYERS: readonly Layer[] = [
   {
@@ -74,7 +76,7 @@ const LAYERS: readonly Layer[] = [
     name: "Policy",
     face: "POLICY",
     spec: "Limits · merchant rules · velocity",
-    note: "What they may do, evaluated in under a millisecond.",
+    note: "What they may do, checked before anything moves.",
     pass: "Within limits",
     fail: "Card frozen in app",
     ms: 0.7,
@@ -92,8 +94,8 @@ const LAYERS: readonly Layer[] = [
     index: "L5",
     name: "Rails",
     face: "RAILS",
-    spec: "Scheme · SEPA · RTP · FPS · book transfer",
-    note: "Where value finally settles, under our own memberships.",
+    spec: "ARTS · ATCI · card scheme · SWIFT · book transfer",
+    note: "Where value finally settles, on the rails it travels.",
     pass: "Authorised",
     ms: 179.5,
   },
@@ -1248,16 +1250,16 @@ export default function SecurityArchitecture() {
         <div className="mt-16 border-t border-(--line) pt-8">
           <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
             <div>
-              <p className="type-label text-(--faint)">Elapsed</p>
+              <p className="type-label text-(--faint)">Elapsed · illustrative</p>
               <p className="type-mono mt-3 flex items-baseline gap-2 text-[clamp(2.6rem,6vw,4.6rem)] leading-none tracking-[-0.04em]">
                 <span ref={clockRef}>0.0</span>
                 <span className="type-label text-(--muted)">ms</span>
               </p>
             </div>
             <p className="max-w-md text-[0.95rem] leading-relaxed text-(--muted)">
-              Four layers of ours answer in{" "}
-              <span className="type-mono text-(--fg)">4.5 ms</span>. The card
-              scheme takes the other{" "}
+              In this illustration, four layers of ours are budgeted at{" "}
+              <span className="type-mono text-(--fg)">4.5 ms</span> and the
+              card scheme takes the other{" "}
               <span className="type-mono text-(--fg)">179.5</span>. Refusing is
               the cheap part — which is the whole argument for doing it here.
             </p>
@@ -1347,19 +1349,10 @@ export default function SecurityArchitecture() {
           </p>
         </div>
 
-        <ul className="mt-14 flex flex-wrap gap-x-10 gap-y-3 border-t border-(--line) pt-6">
-          {[
-            "SOC 2 Type II",
-            "PCI DSS Level 1",
-            "ISO 27001",
-            "GDPR · DPF",
-            "Funds held at Tier-1 custodians",
-          ].map((item) => (
-            <li key={item} className="type-label text-(--faint)">
-              {item}
-            </li>
-          ))}
-        </ul>
+        {/* There was a row of certifications and custody claims here
+            (SOC 2, PCI DSS, ISO 27001, Tier-1 custodians). None is held, and
+            on a fintech's page a badge is a representation, so the row is
+            gone until there is an audit report behind each name. */}
       </div>
     </section>
   );
