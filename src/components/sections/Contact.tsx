@@ -26,7 +26,7 @@ import { gsap } from "@/lib/gsap";
  */
 
 const COUNTRIES = [
-  "Algeria", "United Kingdom", "France", "Tunisia", "Morocco", "United Arab Emirates", "Saudi Arabia",
+  "Algeria", "United Kingdom", "France", "Tunisia",
   "Qatar", "Germany", "Spain", "Italy", "Belgium", "Switzerland", "Canada", "United States", "Other",
 ];
 const MIN = 20;

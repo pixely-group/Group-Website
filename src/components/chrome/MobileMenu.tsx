@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLenis } from "@/components/chrome/SmoothScroll";
 import MagneticButton from "@/components/ui/MagneticButton";
 import { SIGN_IN_OPEN } from "@/lib/auth-trigger";
+import { columnFor, linkHref } from "@/lib/menu";
 import {
   NAV_GEOMETRY,
   NAV_INSETS,
@@ -59,6 +60,15 @@ export default function MobileMenu({
   const anchor = useAnchor();
   const panelRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
+  /* Which item's sub-menu is unfolded. One at a time: the list is the
+     index, and two open columns push the rest of it off a phone. Every
+     opening starts folded. */
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) setExpanded(null);
+  }
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -242,6 +252,7 @@ export default function MobileMenu({
       role="dialog"
       aria-modal="true"
       aria-label="Site menu"
+      data-lenis-prevent
       aria-hidden={!open}
       data-theme={scheme}
       className={`invisible fixed inset-0 z-(--z-menu) flex flex-col justify-between overflow-y-auto pb-10 opacity-0 lg:hidden ${
@@ -281,8 +292,11 @@ export default function MobileMenu({
         <ul className="flex flex-col gap-1">
           {NAV_LINKS.map((link, i) => {
             const active = activeHref === link.href;
+            const column = columnFor(link.href);
+            const isOpen = expanded === link.href;
             return (
-              <li key={link.href} className="overflow-hidden">
+              <li key={link.href}>
+                <div className="flex items-center justify-between gap-4 overflow-hidden">
                 <a
                   href={anchor(link.href)}
                   onClick={onNavigate(link.href)}
@@ -305,6 +319,58 @@ export default function MobileMenu({
                   </span>
                   {link.label}
                 </a>
+                {/* The bar opens these on hover; a finger has no hover, so
+                    the sub-menu is its own press beside the item, and the
+                    item itself still goes to its chapter. */}
+                {column && (
+                  <button
+                    type="button"
+                    data-menu-link
+                    aria-expanded={isOpen}
+                    aria-controls={`mobile-sub-${i}`}
+                    onClick={() => setExpanded(isOpen ? null : link.href)}
+                    tabIndex={open ? 0 : -1}
+                    data-cursor="link"
+                    className="relative flex size-11 shrink-0 items-center justify-center text-(--muted) transition-colors duration-300 hover:text-accent"
+                  >
+                    <span className="sr-only">
+                      {isOpen ? `Close ${link.label}` : `Open ${link.label}`}
+                    </span>
+                    <span aria-hidden className="absolute h-px w-4 bg-current" />
+                    <span
+                      aria-hidden
+                      className={`absolute h-4 w-px bg-current transition-transform duration-500 ease-(--ease-out-expo) ${isOpen ? "scale-y-0" : ""}`}
+                    />
+                  </button>
+                )}
+                </div>
+                {column && (
+                  <div
+                    id={`mobile-sub-${i}`}
+                    inert={!isOpen || undefined}
+                    className={`grid transition-[grid-template-rows,opacity] duration-500 ease-(--ease-out-expo) ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                  >
+                    <ul className="ms-11 flex min-h-0 flex-col overflow-hidden">
+                      <li aria-hidden className="pt-2" />
+                      {column.links.map((sub) => {
+                        const href = linkHref(column, sub);
+                        return (
+                          <li key={sub.label}>
+                            <a
+                              href={anchor(href)}
+                              onClick={onNavigate(href)}
+                              data-cursor="link"
+                              className="type-label block py-2.5 text-(--muted) transition-colors duration-200 hover:text-accent focus-visible:text-accent"
+                            >
+                              {sub.label}
+                            </a>
+                          </li>
+                        );
+                      })}
+                      <li aria-hidden className="pb-4" />
+                    </ul>
+                  </div>
+                )}
               </li>
             );
           })}
