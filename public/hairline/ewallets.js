@@ -115,6 +115,8 @@ function mount({ stage, svg, read }, value) {
   const up = (now) => act >= 0 && tdone(cards[act].a, now) && tdone(cards[act].z, now);
 
   /** Picks card a (-1 puts them all back). The stagger spreads out from the card picked, or the one let go. */
+  // Declared ahead: register() runs the first frame at once, and under reduced motion that frame already picks a card.
+  let B = null;
   function setActive(a) {
     if (a === act) return;
     const now = performance.now(), from = a >= 0 ? a : act;
@@ -127,10 +129,10 @@ function mount({ stage, svg, read }, value) {
     });
     cls(mouth, a < 0 ? "nf hi" : "nf");
     cls(lip, a < 0 ? "nf hi" : "nf");
-    B.wake();
+    B?.wake();
   }
 
-  const B = register(stage, (dt, now) => {
+  B = register(stage, (dt, now) => {
     const still = reducedMotion();
     // With no pointer on it the figure is its own hand: it waits, picks the next card, holds it once ticked, and puts it back.
     if (!active) {
