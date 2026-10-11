@@ -163,12 +163,16 @@ export default function Footer() {
                 <dl className="mt-5 space-y-2 border-t border-(--line) pt-4 text-[0.85rem]">
                   <div className="flex gap-3">
                     <dt className="type-label w-24 shrink-0 pt-px text-(--faint)">{office.registration.label}</dt>
-                    <dd className="type-mono text-(--muted)">
-                      {office.registration.href ? (
-                        <DocLink href={office.registration.href}>{office.registration.value}</DocLink>
-                      ) : (
-                        office.registration.value
-                      )}
+                    <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="type-mono text-(--muted)">
+                        {office.registration.href ? (
+                          <DocLink href={office.registration.href}>{office.registration.value}</DocLink>
+                        ) : (
+                          office.registration.value
+                        )}
+                      </span>
+                      {/* What the number registers, beside it. */}
+                      {office.note && <span className="type-label whitespace-nowrap text-(--faint)">{office.note}</span>}
                     </dd>
                   </div>
                   {office.phone && (
@@ -191,7 +195,6 @@ export default function Footer() {
                       </dd>
                     </div>
                   )}
-                  {office.note && <p className="type-label pt-1 text-(--faint)">{office.note}</p>}
                 </dl>
               </address>
             ))}
