@@ -1,0 +1,16 @@
+# What a CLI deploy must not upload. Secrets stay local (Vercel holds its
+# own environment variables); working files and other projects' assets are
+# not part of the site.
+.env*
+!.env.example
+.next
+node_modules
+wordpress
+pixely-gep
+tests
+*.pptx
+*.png
+!public/**/*.png
+PIXELY_PROJECT_STATE.md
+.claude
+scripts
