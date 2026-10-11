@@ -2,40 +2,52 @@
 
 import { useEffect, useRef } from "react";
 import CountUp from "@/components/ui/CountUp";
+import HairlineFigure from "@/components/ui/HairlineFigure";
 import { gsap } from "@/lib/gsap";
 
 /* The deck publishes no figures, and a real company's site is not the place
    to invent them — this section carries the six core services instead, which
    is what the deck actually documents. The numbering counts up in their
-   place. */
+   place.
+
+   Each service is drawn as a Hairline figure: the service's one gesture
+   told by a hand (a card tapped, a report filed, a module seated), which
+   plays itself when nobody is pointing at it. The files live in
+   public/hairline; `name` is what each one registers itself under. */
 const SERVICES = [
   {
     index: 1,
+    figure: { file: "payments.js", name: "payments" },
     label: "Payments",
     note: "Real-time payments, transfers and merchant collections.",
   },
   {
     index: 2,
+    figure: { file: "ewallets.js", name: "wallet" },
     label: "eWallets",
     note: "Secure digital wallets for individuals, businesses and institutions.",
   },
   {
     index: 3,
+    figure: { file: "identity.js", name: "tablet" },
     label: "Identity",
     note: "Digital identity verification, eKYC and KYB, and authentication built for trust.",
   },
   {
     index: 4,
+    figure: { file: "ai.js", name: "chat" },
     label: "AI services",
     note: "Fraud detection, intelligent automation and AI-assisted decisioning.",
   },
   {
     index: 5,
+    figure: { file: "compliance.js", name: "vault" },
     label: "Compliance",
     note: "Regulatory compliance, risk management and audit-ready reporting.",
   },
   {
     index: 6,
+    figure: { file: "apis.js", name: "modules" },
     label: "APIs and SDKs",
     note: "Developer-first APIs and SDKs for straightforward integration.",
   },
@@ -83,6 +95,14 @@ export default function Metrics() {
               data-metric
               className="border-t border-(--line) pt-6"
             >
+              {/* Above the number rather than beside it: at three across a
+                  card is ~360px, and a figure beside the text would leave
+                  neither room to read. */}
+              <HairlineFigure
+                file={m.figure.file}
+                name={m.figure.name}
+                className="-mx-2 mb-6"
+              />
               <dt className="type-display text-[clamp(2.8rem,6vw,5.4rem)] leading-[0.92] tracking-[-0.03em] whitespace-nowrap">
                 <CountUp value={m.index} prefix="0" />
               </dt>

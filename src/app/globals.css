@@ -1614,3 +1614,25 @@ html[data-cursor="on"] * {
     animation: none;
   }
 }
+
+/* ————————————————————————————————————————
+   Hairline figures (HairlineFigure.tsx).
+
+   The engine paints in five colours it reads from these variables. They are
+   derived from the chapter's own tokens, so a figure follows the ground it is
+   set on. The plate has to be the ground exactly, not a near match: plates
+   are opaque and stand in front of whatever is behind them, and they are only
+   invisible if they are the colour of the page. The four strokes are mixed
+   into the ground rather than given an alpha, so a crossing of two lines
+   never paints darker or brighter than either line.
+   ———————————————————————————————————————— */
+.hairline-figure {
+  /* The engine sets this once the figure mounts; set here too so the card
+     holds its height while the figure's script is still on its way. */
+  aspect-ratio: 5 / 4;
+  --hairline-plate: var(--bg);
+  --hairline-hi: var(--fg);
+  --hairline-edge: color-mix(in oklab, var(--fg) 54%, var(--bg));
+  --hairline-mid: color-mix(in oklab, var(--fg) 34%, var(--bg));
+  --hairline-lo: color-mix(in oklab, var(--fg) 20%, var(--bg));
+}
