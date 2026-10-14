@@ -12,6 +12,18 @@
       "env": {
         "PATH": "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       }
+    },
+    {
+      "name": "wordpress-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "3101",
+        "--directory",
+        "wordpress"
+      ],
+      "port": 3101
     }
   ]
 }
