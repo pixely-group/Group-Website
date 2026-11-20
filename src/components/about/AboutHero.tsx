@@ -17,7 +17,7 @@ export default function AboutHero() {
   const ref = useRef<HTMLElement>(null);
   useHeroIntro(ref);
 
-  const [london, algiers] = OFFICES;
+  const [algiers] = OFFICES;
 
   return (
     <section
@@ -54,9 +54,8 @@ export default function AboutHero() {
               className="max-w-[46ch] text-[1.02rem] leading-relaxed text-(--muted)"
             >
               Pixely builds payments, digital identity and AI into one
-              platform for Algeria, and connects it outward. Two companies
-              carry the name — {london.entity} in {london.city} and{" "}
-              {algiers.entity} in {algiers.city}.
+              platform for Algeria, and connects it outward. The company
+              that carries the name is {algiers.entity}, in {algiers.city}.
             </p>
             <div
               data-fade

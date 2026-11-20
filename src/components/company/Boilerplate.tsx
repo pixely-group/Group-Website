@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { OFFICES } from "@/lib/company";
 
-const [london, algiers] = OFFICES;
+const [algiers] = OFFICES;
 
 /**
  * The paragraph a journalist can lift whole. Every clause is the site's own:
- * the About page's statement, the Core services lines, and the two companies
- * as lib/company records them. It says what Pixely is building, never what
+ * the About page's statement, the Core services lines, and the company as
+ * lib/company records it. It says what Pixely is building, never what
  * it has launched, because nothing has.
  */
 export const SHORT =
@@ -19,9 +19,8 @@ export const FULL =
   `${SHORT} The platform is designed to bring together real-time payments, transfers and merchant collections; ` +
   "digital wallets for individuals, businesses and institutions; identity verification, eKYC and KYB; " +
   "AI-assisted fraud detection and decisioning; and regulatory compliance with audit-ready reporting — " +
-  `with APIs and SDKs for others to build on. Pixely is two companies: ${london.entity}, incorporated in ` +
-  `England and Wales in 2018 and based in ${london.city}, and ${algiers.entity} in ${algiers.city}, ` +
-  "where the platform is built.";
+  `with APIs and SDKs for others to build on. The company behind it is ${algiers.entity}, ` +
+  `in ${algiers.city}, where the platform is built.`;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Pixely — Careers",
   description:
-    "Working at Pixely, in London and Algiers: what the platform is being built to do, the disciplines it needs, and how to send an open application.",
+    "Working at Pixely, in Algiers: what the platform is being built to do, the disciplines it needs, and how to send an open application.",
 };
 
 /**
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
  *
  * What the page can say truthfully is what the work is: the platform the
  * site already describes, the kinds of discipline it takes to build each
- * part of it (drawn from the six services), the two offices it is built
- * from, and how to write in.
+ * part of it (drawn from the six services), where it is built, and how to
+ * write in.
  */
 export default function CareersPage() {
   return (
@@ -35,7 +35,7 @@ export default function CareersPage() {
         title="Build what"
         serif="comes next"
         lede="Pixely is building payments, digital identity and AI into one
-          platform for Algeria, from London and Algiers. There are no
+          platform for Algeria, from Algiers. There are no
           published openings right now — but if the work below is your work,
           we would like to hear from you."
         actions={[
@@ -111,9 +111,9 @@ export default function CareersPage() {
 
       <ServiceBand
         index="03 — Where"
-        title="London and Algiers."
+        title="Algiers."
         lede="SARL PIXELY is the company in Algeria, where the platform is
-          built. PIXELY LTD, in London, operates this website."
+          built, and it operates this website."
         ground="bone"
       >
         <Offices />
@@ -142,7 +142,7 @@ export default function CareersPage() {
             },
             {
               title: "Say where",
-              body: "London, Algiers or either. The work happens across both offices, and it helps to know which you have in mind.",
+              body: "Where you are, and where you would want to work from. The platform is built in Algiers, and it helps to know what you have in mind.",
             },
           ]}
         />

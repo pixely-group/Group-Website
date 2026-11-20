@@ -116,7 +116,7 @@ export default function FinalCTA() {
             /* What can be said without promising anything not yet built:
                the scope, the place, and the way in. */
             ["One platform", "Payments, identity, AI and compliance"],
-            ["Built in Algeria", "London and Algiers"],
+            ["Built in Algeria", "Designed and built in Algiers"],
             ["Developer access", "Ask for the sandbox and API reference"],
           ].map(([term, desc]) => (
             <div key={term} data-cta-fade>

@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "Pixely — About",
   description:
-    "Pixely builds payments, digital identity and AI into one platform for Algeria, and connects it outward — PIXELY LTD in London and SARL PIXELY in Algiers.",
+    "Pixely builds payments, digital identity and AI into one platform for Algeria, and connects it outward — SARL PIXELY, in Algiers.",
 };
 
 /**
@@ -108,11 +108,10 @@ export default function AboutPage() {
       </ServiceBand>
 
       <ServiceBand
-        index="03 — Two companies, two offices"
-        title="London and Algiers."
-        lede="PIXELY LTD, incorporated in England and Wales on 28 September
-          2018, operates this website. SARL PIXELY is the company in Algeria,
-          where the platform is built."
+        index="03 — The company"
+        title="Algiers."
+        lede="SARL PIXELY is the company in Algeria, where the platform is
+          built, and it operates this website."
         ground="bone"
       >
         <Offices />

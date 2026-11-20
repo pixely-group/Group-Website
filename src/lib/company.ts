@@ -1,22 +1,16 @@
 /**
- * Who Pixely is, in law and on the map: the two companies, their offices and
- * how to reach them. One place, because the footer, the contact section, the
- * About page and three legal documents all print these, and an address that
- * is typed six times is wrong in one of them by the second edit.
+ * Who Pixely is, in law and on the map: the company, its office and how to
+ * reach it. One place, because the footer, the contact section, the About
+ * page and three legal documents all print these, and an address that is
+ * typed six times is wrong in one of them by the second edit.
  *
- * The UK entity is exactly as Companies House records it
- * (find-and-update.company-information.service.gov.uk/company/11595193):
- * PIXELY LTD, private limited company, incorporated 28 September 2018,
- * registered office Oakwood House, 422 Hackney Road, London E2 7SY, SIC 63110
- * (data processing, hosting and related activities) and 74100 (specialised
- * design activities). The Algerian entity is as the client gave it.
+ * The Algerian entity is as the client gave it: SARL PIXELY, Zone
+ * Industrielle Rouiba, Section 7, Groupe 338, Rouiba, Algiers, registered
+ * on the registre de commerce under RC 16/00–1054407 B25.
  *
- * PIXELY LTD operates the website, and its terms are governed by the law of
- * England and Wales (the client's decision, 11 October 2026).
+ * SARL PIXELY operates the website, and its terms are governed by Algerian
+ * law.
  */
-
-export const COMPANIES_HOUSE_URL =
-  "https://find-and-update.company-information.service.gov.uk/company/11595193";
 
 export type Office = {
   /** The short name an office goes by on the page. */
@@ -37,17 +31,6 @@ export type Office = {
 };
 
 export const OFFICES: Office[] = [
-  {
-    city: "London",
-    country: "United Kingdom",
-    entity: "PIXELY LTD",
-    address: ["Oakwood House", "422 Hackney Road", "London E2 7SY", "United Kingdom"],
-    registration: { label: "Company no.", value: "11595193", href: COMPANIES_HOUSE_URL },
-    note: "Registered office · England and Wales",
-    phone: { display: "+213 (0) 794 0414093", tel: "+2137940414093" },
-    email: "contact@pixely.com",
-    tz: "Europe/London",
-  },
   {
     city: "Algiers",
     country: "Algeria",

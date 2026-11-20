@@ -133,10 +133,9 @@ const sections: LegalSection[] = [
         <p>
           The law asks for your consent before a website stores anything on
           your device, except what is strictly necessary to provide a service
-          you have asked for. In the UK that exemption is in the Privacy and
-          Electronic Communications Regulations (PECR); in Algeria, Law 18-07
-          does not require consent for processing that is necessary to provide
-          the service you request. The EU rules work the same way.
+          you have asked for. In Algeria, Law 18-07 does not require consent
+          for processing that is necessary to provide the service you request.
+          The EU rules work the same way.
         </p>
         <p>
           Every cookie above falls within that exemption, so there is nothing

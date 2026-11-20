@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import DocLink from "@/components/ui/DocLink";
-import { COMPANIES_HOUSE_URL, OFFICES, OPERATOR } from "@/lib/company";
+import { OFFICES, OPERATOR } from "@/lib/company";
 import LegalPage, {
   Bullets,
   DocRef,
@@ -16,8 +16,6 @@ export const metadata: Metadata = {
     "The terms on which you may use the Pixely website: an information site about the platform Pixely is building.",
 };
 
-const ALGIERS = OFFICES.find((o) => o.entity !== OPERATOR.entity)!;
-
 const sections: LegalSection[] = [
   {
     id: "who-we-are",
@@ -26,13 +24,8 @@ const sections: LegalSection[] = [
       <>
         <p>
           This website is operated by <strong>{OPERATOR.entity}</strong>, a
-          private limited company registered in England and Wales,{" "}
-          {OPERATOR.registration.label.toLowerCase()}{" "}
-          <DocLink href={COMPANIES_HOUSE_URL}>{OPERATOR.registration.value}</DocLink>,
-          with its registered office at {OPERATOR.address.join(", ")}. Its group
-          company in Algeria is <strong>{ALGIERS.entity}</strong>,{" "}
-          {ALGIERS.address.join(", ")} ({ALGIERS.registration.label}{" "}
-          {ALGIERS.registration.value}).
+          company registered in Algeria, {OPERATOR.registration.label}{" "}
+          {OPERATOR.registration.value}, at {OPERATOR.address.join(", ")}.
         </p>
         <p>
           In these terms, “Pixely”, “we” and “us” mean {OPERATOR.entity}. By
@@ -139,10 +132,10 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          The website links to sites we do not control, among them Companies
-          House, the Journal Officiel de la République Algérienne (joradp.dz),
-          the Information Commissioner’s Office, and Google and Apple for
-          sign-in. Those sites have their own terms and privacy policies, and
+          The website links to sites we do not control, among them the Journal
+          Officiel de la République Algérienne (joradp.dz), the national
+          authority for the protection of personal data (anpdp.dz), and Google
+          and Apple for sign-in. Those sites have their own terms and privacy policies, and
           we are not responsible for their content or availability.
         </p>
         <p>
@@ -231,16 +224,15 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          These terms are governed by the law of England and Wales, and the
-          courts of England and Wales have jurisdiction over any dispute about
-          them or the website.
+          These terms are governed by Algerian law, and the courts of Algiers
+          have jurisdiction over any dispute about them or the website.
         </p>
         <p>
           This is without prejudice to the mandatory protections given to
-          consumers by the law of the country where they live, including
-          Algeria. If you are a consumer, you keep those protections, and you
-          may also bring proceedings in the courts of your own country where
-          its law gives you that right.
+          consumers by the law of the country where they live. If you are a
+          consumer, you keep those protections, and you may also bring
+          proceedings in the courts of your own country where its law gives
+          you that right.
         </p>
         <p>
           If any part of these terms is found unenforceable, the rest stays in
@@ -256,7 +248,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Questions about these terms: <Mail />, or by post to either office:
+          Questions about these terms: <Mail />, or by post:
         </p>
         <Facts
           items={OFFICES.map(

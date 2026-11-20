@@ -54,12 +54,11 @@ export default function PressPage() {
       </ServiceBand>
 
       <ServiceBand
-        index="02 — The companies"
-        title="Two companies, one name."
-        lede="PIXELY LTD, incorporated in England and Wales on 28 September
-          2018, operates this website. SARL PIXELY is the company in Algeria,
-          where the platform is built. Registration details are as each
-          register records them."
+        index="02 — The company"
+        title="One company, one name."
+        lede="SARL PIXELY is the company in Algeria, where the platform is
+          built, and it operates this website. Registration details are as
+          the register records them."
         ground="ink"
       >
         <Offices />

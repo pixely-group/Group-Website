@@ -1,7 +1,7 @@
 import { OFFICES } from "@/lib/company";
 
 const MEDIA_EMAIL = "contact@pixely.dz";
-const algiers = OFFICES[1];
+const algiers = OFFICES[0];
 
 /**
  * The Press hero's right-hand column: the media contact, set the way About

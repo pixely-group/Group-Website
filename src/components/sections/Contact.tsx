@@ -186,7 +186,7 @@ export default function Contact() {
 
           <dl data-contact-fade className="mt-12 grid gap-y-6 border-t border-(--line) pt-8 text-[0.95rem]">
             {/* One row per office that can be reached directly, under its
-                city, so a number is never read as the other office's. */}
+                city, so an address is never read apart from its office. */}
             {OFFICES.filter((o) => o.email || o.phone).map((o) => (
               <div key={o.city}>
                 <dt className="type-label text-(--faint)">Write or call · {o.city}</dt>

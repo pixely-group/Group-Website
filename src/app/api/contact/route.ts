@@ -59,7 +59,7 @@ const page = (label: string, title: string, rows: string) =>
   `<div style="max-width:560px;margin:0 auto;padding:44px 24px">` +
   `<p style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#8c9bff;margin:0 0 18px">${label}</p>` +
   `<h1 style="font-size:28px;line-height:1.15;font-weight:600;margin:0 0 24px">${title}</h1>${rows}` +
-  `<p style="margin-top:36px;border-top:1px solid #2a2a2e;padding-top:20px;font-size:12px;color:#8a8a90">Pixely · PIXELY LTD, London · SARL PIXELY, Algiers</p>` +
+  `<p style="margin-top:36px;border-top:1px solid #2a2a2e;padding-top:20px;font-size:12px;color:#8a8a90">Pixely · SARL PIXELY, Algiers</p>` +
   `</div></body></html>`;
 
 const row = (k: string, v: string) =>

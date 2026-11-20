@@ -19,8 +19,6 @@ export const metadata: Metadata = {
     "What the Pixely website collects, why, who it is shared with, how long it is kept, and the rights you have over it.",
 };
 
-const ALGIERS = OFFICES.find((o) => o.entity !== OPERATOR.entity)!;
-
 const sections: LegalSection[] = [
   {
     id: "who-we-are",
@@ -29,23 +27,12 @@ const sections: LegalSection[] = [
       <>
         <p>
           This website is operated by <strong>{OPERATOR.entity}</strong>, a
-          private limited company registered in England and Wales (
-          {OPERATOR.registration.label.toLowerCase()}{" "}
-          {OPERATOR.registration.value}), whose registered office is at{" "}
-          {OPERATOR.address.join(", ")}. It is the controller of the personal
-          data processed through the website.
+          company registered in Algeria ({OPERATOR.registration.label}{" "}
+          {OPERATOR.registration.value}), at {OPERATOR.address.join(", ")}. It
+          is the controller of the personal data processed through the website.
         </p>
         <p>
-          Its group company in Algeria, <strong>{ALGIERS.entity}</strong> (
-          {ALGIERS.registration.label} {ALGIERS.registration.value}),{" "}
-          {ALGIERS.address.join(", ")}, handles enquiries that come from
-          Algeria or concern our work there. For those enquiries the two
-          companies decide together how your data is used, and act as joint
-          controllers. You can raise any question or request with either of
-          them; it will reach the right one.
-        </p>
-        <p>
-          In this notice, “Pixely”, “we” and “us” mean those two companies.
+          In this notice, “Pixely”, “we” and “us” mean {OPERATOR.entity}.
           It covers the website only. The platform we are building is not
           live, and when a Pixely product is, it will come with its own
           notice.
@@ -86,7 +73,7 @@ const sections: LegalSection[] = [
             ["Purpose", "To sign you in and keep you signed in."],
             [
               "Lawful basis",
-              "UK and EU GDPR: necessary to provide the sign-in you ask for (contract). Law 18-07: your consent, given when you choose to sign in, and the performance of the service you request.",
+              "EU GDPR: necessary to provide the sign-in you ask for (contract). Law 18-07: your consent, given when you choose to sign in, and the performance of the service you request.",
             ],
           ]}
         />
@@ -110,7 +97,7 @@ const sections: LegalSection[] = [
             ],
             [
               "Lawful basis",
-              "UK and EU GDPR: our legitimate interest in catching mistyped addresses. Law 18-07: necessary for the sign-up you have started.",
+              "EU GDPR: our legitimate interest in catching mistyped addresses. Law 18-07: necessary for the sign-up you have started.",
             ],
           ]}
         />
@@ -133,7 +120,7 @@ const sections: LegalSection[] = [
             ["Purpose", "To read and answer your enquiry, and follow it up."],
             [
               "Lawful basis",
-              "UK and EU GDPR: our legitimate interest in answering the people who write to us, or steps you ask us to take before entering into a contract. Law 18-07: your consent, given when you send the message.",
+              "EU GDPR: our legitimate interest in answering the people who write to us, or steps you ask us to take before entering into a contract. Law 18-07: your consent, given when you send the message.",
             ],
           ]}
         />
@@ -151,7 +138,7 @@ const sections: LegalSection[] = [
             ],
             [
               "Lawful basis",
-              "UK and EU GDPR: our legitimate interest in keeping the website secure and available. Law 18-07: necessary for that same purpose.",
+              "EU GDPR: our legitimate interest in keeping the website secure and available. Law 18-07: necessary for that same purpose.",
             ],
           ]}
         />
@@ -191,10 +178,6 @@ const sections: LegalSection[] = [
               </>,
             ],
             [
-              "Our group",
-              `${OPERATOR.entity} and ${ALGIERS.entity} share an enquiry between them when it concerns both.`,
-            ],
-            [
               "Authorities",
               "Where the law requires us to, or to establish, exercise or defend legal claims.",
             ],
@@ -209,29 +192,22 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Pixely works across two countries, so personal data can cross
-          borders. Plainly, this is how:
+          Pixely is in Algeria and some of the services the website uses are
+          not, so personal data can cross borders. Plainly, this is how:
         </p>
         <Bullets
           items={[
             <>
-              The website is operated from the United Kingdom by{" "}
-              {OPERATOR.entity}. If you use it from Algeria or elsewhere, what
-              you send it goes to the UK.
+              The website is operated from Algeria by {OPERATOR.entity}. What
+              you send it is received there.
             </>,
             "Contact-form messages pass through Brevo in the European Union (France).",
             "If you sign in with Google or Apple, the provider, which operates from the United States, sends us the details listed above.",
-            <>
-              An enquiry concerning Algeria may be shared between{" "}
-              {OPERATOR.entity} and {ALGIERS.entity}.
-            </>,
           ]}
         />
         <p>
           For each transfer we apply the safeguards the law that governs it
-          requires. Transfers from the UK rely on UK adequacy regulations or
-          the contractual safeguards UK law approves. For personal data
-          collected in Algeria, article 44 of Law 18-07 makes a transfer
+          requires. For personal data collected in Algeria, article 44 of Law 18-07 makes a transfer
           abroad subject to the authorisation of the national authority, the
           ANPDP, and we apply its conditions to those transfers.
         </p>
@@ -300,9 +276,8 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Depending on the law that applies to you (UK GDPR and the Data
-          Protection Act 2018, the EU GDPR if you are in the European Union,
-          or Algeria’s{" "}
+          Depending on the law that applies to you (the EU GDPR if you are
+          in the European Union, or Algeria’s{" "}
           <DocLink href={EXTERNAL.law1807}>Law 18-07 of 10 June 2018</DocLink>{" "}
           on the protection of personal data, as amended by{" "}
           <DocLink href={EXTERNAL.law2511}>Law 25-11 of 24 July 2025</DocLink>
@@ -352,13 +327,6 @@ const sections: LegalSection[] = [
         <Facts
           items={[
             [
-              "United Kingdom",
-              <>
-                The Information Commissioner’s Office,{" "}
-                <DocLink href={EXTERNAL.ico}>ico.org.uk</DocLink>.
-              </>,
-            ],
-            [
               "Algeria",
               <>
                 The national authority for the protection of personal data
@@ -403,7 +371,7 @@ const sections: LegalSection[] = [
       <>
         <p>
           For anything about your personal data or this notice, write to{" "}
-          <Mail />, or by post to either office:
+          <Mail />, or by post:
         </p>
         <Facts
           items={OFFICES.map(

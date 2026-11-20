@@ -140,13 +140,12 @@ export default function Footer() {
           </nav>
         </div>
 
-        {/* The two companies and where they are. Written once, in
-            lib/company, and read here, on the About page and in the legal
-            documents, so an address is never right in one and stale in
-            another. */}
+        {/* The company and where it is. Written once, in lib/company, and
+            read here, on the About page and in the legal documents, so an
+            address is never right in one and stale in another. */}
         <section id="offices" aria-labelledby="offices-heading" className="mt-16 border-t border-(--line) pt-10">
           <h2 id="offices-heading" className="type-label mb-8 text-(--muted)">
-            Offices
+            Office
           </h2>
           <div className="grid gap-10 md:grid-cols-2 md:gap-16">
             {OFFICES.map((office) => (
@@ -214,10 +213,10 @@ export default function Footer() {
           {/* Who is behind the site, as the registers have it. Nothing here
               claims a licence: none is held, and none is implied. */}
           <p className="type-label max-w-2xl leading-relaxed text-(--faint)">
-            {OFFICES[0].entity} is a private limited company registered in England and Wales,
-            no. {OFFICES[0].registration.value}, registered office {OFFICES[0].address.slice(0, 3).join(", ")}.
-            It operates this website. {OFFICES[1].entity} is registered in Algeria, RC {OFFICES[1].registration.value}.
-            No payment, banking or financial services are provided through this website.
+            {OFFICES[0].entity} is a company registered in Algeria,
+            {" "}{OFFICES[0].registration.label} {OFFICES[0].registration.value}, at {OFFICES[0].address.slice(0, 3).join(", ")}.
+            It operates this website. No payment, banking or financial services
+            are provided through this website.
           </p>
           <div className="flex shrink-0 flex-wrap gap-x-7 gap-y-3">
             {LEGAL.map((link) => (
@@ -247,7 +246,7 @@ export default function Footer() {
         </div>
 
         <p className="type-label mt-8 text-(--faint)">
-          © {new Date().getFullYear()} PIXELY.
+          © {new Date().getFullYear()} Pixely — AI-powered fintech platform
         </p>
       </div>
     </footer>

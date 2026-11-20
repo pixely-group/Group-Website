@@ -13,7 +13,7 @@ export const TOPICS = [
   { id: "platform", label: "Platform enquiry", hint: "Payments, wallets, identity, AI or compliance for your business." },
   { id: "partnerships", label: "Partnership", hint: "Banks, institutions and technology partners." },
   { id: "press", label: "Press", hint: "Interviews, briefings and media enquiries." },
-  { id: "careers", label: "Careers", hint: "Working at Pixely in London or Algiers." },
+  { id: "careers", label: "Careers", hint: "Working at Pixely in Algiers." },
 ] as const;
 
 export type TopicId = (typeof TOPICS)[number]["id"];

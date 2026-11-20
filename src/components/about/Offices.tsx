@@ -6,11 +6,11 @@ import DocLink from "@/components/ui/DocLink";
 import { OFFICES, type Office } from "@/lib/company";
 
 /**
- * The two companies, side by side: each office set as a typographic card —
- * the city in the display voice, its local time kept like the footer's
- * clocks, and the particulars ruled off in hairlines, as an envelope or a
- * register would print them. Every fact comes from lib/company; nothing on
- * this card is typed here.
+ * The company, set as a typographic card — the city in the display voice,
+ * its local time kept like the footer's clocks, and the particulars ruled
+ * off in hairlines, as an envelope or a register would print them. Every
+ * fact comes from lib/company; nothing on this card is typed here. The
+ * cards divide into columns only when there is more than one office.
  */
 
 /** HH:MM in the office's own zone. Blank on the server and filled after
@@ -135,7 +135,13 @@ function OfficeCard({ office, index }: { office: Office; index: number }) {
 
 export default function Offices() {
   return (
-    <div className="grid gap-20 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-(--line)">
+    <div
+      className={
+        OFFICES.length > 1
+          ? "grid gap-20 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-(--line)"
+          : "grid max-w-3xl gap-20"
+      }
+    >
       {OFFICES.map((office, i) => (
         <OfficeCard key={office.city} office={office} index={i} />
       ))}

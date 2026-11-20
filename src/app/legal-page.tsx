@@ -44,7 +44,6 @@ const DOCS: { doc: LegalDoc; href: string; label: string; name: string }[] = [
  *  French edition of the Journal Officiel, opened at the page each law starts
  *  on, as the globe on the front page links them. */
 export const EXTERNAL = {
-  ico: "https://ico.org.uk/",
   anpdp: "https://anpdp.dz/",
   law1807: LAWS["18-07"].href,
   law2511: LAWS["18-07"].amended!.href,
@@ -216,8 +215,7 @@ function OperatorBlock() {
         <div className="text-[0.9375rem] leading-[1.65] text-(--muted)">
           <p className="text-(--fg)">{OPERATOR.entity}</p>
           <p className="mt-2">
-            A private limited company registered in England and Wales,{" "}
-            {OPERATOR.registration.label.toLowerCase()}{" "}
+            A company registered in Algeria, {OPERATOR.registration.label}{" "}
             {OPERATOR.registration.href ? (
               <DocLink href={OPERATOR.registration.href}>
                 {OPERATOR.registration.value}
@@ -227,7 +225,7 @@ function OperatorBlock() {
             )}
             .
           </p>
-          <p className="mt-2">Registered office: {OPERATOR.address.join(", ")}.</p>
+          <p className="mt-2">{OPERATOR.address.join(", ")}.</p>
         </div>
         <div className="text-[0.9375rem] leading-[1.65] text-(--muted) sm:col-start-2 lg:col-start-auto">
           {others.map((o) => (
